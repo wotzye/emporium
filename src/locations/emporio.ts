@@ -263,7 +263,7 @@ export function createEmporio(g: Game): Location {
   scene.add(rbox(0.72, 0.05, 3.62, 0.015, woodDark, caseX, 0.62, caseZ));
   for (const z of [caseZ - 1.8, caseZ - 0.6, caseZ + 0.6, caseZ + 1.8]) scene.add(rbox(0.05, 1.55, 0.05, 0.015, brass, caseX - 0.34, 1.4, z));
   scene.add(rbox(0.05, 1.6, 3.6, 0.01, woodDark, caseX + 0.33, 1.4, caseZ));
-  const glass = mesh(new THREE.PlaneGeometry(3.6, 1.55), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.08, roughness: 0.05, metalness: 0.9 }), caseX - 0.36, 1.4, caseZ);
+  const glass = mesh(new THREE.PlaneGeometry(3.6, 1.55), new THREE.MeshBasicMaterial({ color: 0x9aa0a4, transparent: true, opacity: 0.025, depthWrite: false }), caseX - 0.36, 1.4, caseZ);
   glass.rotation.y = -Math.PI / 2;
   glass.castShadow = false;
   fx(glass);
@@ -279,9 +279,13 @@ export function createEmporio(g: Game): Location {
   const cm = cursedMat();
   // 1. shoe
   const shoe = new THREE.Group();
-  shoe.add(box(0.22, 0.07, 0.09, cm, 0, 0.035, 0));
-  shoe.add(box(0.08, 0.12, 0.09, cm, -0.07, 0.09, 0));
-  shoe.add(cyl(0.012, 0.012, 0.1, cm, 0.08, 0.05, 0, 6));
+  const shoeModel = prop('shoe', { width: 0.24 });
+  if (shoeModel) shoe.add(cursify(shoeModel));
+  else {
+    shoe.add(box(0.22, 0.07, 0.09, cm, 0, 0.035, 0));
+    shoe.add(box(0.08, 0.12, 0.09, cm, -0.07, 0.09, 0));
+    shoe.add(cyl(0.012, 0.012, 0.1, cm, 0.08, 0.05, 0, 6));
+  }
   shoe.position.set(caseX, topY, zs[0]);
   shoe.rotation.y = Math.PI / 2 + 0.3;
   // 2. statuette
@@ -296,8 +300,12 @@ export function createEmporio(g: Game): Location {
   statue.position.set(caseX, topY, zs[1]);
   // 3. doll
   const doll = new THREE.Group();
-  doll.add(mesh(new THREE.ConeGeometry(0.08, 0.2, 12), cm, 0, 0.1, 0));
-  doll.add(sphere(0.055, cm, 0, 0.25, 0, 12));
+  const dollModel = prop('doll', { height: 0.32, turn: -Math.PI / 2, rot: [-Math.PI / 2, 0, 0] });
+  if (dollModel) doll.add(cursify(dollModel));
+  else {
+    doll.add(mesh(new THREE.ConeGeometry(0.08, 0.2, 12), cm, 0, 0.1, 0));
+    doll.add(sphere(0.055, cm, 0, 0.25, 0, 12));
+  }
   doll.position.set(caseX, topY, zs[2]);
   // 4. butcher's object, wrapped in a stained cloth
   const cloth = mat(0xa8a39a, { roughness: 1 });

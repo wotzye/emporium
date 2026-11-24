@@ -33,3 +33,7 @@ Ogni push su `main` pubblica il gioco su GitHub Pages tramite `.github/workflows
 - Casa di Ada (Poly Haven): televisore, divano, cucina elettrica, bollitore, stampelle, baule, occhiali tondi, cornice, cappello da pesca, consolle, credenza, cassa militare, statua del gatto
 - Altri oggetti Poly Haven: ratto, sedia a rotelle, bidone, lampada a gabbia, scala
 - Suoni da Freesound: "old possessed voice" (fusagawi), "random jumpscare" (enclosurex_studios), "spooky metallic ghost moving" (robinhood76), "scary halloween bell strike" (elisfir), "sfx chains" (tosimos), "demon laugh 1" (noahbangs), "creepy footsteps with reverb" (brandnewhexagon), "squeaky door hinge" (jomungus) — verificare la licenza di ciascuno prima della pubblicazione
+
+### Modelli Sketchfab (CC-BY 4.0)
+- "3D Antique Doll" di nektar.green — https://sketchfab.com/3d-models/3d-antique-doll-a0a494a8c3db4cc4ad10cb433125fe78
+- "3D Photogrammetry 1950's vintage Leopard Shoe" di gabriellarosabertin — https://sketchfab.com/3d-models/3d-photogrammetry-1950s-vintage-leopard-shoe-2209078ed08e4eaf811abd202ef0aa6d

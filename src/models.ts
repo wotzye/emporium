@@ -50,6 +50,8 @@ const FILES = {
   sideboard: 'models/WoodenTable_03.glb',
   armyCrate: 'models/wooden_military_crate.glb',
   catStatue: 'models/concrete_cat_statue.glb',
+  doll: 'models/doll.glb',
+  shoe: 'models/shoe.glb',
 } as const;
 export type ModelId = keyof typeof FILES;
 
@@ -384,7 +386,7 @@ export function ghostMaterial(uniforms: { time: { value: number }; opacity: { va
  * turned so that its front faces `face` (radians about y). Only one child of a multi-object
  * file can be picked with `only` (e.g. one of the three candleholders).
  */
-export function prop(id: ModelId, o: { height?: number; width?: number; turn?: number; only?: string | RegExp } = {}) {
+export function prop(id: ModelId, o: { height?: number; width?: number; turn?: number; only?: string | RegExp; rot?: [number, number, number] } = {}) {
   const src = instance(id);
   if (!src) return null;
   let obj: THREE.Object3D = src;
@@ -406,7 +408,11 @@ export function prop(id: ModelId, o: { height?: number; width?: number; turn?: n
     }
   }
   const inner = new THREE.Group();
-  inner.add(obj);
+  // stand a model up if its author laid it down (rot), then face it (turn)
+  const upright = new THREE.Group();
+  upright.add(obj);
+  if (o.rot) upright.rotation.set(o.rot[0], o.rot[1], o.rot[2]);
+  inner.add(upright);
   inner.rotation.y = o.turn ?? 0;
   const outer = new THREE.Group();
   outer.add(inner);
@@ -433,13 +439,16 @@ export function cursify(o: THREE.Object3D) {
     if (!m.isMesh) return;
     const src = m.material as THREE.MeshStandardMaterial;
     m.material = new THREE.MeshStandardMaterial({
-      color: 0xc4101a,
-      roughness: 0.45,
-      metalness: 0.15,
+      // a deep red that stays red under strong light (pale pinks lose their colour in the noir filter)
+      color: 0x2a0103,
+      roughness: 0.55,
+      metalness: 0,
+      envMapIntensity: 0.25,
       normalMap: src.normalMap ?? null,
       roughnessMap: src.roughnessMap ?? null,
-      emissive: 0x400004,
-      emissiveIntensity: 0.6,
+      // mostly self-lit: strong white light can't wash the red out to pink/white
+      emissive: 0x9a0a12,
+      emissiveIntensity: 0.55,
     });
   });
   return o;

@@ -24,8 +24,14 @@ export function createLab(g: Game): Location {
   (chars[4] as ReturnType<typeof createAdaGhost>).setOpacity(1);
   const figs = chars.map((c) => c.group);
   const props: THREE.Object3D[] = [];
-  (['barberChair', 'candleholders', 'woodChair', 'stool', 'teaSet', 'suitcase', 'bucket', 'crate', 'lantern'] as const).forEach((id, i) => {
-    const p = prop(id, { height: id === 'barberChair' ? 1.3 : undefined });
+  ([[Math.PI / 2, 0, 0], [-Math.PI / 2, 0, 0], [0, 0, Math.PI / 2], [0, 0, -Math.PI / 2]] as [number, number, number][]).forEach((r, i) => {
+    const d = prop('doll', { height: 0.4, rot: r });
+    if (!d) return;
+    d.position.set(-2.6 + i * 0.45, 0, -2.3);
+    scene.add(d);
+  });
+  (['doll', 'shoe', 'catStatue', 'barberChair', 'candleholders', 'woodChair', 'stool', 'teaSet', 'suitcase', 'bucket', 'crate', 'lantern'] as const).forEach((id, i) => {
+    const p = prop(id, { height: id === 'barberChair' ? 1.3 : id === 'doll' ? 0.5 : id === 'catStatue' ? 0.4 : undefined, width: id === 'shoe' ? 0.4 : undefined });
     if (!p) return;
     p.position.set(-2.4 + i * 0.6, 0, -1.8);
     scene.add(p);
@@ -36,7 +42,7 @@ export function createLab(g: Game): Location {
     nameKey: 'place.map',
     scene,
     drone: 'emporio',
-    views: { main: { pos: [0, 1.4, 3.6], look: [0, 1.0, 0] }, m: { pos: [-1.5, 1.7, 1.2], look: [-1.5, 1.55, 0] }, b: { pos: [-0.5, 1.6, 1.4], look: [-0.5, 1.4, 0] }, l: { pos: [0.5, 1.3, 1.3], look: [0.5, 1.2, 0] }, h: { pos: [1.5, 1.55, 1.3], look: [1.5, 1.4, 0] }, bh: { pos: [-0.1, 1.25, 1.1], look: [-0.6, 0.95, 0.35] }, mh: { pos: [-1.2, 1.4, 1.3], look: [-1.5, 1.05, 0.7] }, mf: { pos: [-1.5, 1.78, 0.65], look: [-1.5, 1.74, 0] }, ad: { pos: [2.5, 1.5, 1.3], look: [2.5, 1.35, 0] }, props: { pos: [0, 1.5, 1.0], look: [0, 0.5, -1.8] } },
+    views: { main: { pos: [0, 1.4, 3.6], look: [0, 1.0, 0] }, m: { pos: [-1.5, 1.7, 1.2], look: [-1.5, 1.55, 0] }, b: { pos: [-0.5, 1.6, 1.4], look: [-0.5, 1.4, 0] }, l: { pos: [0.5, 1.3, 1.3], look: [0.5, 1.2, 0] }, h: { pos: [1.5, 1.55, 1.3], look: [1.5, 1.4, 0] }, bh: { pos: [-0.1, 1.25, 1.1], look: [-0.6, 0.95, 0.35] }, mh: { pos: [-1.2, 1.4, 1.3], look: [-1.5, 1.05, 0.7] }, mf: { pos: [-1.5, 1.78, 0.65], look: [-1.5, 1.74, 0] }, ad: { pos: [2.5, 1.5, 1.3], look: [2.5, 1.35, 0] }, props: { pos: [0, 1.5, 1.0], look: [0, 0.5, -1.8] }, p3: { pos: [-1.9, 0.8, -0.9], look: [-1.9, 0.25, -2.3] } },
     startView: 'main',
     hotspots: [],
     update: (dt, t) => chars.forEach((c) => c.update(dt, t, g.engine.camera)),
