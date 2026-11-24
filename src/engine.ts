@@ -194,6 +194,33 @@ export class Engine {
     }
   }
 
+  /** Free the GPU memory of a scene we've left far behind (it is rebuilt from the save if we come back). */
+  disposeScene(scene: THREE.Scene) {
+    const done = new Set<unknown>();
+    scene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.geometry && !done.has(m.geometry)) {
+        done.add(m.geometry);
+        m.geometry.dispose();
+      }
+      const mats = m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : [];
+      for (const mt of mats) {
+        // materials shared between rooms stay alive
+        if (done.has(mt) || mt.userData.shared) continue;
+        done.add(mt);
+        for (const v of Object.values(mt as unknown as Record<string, unknown>)) {
+          if (v instanceof THREE.Texture && v !== this.envTex && !done.has(v)) {
+            done.add(v);
+            v.dispose();
+          }
+        }
+        mt.dispose();
+      }
+      const l = o as THREE.Light & { shadow?: THREE.LightShadow };
+      if (l.isLight && l.shadow?.map) l.shadow.map.dispose();
+    });
+  }
+
   /**
    * Compile a scene's shaders in the background, before you walk into it, so that the screen
    * doesn't sit black while the GPU catches up. A stand-in for the torch keeps the light count
@@ -206,12 +233,29 @@ export class Engine {
       scene.environment = this.envTex;
       scene.environmentIntensity = scene.userData.envIntensity ?? 0.12;
     }
+    // upload the textures to the GPU now, not on the first frame you see
+    const seen = new Set<THREE.Texture>();
+    scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material;
+      if (!m) return;
+      for (const mt of Array.isArray(m) ? m : [m])
+        for (const v of Object.values(mt as unknown as Record<string, unknown>))
+          if (v instanceof THREE.Texture && !seen.has(v)) {
+            seen.add(v);
+            try {
+              this.renderer.initTexture(v);
+            } catch {
+              /* uploads on first use instead */
+            }
+          }
+    });
     const stand = new THREE.SpotLight(0xffffff, 0, 10, 0.4, 0.55, 1.5);
     stand.castShadow = true;
     scene.add(stand, stand.target);
     try {
       const r = this.renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown> };
-      if (r.compileAsync) await r.compileAsync(scene, this.camera);
+      // compileAsync polls the GPU; without KHR_parallel_shader_compile (iOS) it can take ages: cap it
+      if (r.compileAsync) await Promise.race([r.compileAsync(scene, this.camera), new Promise((res) => setTimeout(res, 2500))]);
       else r.compile(scene, this.camera);
     } catch {
       /* not fatal: it will compile on first sight instead */

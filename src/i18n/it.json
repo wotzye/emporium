@@ -90,8 +90,8 @@
   "hint.map.barbiere": "Il barbiere, Diego. Il salone con il palo a strisce.",
   "hint.map.return": "Riporta il rasoio all'Emporio. Prima che lui lo rivoglia.",
   "hint.emporio.go": "Non fidarti di lui. Ma per ora fai quello che dice.",
-  "hint.emporio.place": "La vetrina. C'è un posto vuoto col nome del barbiere.",
-  "hint.emporio.done": "Uno è al sicuro. Per ora basta così.",
+  "hint.emporio.place": "La vetrina. C'è un posto vuoto col suo nome.",
+  "hint.emporio.done": "Due sono al sicuro. Per ora basta così.",
   "hint.macelleria": "Vattene, Diego. Subito.",
   "hint.bar.fuse": "Il quadro elettrico vuole un fusibile. I barbieri tengono tutto nei cassetti, sotto lo specchio.",
   "hint.bar.useFuse": "Tocca il fusibile nel grembiule, poi il quadro elettrico sul muro di sinistra.",
@@ -336,7 +336,7 @@
   "map.adaLocked": "La casa della signora Ada. Persiane chiuse. Non ancora.",
   "map.adaDone": "La casa di Ada è silenziosa, adesso. Anche la sedia a dondolo.",
   "mid.1": "Un oggetto è tornato al suo posto.\nNe mancano cinque.",
-  "mid.2": "Mentre attraversi la piazza, senti cigolare una persiana.\nIn casa della signora Ada, al piano di sopra, si è accesa una luce.",
+  "mid.2": "Mentre attraversi la piazza, una persiana cigola.\nIl paese si è accorto di te.",
   "hint.map.ada": "La casa della signora Ada, Diego. Lei non è mai andata via davvero.",
   "hint.map.returnGlasses": "Riporta gli occhiali all'Emporio. Lei li vuole indietro.",
   "hint.map.done": "Per ora basta così, Diego. Riposati, se ci riesci.",
@@ -435,5 +435,8 @@
   "mem.ada.4": "Nel 1974 un forestiero vestito di nero le offre un paio di occhiali tondi. «Con questi vedrà meglio, signora. Vedrà tutto quello che ha perso.»",
   "mem.ada.5": "Con gli occhiali, Ettore era di nuovo lì, sulla sua sedia. Ma non poteva andarsene finché lei lo guardava. Ada lo capì, li chiuse nel baule... e ogni notte risaliva in soffitta. Lì la trovarono. Adesso lui può andare.",
   "diary.memAda.title": "Ricordo: Ada ed Ettore",
-  "diary.memAda.text": "14 giugno 1946: Ettore torna dalla guerra con una stampella e sposa Ada.\nOgni sera: lui alla finestra, lei ai fornelli, la teiera in mezzo.\n1971: Ettore muore. Ada continua ad apparecchiare per due.\n1974: l'uomo in nero le vende un paio di occhiali tondi. «Vedrà tutto quello che ha perso.»\nCon gli occhiali Ettore torna sulla sedia a dondolo, ma non può andarsene finché lei lo guarda.\nAda chiude gli occhiali nel baule, ma ogni notte risale in soffitta. Lì la trovano."
+  "diary.memAda.text": "14 giugno 1946: Ettore torna dalla guerra con una stampella e sposa Ada.\nOgni sera: lui alla finestra, lei ai fornelli, la teiera in mezzo.\n1971: Ettore muore. Ada continua ad apparecchiare per due.\n1974: l'uomo in nero le vende un paio di occhiali tondi. «Vedrà tutto quello che ha perso.»\nCon gli occhiali Ettore torna sulla sedia a dondolo, ma non può andarsene finché lei lo guarda.\nAda chiude gli occhiali nel baule, ma ogni notte risale in soffitta. Lì la trovano.",
+  "hint.map.choose": "Il barbiere o la signora Ada, Diego. Scegli tu da dove cominciare.",
+  "hint.emporio.next": "Ne hai riportato uno. L'altro ti aspetta: il barbiere o la signora Ada.",
+  "emp.placedBar": "Aldo voleva gli anni indietro. Io glieli ho solo venduti."
 }

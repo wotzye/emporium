@@ -197,7 +197,6 @@ export class Game {
     const out = new Set<string>([...(L.next ?? [])]);
     if (L.exitTo) out.add(L.exitTo);
     if (L.id !== 'map') out.add('map');
-    for (const h of L.hotspots) if (this.factories[h.id]) out.add(h.id);
     return [...out].filter((id) => this.factories[id] && id !== L.id);
   }
   private prewarmTimer = 0;
@@ -230,12 +229,23 @@ export class Game {
     this.selected = null;
     this.setHeld(null);
     const L = this.location(id);
+    // keep only this place and its neighbours in memory: phones (iPhone above all) lose the
+    // WebGL context, and with it the whole picture, if too many rooms sit on the GPU at once
+    const keep = new Set([id, 'map', ...this.neighbours(L)]);
+    const group = (k: string) => k.split('_')[0];
+    for (const k of Object.keys(this.built)) {
+      // rooms of the same building stay together (they share state and set each other up)
+      if (keep.has(k) || group(k) === group(id)) continue;
+      this.engine.disposeScene(this.built[k].scene);
+      delete this.built[k];
+    }
     this.loc = L;
     this.applySettings();
     this.save.location = id;
     this.persist();
     // compile while the screen is still black (instant if it was prewarmed)
-    await this.engine.prewarm(L.scene);
+    // never let a slow or stuck compile keep the screen black
+    await Promise.race([this.engine.prewarm(L.scene), new Promise((r) => setTimeout(r, 1500))]);
     this.engine.setScene(L.scene);
     this.viewStack = [];
     this.currentView = L.startView;

@@ -31,6 +31,16 @@ if (location.search.includes('lab')) game.register('lab', createLab);
 
 const models = preloadModels();
 
+// if the phone takes the graphics away (out of memory), come back where we were
+game.engine.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  const n = document.createElement('div');
+  n.style.cssText = 'position:fixed;inset:0;background:#000;color:#cfc8b8;display:grid;place-items:center;font:16px monospace;z-index:99';
+  n.textContent = '…';
+  document.body.append(n);
+  setTimeout(() => location.reload(), 1200);
+});
+
 function title() {
   const el = game.ui.title;
   const hasSave = game.hasSave();

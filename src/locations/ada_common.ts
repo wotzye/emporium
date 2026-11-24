@@ -1,8 +1,11 @@
 import * as THREE from 'three';
-import { canvasTex, noise } from '../builders';
+import { canvasTex, noise, cachedMaterial } from '../builders';
 
 /** Faded floral wallpaper with damp stains and a darker band where furniture used to stand. */
 export function wallpaper(base = '#b8b0a0', repeat: [number, number] = [3, 1.5]) {
+  return cachedMaterial('wallpaper' + base + repeat, () => makeWallpaper(base, repeat));
+}
+function makeWallpaper(base: string, repeat: [number, number]) {
   const tex = canvasTex(512, 512, (c, w, h) => {
     c.fillStyle = base;
     c.fillRect(0, 0, w, h);

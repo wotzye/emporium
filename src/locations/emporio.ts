@@ -437,18 +437,16 @@ export function createEmporio(g: Game): Location {
     await g.ui.memory(m.title, m.panels);
     g.diaryPage(isRazor ? 'memBarbiere' : 'memAda');
     await g.ui.fadeIn(800);
-    if (isRazor)
+    // what he says depends on the object, and on how many are back
+    const count = (g.flag('placedRazor') ? 1 : 0) + (g.flag('placedGlasses') ? 1 : 0);
+    await g.say([{ who: 'mercante', key: isRazor ? 'emp.placedBar' : 'emp.placedAda1' }]);
+    if (count === 1)
       await g.say([
         { who: 'mercante', key: 'emp.placed1' },
         { who: 'mercante', key: 'emp.placed2' },
         { who: 'diego', key: 'emp.placed3' },
       ]);
-    else
-      await g.say([
-        { who: 'mercante', key: 'emp.placedAda1' },
-        { who: 'mercante', key: 'emp.placedAda2' },
-        { who: 'diego', key: 'emp.placedAda3' },
-      ]);
+    else await g.say([{ who: 'mercante', key: 'emp.placedAda2' }, { who: 'diego', key: 'emp.placedAda3' }]);
     await g.view('main');
   };
   const placeRazor = () => placeObject('razor');
@@ -570,8 +568,8 @@ export function createEmporio(g: Game): Location {
     debug: { rim },
     hint: () => {
       if (g.has('razor') || g.has('glasses')) return 'hint.emporio.place';
-      if (g.flag('placedRazor') && !g.flag('placedGlasses')) return 'hint.emporio.ada';
-      if (g.flag('placedRazor')) return 'hint.emporio.done';
+      if (g.flag('placedRazor') && g.flag('placedGlasses')) return 'hint.emporio.done';
+      if (g.flag('placedRazor') || g.flag('placedGlasses')) return 'hint.emporio.next';
       return 'hint.emporio.go';
     },
   };

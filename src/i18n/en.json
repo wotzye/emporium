@@ -90,8 +90,8 @@
   "hint.map.barbiere": "The barber, Diego. The shop with the striped pole.",
   "hint.map.return": "Take the razor to the Emporium. Before he wants it back.",
   "hint.emporio.go": "Don't trust him. But for now, do what he says.",
-  "hint.emporio.place": "The display case. There's an empty place with the barber's name.",
-  "hint.emporio.done": "One is safe. That's enough for now.",
+  "hint.emporio.place": "The display case. There's an empty place with their name on it.",
+  "hint.emporio.done": "Two are safe. That's enough for now.",
   "hint.macelleria": "Get out, Diego. Now.",
   "hint.bar.fuse": "The fuse box needs a fuse. Barbers keep everything in drawers, under the mirror.",
   "hint.bar.useFuse": "Tap the fuse in the apron, then the fuse box on the left wall.",
@@ -336,7 +336,7 @@
   "map.adaLocked": "Mrs Ada's house. Shutters closed. Not yet.",
   "map.adaDone": "Ada's house is quiet now. Even the rocking chair.",
   "mid.1": "One object is back where it belongs.\nFive to go.",
-  "mid.2": "As you cross the square, a shutter creaks.\nUpstairs in Mrs Ada's house, a light has come on.",
+  "mid.2": "As you cross the square, a shutter creaks.\nThe village has noticed you.",
   "hint.map.ada": "Mrs Ada's house, Diego. She never really left.",
   "hint.map.returnGlasses": "Bring the glasses to the Emporium. She wants them back.",
   "hint.map.done": "That's enough for now, Diego. Rest, if you can.",
@@ -435,5 +435,8 @@
   "mem.ada.4": "In 1974 a stranger dressed in black offers her a pair of round glasses. \"You'll see better with these, madam. You'll see everything you've lost.\"",
   "mem.ada.5": "With the glasses, Ettore was back in his chair. But he couldn't leave while she was looking. Ada understood, locked them in the trunk... and every night she climbed back to the attic. That's where they found her. Now he can go.",
   "diary.memAda.title": "Memory: Ada and Ettore",
-  "diary.memAda.text": "14 June 1946: Ettore comes home from the war on a crutch and marries Ada.\nEvery evening: him by the window, her by the stove, the teapot between them.\n1971: Ettore dies. Ada keeps laying the table for two.\n1974: the man in black sells her a pair of round glasses. \"You'll see everything you've lost.\"\nWith the glasses Ettore is back in the rocking chair, but he can't leave while she's looking.\nAda locks the glasses in the trunk, but every night she climbs back to the attic. That's where they find her."
+  "diary.memAda.text": "14 June 1946: Ettore comes home from the war on a crutch and marries Ada.\nEvery evening: him by the window, her by the stove, the teapot between them.\n1971: Ettore dies. Ada keeps laying the table for two.\n1974: the man in black sells her a pair of round glasses. \"You'll see everything you've lost.\"\nWith the glasses Ettore is back in the rocking chair, but he can't leave while she's looking.\nAda locks the glasses in the trunk, but every night she climbs back to the attic. That's where they find her.",
+  "hint.map.choose": "The barber or Mrs Ada, Diego. You choose where to start.",
+  "hint.emporio.next": "You've brought one back. The other is waiting: the barber or Mrs Ada.",
+  "emp.placedBar": "Aldo wanted his years back. I only sold them to him."
 }

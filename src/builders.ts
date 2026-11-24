@@ -469,8 +469,16 @@ export function lathe(profile: [number, number][], m: THREE.Material, x = 0, y =
 
 /** Normal map from the brightness of a canvas (dark = low). */
 export function normalFromCanvas(src: HTMLCanvasElement, strength = 2, repeat?: [number, number]) {
-  const w = src.width, h = src.height;
-  const sd = src.getContext('2d')!.getImageData(0, 0, w, h).data;
+  // normal maps don't need full resolution: a 256px copy is 16x less work than 1024px,
+  // and reading pixels back from a GPU canvas is the slowest thing a phone can do
+  const w = Math.min(src.width, 256), h = Math.min(src.height, 256);
+  const small = document.createElement('canvas');
+  small.width = w;
+  small.height = h;
+  const sc = small.getContext('2d', { willReadFrequently: true })!;
+  sc.drawImage(src, 0, 0, w, h);
+  const sd = sc.getImageData(0, 0, w, h).data;
+  strength *= w / src.width;
   const hgt = new Float32Array(w * h);
   for (let i = 0; i < w * h; i++) hgt[i] = (sd[i * 4] * 0.299 + sd[i * 4 + 1] * 0.587 + sd[i * 4 + 2] * 0.114) / 255;
   const out = document.createElement('canvas');
@@ -504,7 +512,8 @@ function paintCanvas(w: number, h: number, draw: (c: CanvasRenderingContext2D, w
   const cv = document.createElement('canvas');
   cv.width = w;
   cv.height = h;
-  draw(cv.getContext('2d')!, w, h);
+  // a CPU-side canvas: these get read back for normal maps, which on a GPU canvas means a stall
+  draw(cv.getContext('2d', { willReadFrequently: true })!, w, h);
   return cv;
 }
 
@@ -520,7 +529,7 @@ function texFrom(cv: HTMLCanvasElement, repeat?: [number, number]) {
 }
 
 /** Glazed ceramic tiles with real grout relief, chips and grime. */
-export function tileMaterial(o: { a?: string; b?: string; n?: number; repeat?: [number, number]; grout?: string; grime?: number; rough?: number; checker?: boolean } = {}) {
+function _tileMaterial(o: { a?: string; b?: string; n?: number; repeat?: [number, number]; grout?: string; grime?: number; rough?: number; checker?: boolean } = {}) {
   const n = o.n ?? 8;
   const grime = o.grime ?? 0.35;
   const color = paintCanvas(512, 512, (c, w, h) => {
@@ -569,13 +578,12 @@ export function tileMaterial(o: { a?: string; b?: string; n?: number; repeat?: [
     const s = w / n;
     c.fillStyle = '#000';
     c.fillRect(0, 0, w, h);
-    c.fillStyle = '#fff';
-    for (let i = 0; i < n; i++)
-      for (let j = 0; j < n; j++) {
-        c.filter = 'blur(1.5px)';
-        c.fillRect(i * s + 3, j * s + 3, s - 6, s - 6);
-      }
-    c.filter = 'none';
+    // soft-edged tiles without a blur filter (blur on a CPU canvas is very slow):
+    // three nested rectangles of increasing brightness make the bevel
+    for (const [inset, v] of [[2, '#555'], [3, '#aaa'], [4, '#fff']] as const) {
+      c.fillStyle = v;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) c.fillRect(i * s + inset, j * s + inset, s - inset * 2, s - inset * 2);
+    }
     noise(c, w, h, 3000, 0.08);
   });
   return new THREE.MeshStandardMaterial({
@@ -588,7 +596,7 @@ export function tileMaterial(o: { a?: string; b?: string; n?: number; repeat?: [
 }
 
 /** Wood with grain and relief. plank: boards for floors. */
-export function woodMaterial(o: { base?: string; repeat?: [number, number]; plank?: boolean; rough?: number } = {}) {
+function _woodMaterial(o: { base?: string; repeat?: [number, number]; plank?: boolean; rough?: number } = {}) {
   const base = o.base ?? '#5a4632';
   const color = paintCanvas(512, 512, (c, w, h) => {
     c.fillStyle = base;
@@ -635,7 +643,7 @@ export function woodMaterial(o: { base?: string; repeat?: [number, number]; plan
 }
 
 /** Old plaster / wallpaper with damp stains, flaking and relief. */
-export function plasterMaterial(o: { base?: string; repeat?: [number, number]; stripes?: boolean; damp?: number } = {}) {
+function _plasterMaterial(o: { base?: string; repeat?: [number, number]; stripes?: boolean; damp?: number } = {}) {
   const damp = o.damp ?? 0.5;
   const color = paintCanvas(512, 512, (c, w, h) => {
     c.fillStyle = o.base ?? '#8a857b';
@@ -745,7 +753,7 @@ export function framed(w: number, h: number, draw: (c: CanvasRenderingContext2D,
 }
 
 /** Rough stone wall: irregular blocks with deep mortar and damp. */
-export function stoneMaterial(repeat: [number, number] = [2, 1], base = '#6b665d') {
+function _stoneMaterial(repeat: [number, number] = [2, 1], base = '#6b665d') {
   const cv = document.createElement('canvas');
   cv.width = cv.height = 512;
   const c = cv.getContext('2d')!;
@@ -847,3 +855,20 @@ export function handwheel(r: number, m: THREE.Material) {
   });
   return g;
 }
+
+// ---------------- shared, built-once materials ----------------
+const matCache = new Map<string, THREE.Material>();
+function cached<T extends THREE.Material>(key: string, make: () => T): T {
+  let m = matCache.get(key) as T | undefined;
+  if (!m) {
+    m = make();
+    m.userData.shared = true;
+    matCache.set(key, m);
+  }
+  return m;
+}
+export const tileMaterial = (o: Parameters<typeof _tileMaterial>[0] = {}) => cached('tile' + JSON.stringify(o), () => _tileMaterial(o));
+export const woodMaterial = (o: Parameters<typeof _woodMaterial>[0] = {}) => cached('wood' + JSON.stringify(o), () => _woodMaterial(o));
+export const plasterMaterial = (o: Parameters<typeof _plasterMaterial>[0] = {}) => cached('plaster' + JSON.stringify(o), () => _plasterMaterial(o));
+export const stoneMaterial = (repeat: [number, number] = [2, 1], base = '#6b665d') => cached('stone' + repeat + base, () => _stoneMaterial(repeat, base));
+export { cached as cachedMaterial };

@@ -634,9 +634,13 @@ export function createBarbiere(g: Game): Location {
       await g.say([{ who: 'narr', key: 'bar.pulled' }]);
       await g.go('barbiere');
       g.busy = true;
+      // the shop may have been rebuilt on the way: run the finale of the one on screen
+      await (g.examiners.barberFinale ?? finale)();
+      return;
     }
     await finale();
   };
+  g.examiners.barberFinale = finale;
 
   g.examiners.case = async () => {
     await g.say([{ who: 'diego', key: 'bar.case1' }, { who: 'diego', key: 'bar.case2' }]);

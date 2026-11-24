@@ -189,7 +189,7 @@ export function createMap(g: Game): Location {
     emporio: true,
     macelleria: !!g.flag('metMerchant') && !g.flag('fledButcher'),
     barbiere: !!g.flag('fledButcher') && !g.flag('placedRazor'),
-    ada: !!g.flag('placedRazor') && !g.flag('placedGlasses'),
+    ada: !!g.flag('fledButcher') && !g.flag('placedGlasses'),
   };
 
   for (const b of buildings) {
@@ -301,7 +301,7 @@ export function createMap(g: Game): Location {
             return g.go('barbiere');
           }
           if (b.id === 'ada') {
-            if (!g.flag('placedRazor')) return g.say('map.adaLocked');
+            if (!g.flag('fledButcher')) return g.say('map.adaLocked');
             if (g.flag('placedGlasses')) return g.say('map.adaDone');
             return g.go('ada_soggiorno');
           }
@@ -402,7 +402,8 @@ export function createMap(g: Game): Location {
     drone: 'map',
     startView: 'top',
     exposure: 0.8,
-    next: g.flag('placedRazor') && !g.flag('placedGlasses') ? ['ada_soggiorno'] : [],
+    // the places you can walk into right now are prepared while you look at the square
+    next: ['emporio', ...(isOpen.macelleria ? ['macelleria'] : []), ...(isOpen.barbiere ? ['barbiere'] : []), ...(isOpen.ada ? ['ada_soggiorno'] : [])],
     views: {
       top: { pos: [0, 25, 19], look: [0, 0, -0.5], yaw: 14, pitch: 8, fov: 48 },
     },
@@ -422,11 +423,11 @@ export function createMap(g: Game): Location {
           { who: 'diego', key: 'map.intro2' },
         ]);
       }
-      if (g.flag('placedRazor') && !g.flag('chapter2')) {
+      if ((g.flag('placedRazor') || g.flag('placedGlasses')) && !g.flag('chapter2')) {
         g.set('chapter2');
         await g.ui.cards(['mid.1', 'mid.2']);
       }
-      if (g.flag('placedGlasses') && !g.flag('demoEnd')) {
+      if (g.flag('placedRazor') && g.flag('placedGlasses') && !g.flag('demoEnd')) {
         g.set('demoEnd');
         await g.ui.cards(['end.1', 'end.2', 'end.3']);
       }
@@ -434,10 +435,11 @@ export function createMap(g: Game): Location {
     hint: () => {
       if (!g.flag('metMerchant')) return 'hint.map.emporio';
       if (!g.flag('fledButcher')) return 'hint.map.macelleria';
-      if (!g.flag('razor')) return 'hint.map.barbiere';
-      if (!g.flag('placedRazor')) return 'hint.map.return';
-      if (!g.flag('glasses')) return 'hint.map.ada';
-      if (!g.flag('placedGlasses')) return 'hint.map.returnGlasses';
+      if (g.has('razor')) return 'hint.map.return';
+      if (g.has('glasses')) return 'hint.map.returnGlasses';
+      if (!g.flag('placedRazor') && !g.flag('placedGlasses')) return 'hint.map.choose';
+      if (!g.flag('placedRazor')) return 'hint.map.barbiere';
+      if (!g.flag('placedGlasses')) return 'hint.map.ada';
       return 'hint.map.done';
     },
   };
