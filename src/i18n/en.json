@@ -57,7 +57,7 @@
   "sign.stazione": "{{name.village}}",
   "map.intro1": "{{name.village}}. It looks like everyone has left.",
   "map.intro2": "Below Dad's shop there's a light on. A new sign: Emporio.",
-  "map.notYet": "The butcher's shutter is half down. First I want to see who opened that shop underneath.",
+  "map.notYet": "The butcher's shutter is half down. First I want to see who opened that shop underneath: the Emporium, the dark door on the right.",
   "map.butcherClosed": "I'm not going back in. Not now. He's still in there.",
   "map.barberLocked": "The barber's. The curtains are drawn.",
   "map.barberDone": "There's nothing I need in there anymore.",

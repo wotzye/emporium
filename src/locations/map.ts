@@ -76,7 +76,8 @@ export function createMap(g: Game): Location {
 
   const hotspots: Hotspot[] = [];
   const signs: THREE.Object3D[] = [];
-  const label = (text: string, x: number, y: number, z: number, open: boolean) => {
+  const labelFor: [THREE.Sprite, string][] = [];
+  const label = (text: string, x: number, y: number, z: number, open: boolean, target?: string) => {
     const font = "bold 58px 'American Typewriter', 'Courier New', monospace";
     const probe = document.createElement('canvas').getContext('2d')!;
     probe.font = font;
@@ -98,7 +99,8 @@ export function createMap(g: Game): Location {
     sp.scale.set((cw / 96) * k, k, 1);
     sp.position.set(x, y, z);
     sp.renderOrder = 10;
-    sp.userData.noPick = true;
+    if (target) labelFor.push([sp, target]);
+    else sp.userData.noPick = true;
     scene.add(sp);
   };
   const isOpen: Record<string, boolean> = {
@@ -136,9 +138,10 @@ export function createMap(g: Game): Location {
     if (b.id !== 'chiesa') {
       const wp = new THREE.Vector3(0, b.h + 2.1, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), b.rot).add(new THREE.Vector3(b.x, 0, b.z));
       if (b.id === 'macelleria') {
-        label(t('place.macelleria'), wp.x - 1.2, wp.y, wp.z, isOpen.macelleria);
-        label(t('place.emporio').split(' ')[0], wp.x + 1.8, wp.y - 1.4, wp.z + 1.5, true);
-      } else label(t(`label.${b.id}`), wp.x, wp.y, wp.z, !!isOpen[b.id]);
+        label(t('place.macelleria'), wp.x - 1.2, wp.y, wp.z, isOpen.macelleria, 'macelleria');
+        const ep = new THREE.Vector3(1.4, 3.4, b.d / 2 + 1.4).applyAxisAngle(new THREE.Vector3(0, 1, 0), b.rot).add(new THREE.Vector3(b.x, 0, b.z));
+        label(t('place.emporio').split(' ')[0], ep.x, ep.y, ep.z, true, 'emporio');
+      } else label(t(`label.${b.id}`), wp.x, wp.y, wp.z, !!isOpen[b.id], b.id);
     }
     if (b.sign) {
       const s = textPlane([t(b.sign)], b.w * 0.9, 0.55, { bg: '#1a1816', fg: '#e8e2d4', size: 90, px: 128 });
@@ -180,7 +183,7 @@ export function createMap(g: Game): Location {
       const eh = hitBox(1.6, 2.4, 1.8, 1.3, 1.2, b.d / 2 + 0.6, 'emporio');
       grp.add(eh);
       hotspots.push({ id: 'emporio', obj: eh, tap: () => g.go('emporio') });
-      const mh = hitBox(2.8, 3.4, 0.8, -0.9, 1.7, b.d / 2 + 0.3, 'macelleria');
+      const mh = hitBox(b.w + 0.3, b.h + 0.8, b.d + 0.3, 0, (b.h + 0.8) / 2, 0, 'macelleria');
       grp.add(mh);
       hotspots.push({
         id: 'macelleria',
@@ -234,8 +237,8 @@ export function createMap(g: Game): Location {
   vs.position.set(12.2, 2.8, -3.2);
   vs.rotation.y = -Math.PI / 2;
   scene.add(vs);
-  label(t('label.valigia'), 12, 5.6, -2.5, false);
-  label(t('label.stazione'), 0, 4.6, 17, false);
+  label(t('label.valigia'), 12, 5.6, -2.5, false, 'valigia');
+  label(t('label.stazione'), 0, 4.6, 17, false, 'stazione');
   const vh = hitBox(2, 3, 3, 12.5, 1.5, -2.5, 'valigia');
   scene.add(vh);
   hotspots.push({ id: 'valigia', obj: vh, tap: () => g.say('map.alley') });
@@ -251,6 +254,11 @@ export function createMap(g: Game): Location {
   const sh = hitBox(6, 3.5, 3, 0, 1.5, 17, 'stazione');
   scene.add(sh);
   hotspots.push({ id: 'stazione', obj: sh, tap: () => g.say('map.station') });
+
+  for (const [sp, id] of labelFor) {
+    const h = hotspots.find((x) => x.id === id);
+    if (h) hotspots.push({ id: id + 'Label', obj: sp, tap: h.tap });
+  }
 
   // street lamps (lit when it gets dark)
   for (const [x, z] of [[-3.5, -3], [3.5, -3], [-3.5, 4], [3.5, 4]]) {

@@ -269,6 +269,8 @@ export class Engine {
     const ndc = new THREE.Vector2(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
     const hits = this.raycaster.intersectObjects(this.scene.children, true).filter((h) => !h.object.userData.noPick && isVisibleChain(h.object));
+    // labels (sprites) are drawn on top of everything, so they also win the tap
+    hits.sort((a, b) => Number((b.object as THREE.Sprite).isSprite === true) - Number((a.object as THREE.Sprite).isSprite === true) || a.distance - b.distance);
     this.onTap(hits);
   }
 }
