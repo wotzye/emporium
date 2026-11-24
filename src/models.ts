@@ -38,7 +38,7 @@ export function preloadModels(onProgress?: (k: number) => void) {
   loading = Promise.all(
     ids.map((id) =>
       loader
-        .loadAsync(FILES[id])
+        .loadAsync(import.meta.env.MODE === 'single' ? FILES[id].replace('models/', 'models-json/').replace('.glb', '.json') : FILES[id])
         .then((g) => {
           cache[id] = g;
         })
