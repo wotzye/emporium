@@ -43,6 +43,8 @@ export interface Location {
   dark?: () => boolean;
   /** handles for tests and screenshots */
   debug?: Record<string, unknown>;
+  /** per-place exposure multiplier (the open square is brighter than the shops) */
+  exposure?: number;
   /** direct manipulation: drag objects, rub surfaces, turn dials */
   interactions?: Interaction[];
 }
@@ -146,6 +148,11 @@ export class Game {
     if (this.engine.quality !== s.quality) this.engine.setQuality(s.quality);
     this.audio.reduced = s.reducedScares;
     this.audio.setVolume(s.volume);
+    const br = s.brightness ?? 1;
+    this.engine.film.uniforms.lift.value = [0.15, 0.45, 0.8][br];
+    this.engine.film.uniforms.vigFloor.value = [0.35, 0.45, 0.55][br];
+    this.engine.renderer.toneMappingExposure = [1.0, 1.15, 1.3][br] * (this.loc?.exposure ?? 1);
+    document.documentElement.style.setProperty('--fs', String([1.1, 1.3, 1.55][s.textSize ?? 1]));
     this.updateLisaBadge();
   }
 
@@ -189,6 +196,7 @@ export class Game {
     this.setHeld(null);
     const L = this.location(id);
     this.loc = L;
+    this.applySettings();
     this.save.location = id;
     this.persist();
     this.engine.setScene(L.scene);
@@ -586,6 +594,24 @@ export class Game {
           label: v === 0 ? t('ui.off') : v === 0.4 ? '50%' : '100%',
           on: s.volume === v,
           set: () => { s.volume = v; this.applySettings(); this.persist(); this.openSettings(); },
+        })),
+      },
+      {
+        label: t('ui.brightness'),
+        value: '',
+        options: [0, 1, 2].map((v) => ({
+          label: t(`ui.br.${v}`),
+          on: (s.brightness ?? 1) === v,
+          set: () => { s.brightness = v; this.applySettings(); this.persist(); this.openSettings(); },
+        })),
+      },
+      {
+        label: t('ui.textSize'),
+        value: '',
+        options: [0, 1, 2].map((v) => ({
+          label: t(`ui.ts.${v}`),
+          on: (s.textSize ?? 1) === v,
+          set: () => { s.textSize = v; this.applySettings(); this.persist(); this.refreshTexts(); this.openSettings(); },
         })),
       },
       {

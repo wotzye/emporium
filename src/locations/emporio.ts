@@ -3,6 +3,7 @@ import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, cursedMat, bulb, fx, rbox, lathe, dust, lightCone, canvasTex, noise, woodMaterial, plasterMaterial } from '../builders';
 import { createMerchant } from '../characters';
 import { barberMemory } from '../memories';
+import { prop } from '../models';
 import { t } from '../i18n';
 
 export function createEmporio(g: Game): Location {
@@ -38,6 +39,17 @@ export function createEmporio(g: Game): Location {
     pl.position.set(x + (x < 0 ? 0.25 : -0.25), 2.25, z);
     scene.add(pl);
   }
+  // a rocking chair in the corner, which sometimes rocks on its own
+  const rockPivot = new THREE.Group();
+  const rocker = prop('rocking', { height: 1.05 });
+  if (rocker) {
+    rockPivot.add(rocker);
+    rockPivot.position.set(2.55, 0, 1.75);
+    rockPivot.rotation.y = -2.4;
+    scene.add(rockPivot);
+  }
+  let rockAmp = 0;
+  let nextRock = 8 + Math.random() * 10;
   const b = bulb(-0.6, 2.7, 0.2, 10, 1.1, 7);
   scene.add(b.group);
   scene.add(lightCone(-0.6, 2.68, 0.2, 2.6, 1.2, 0.02));
@@ -393,8 +405,11 @@ export function createEmporio(g: Game): Location {
     candleBase = 3.2;
     g.setFlicker(false);
     await g.say([{ who: 'narr', key: 'emp.sealed' }]);
-    // the object remembers: the story of the man it belonged to
-    g.audio.sfx('whisper');
+    // the object remembers: the story of the man it belonged to, to a music box
+    g.audio.rec('windup', { gain: 0.8 });
+    g.audio.rec('musicbox', { gain: 0.7, delay: 1.4 });
+    g.audio.rec('musicbox', { gain: 0.55, delay: 4.2, rate: 0.94 });
+    g.audio.rec('musicbox', { gain: 0.4, delay: 7.0, rate: 0.88 });
     await g.ui.fadeOut(800);
     const m = barberMemory();
     await g.ui.memory(m.title, m.panels);
@@ -454,6 +469,16 @@ export function createEmporio(g: Game): Location {
     },
     hotspots,
     update: (dt, time) => {
+      if (rocker) {
+        nextRock -= dt;
+        if (nextRock < 0) {
+          rockAmp = 0.12;
+          nextRock = 14 + Math.random() * 16;
+          g.audio.sfx('creak');
+        }
+        rockAmp *= Math.exp(-dt * 0.35);
+        rocker.rotation.x = Math.sin(time * 2.2) * rockAmp;
+      }
       candles.forEach((c, i) => {
         c.intensity = candleBase * (1 + Math.sin(time * 9 + i * 3) * 0.1 + Math.random() * 0.1);
         flames[i].scale.set(1 + Math.random() * 0.15, 2.4 + Math.sin(time * 11 + i) * 0.3, 1);

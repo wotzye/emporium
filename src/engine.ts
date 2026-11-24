@@ -24,6 +24,8 @@ const FilmShader = {
     grain: { value: 0.09 },
     contrast: { value: 1.18 },
     brightness: { value: 1 },
+    lift: { value: 0.45 },
+    vigFloor: { value: 0.45 },
     vignette: { value: 1.0 },
     flicker: { value: 1 },
     resolution: { value: new THREE.Vector2(1, 1) },
@@ -34,12 +36,14 @@ const FilmShader = {
   `,
   fragmentShader: /* glsl */ `
     uniform sampler2D tDiffuse;
-    uniform float time, keepColor, grain, contrast, brightness, vignette, flicker;
+    uniform float time, keepColor, grain, contrast, brightness, vignette, flicker, lift, vigFloor;
     uniform vec2 resolution;
     varying vec2 vUv;
     float rand(vec2 co) { return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453); }
     void main() {
       vec4 c = texture2D(tDiffuse, vUv);
+      // brightness setting: lift the shadows much more than the highlights
+      c.rgb = pow(max(c.rgb, 0.0), vec3(1.0 / (1.0 + lift)));
       float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
       float mx = max(c.r, max(c.g, c.b));
       float mn = min(c.r, min(c.g, c.b));
@@ -53,7 +57,7 @@ const FilmShader = {
       col += n * grain;
       vec2 p = vUv - 0.5;
       float v = smoothstep(0.85, 0.25, length(p * vec2(1.1, 1.0)) * vignette);
-      col *= mix(0.35, 1.0, v);
+      col *= mix(vigFloor, 1.0, v);
       col *= brightness * flicker;
       gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }
@@ -96,6 +100,9 @@ export class Engine {
   torchOn = false;
   torchFlicker = 0;
   private torchLevel = 0;
+  private torchProbe = 0;
+  private torchNear = 1;
+  private torchNearS = 1;
   scene: THREE.Scene = new THREE.Scene();
   private raycaster = new THREE.Raycaster();
   private clock = new THREE.Clock();
@@ -289,7 +296,20 @@ export class Engine {
     this.torchLevel += (want - this.torchLevel) * Math.min(dt * 12, 1);
     let tf = 1;
     if (this.torchFlicker > 0) tf = Math.random() < this.torchFlicker * 0.25 ? Math.random() * 0.2 : 1 - Math.random() * this.torchFlicker * 0.4;
-    this.torch.intensity = 13 * this.torchLevel * tf;
+    if (this.torchLevel > 0.01) {
+      this.torchProbe -= dt;
+      if (this.torchProbe <= 0) {
+        this.torchProbe = 0.15;
+        this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+        this.raycaster.layers.set(0);
+        const hit = this.raycaster.intersectObjects(this.scene.children, true).find((h) => h.object.visible && !(h.object as THREE.Mesh).userData.hit);
+        this.raycaster.layers.enableAll();
+        const d = hit ? hit.distance : 10;
+        this.torchNear = THREE.MathUtils.clamp((d / 2.2) ** 2, 0.12, 1);
+      }
+      this.torchNearS += (this.torchNear - this.torchNearS) * Math.min(dt * 6, 1);
+    }
+    this.torch.intensity = 13 * this.torchLevel * tf * this.torchNearS;
     let flick = 1;
     if (this.flickerAmt > 0) flick = 1 - this.flickerAmt * (Math.random() < 0.08 ? 0.6 : Math.random() * 0.12);
     this.film.uniforms.flicker.value = flick;

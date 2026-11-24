@@ -604,6 +604,8 @@ export function createBarbiere(g: Game): Location {
       await sleep(70);
     }
     g.setFlicker(true, 0.8);
+    // behind you, scissors snipping at nothing
+    g.audio.rec('scissors', { gain: 1.0 });
     await g.say([{ who: 'narr', key: 'bar.ghost1' }]);
     await g.scare('barber');
     setLights(0);
@@ -649,7 +651,7 @@ export function createBarbiere(g: Game): Location {
     if (g.flag('b.chairs')) return g.say('bar.chairsDone');
     chairState[i] = (chairState[i] + 1) % 4;
     g.set('b.chairState', chairState.join(','));
-    g.audio.sfx('creak');
+    if (!g.audio.rec('chairpump', { gain: 0.9, offset: (i % 3) * 2, dur: 1.6 })) g.audio.sfx('creak');
     const from = chairs[i].rotation.y;
     const to = from + Math.PI / 2;
     const t0 = performance.now();

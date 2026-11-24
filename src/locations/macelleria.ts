@@ -498,12 +498,14 @@ export function createMacelleria(g: Game): Location {
     g.engine.torchFlicker = 0;
     g.setTorch(false, true);
     brunoC.setEyes(true);
+    g.audio.rec('growl', { gain: 1.1, rate: 0.85 });
     await g.say([{ who: 'bruno', key: 'mac.bruno1' }]);
     await g.scare('bruno');
     g.audio.sfx('heart');
     const ok = await g.ui.quick(t('ui.run'), 3200);
     if (!ok) {
       bruno.position.z = -0.4;
+      g.audio.rec('smash', { gain: 1.2 });
       await g.scare('bruno', 450);
       await g.say([{ who: 'narr', key: 'mac.caught' }]);
     }

@@ -264,6 +264,7 @@ export function createBarbiereCantina(g: Game): Location {
             g.audio.hush(4);
             ghostC.setOpacity(0.9);
             g.audio.sfx('breath');
+            g.audio.rec('scratch', { gain: 1 });
             g.engine.torchFlicker = 1;
             await sleep(900);
             ghostC.setOpacity(0);

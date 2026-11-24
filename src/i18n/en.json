@@ -317,5 +317,13 @@
   "mem.bar.4": "The favour was simple: keep working. Every customer who sits in the chair gets up a year older. Aldo grows younger. The village grows old. No one understands why.",
   "mem.bar.5": "One morning Aldo looks in the mirror and can no longer see himself. He can only see out from inside it. Since then he has been waiting, behind the glass, for someone to bring the razor back.",
   "diary.memBarbiere.title": "Memory: Aldo, the barber",
-  "diary.memBarbiere.text": "1951: Aldo Morandi opens his shop, aged twenty-three.\nThe years go by in the same mirror, and Aldo starts to hate it.\nOctober 1974: the stranger in black gives him an ivory razor. \"Every shave will give you back a year.\"\nThe favour: keep working. Every customer gets up a year older, Aldo grows younger, the village grows old.\nOne morning Aldo can no longer see himself in the mirror. He can only see out from inside it."
+  "diary.memBarbiere.text": "1951: Aldo Morandi opens his shop, aged twenty-three.\nThe years go by in the same mirror, and Aldo starts to hate it.\nOctober 1974: the stranger in black gives him an ivory razor. \"Every shave will give you back a year.\"\nThe favour: keep working. Every customer gets up a year older, Aldo grows younger, the village grows old.\nOne morning Aldo can no longer see himself in the mirror. He can only see out from inside it.",
+  "ui.brightness": "Brightness",
+  "ui.textSize": "Text",
+  "ui.br.0": "Dark",
+  "ui.br.1": "Bright",
+  "ui.br.2": "Very bright",
+  "ui.ts.0": "Normal",
+  "ui.ts.1": "Large",
+  "ui.ts.2": "Very large"
 }

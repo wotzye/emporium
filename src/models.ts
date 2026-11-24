@@ -24,16 +24,27 @@ const FILES = {
   bucket: 'models/wooden_bucket_01.glb',
   crate: 'models/wooden_crate_01.glb',
   lantern: 'models/wooden_lantern_01.glb',
+  rocking: 'models/Rockingchair_01.glb',
+  streetLamp: 'models/street_lamp_02.glb',
+  ironGate: 'models/large_iron_gate.glb',
+  frame: 'models/fancy_picture_frame_01.glb',
+  chandelier: 'models/lantern_chandelier_01.glb',
+  roundTable: 'models/round_wooden_table_01.glb',
 } as const;
 export type ModelId = keyof typeof FILES;
 
 const cache: Partial<Record<ModelId, GLTF>> = {};
 let loading: Promise<void> | null = null;
 
+const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows'];
+/** Resolves when the characters are in; props keep loading in the background. */
 export function preloadModels(onProgress?: (k: number) => void) {
   if (loading) return loading;
   const loader = new GLTFLoader();
-  const ids = Object.keys(FILES) as ModelId[];
+  const all = Object.keys(FILES) as ModelId[];
+  const ids = CHAR_IDS;
+  for (const id of all.filter((i) => !CHAR_IDS.includes(i)))
+    loader.loadAsync(import.meta.env.MODE === 'single' ? FILES[id].replace('models/', 'models-json/').replace('.glb', '.json') : FILES[id]).then((g) => (cache[id] = g)).catch(() => {});
   let done = 0;
   loading = Promise.all(
     ids.map((id) =>

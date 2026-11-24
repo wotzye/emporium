@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import { prop } from '../models';
 import { Game, Location, Hotspot } from '../game';
 import { box, cyl, sphere, mat, mesh, canvasTex, noise, textPlane, hitBox, cursedMat, fx, rbox, lathe, normalFromCanvas, woodMaterial, plasterMaterial } from '../builders';
 import { LAYER_FX } from '../engine';
 import { t } from '../i18n';
+import { createHaunts } from './map_haunt';
 
 interface Building {
   id: string;
@@ -170,11 +172,11 @@ export function createMap(g: Game): Location {
       c.strokeText(text, w / 2, h / 2);
       c.shadowColor = 'rgba(0,0,0,0.9)';
       c.shadowBlur = 16;
-      c.fillStyle = open ? '#ffffff' : 'rgba(200,196,188,0.6)';
+      c.fillStyle = open ? '#ffffff' : 'rgba(215,210,200,0.85)';
       c.fillText(text, w / 2, h / 2);
     });
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
-    const k = open ? 1.4 : 1.1;
+    const k = (open ? 1.4 : 1.15) * [1.0, 1.4, 1.75][g.save.settings.textSize ?? 1];
     sp.scale.set((cw / 96) * k, k, 1);
     sp.position.set(x, y, z);
     sp.renderOrder = 10;
@@ -354,7 +356,12 @@ export function createMap(g: Game): Location {
   // street lamps (lit when it gets dark)
   for (const [x, z] of [[-3.5, -3], [3.5, -3], [-3.5, 4], [3.5, 4]]) {
     const iron = mat(0x161616, { metalness: 0.5, roughness: 0.5 });
-    scene.add(lathe([[0, 0], [0.18, 0], [0.16, 0.12], [0.08, 0.2], [0.06, 0.5], [0.045, 2.9], [0.07, 3.0], [0, 3.0]], iron, x, 0, z, 12));
+    const realLamp = prop('streetLamp', { height: 3.4 });
+    if (realLamp) {
+      realLamp.position.set(x, 0, z);
+      realLamp.traverse((o) => (o.userData.noPick = true));
+      scene.add(realLamp);
+    } else scene.add(lathe([[0, 0], [0.18, 0], [0.16, 0.12], [0.08, 0.2], [0.06, 0.5], [0.045, 2.9], [0.07, 3.0], [0, 3.0]], iron, x, 0, z, 12));
     const lampOn = progress >= 1;
     const lantern = new THREE.Group();
     lantern.add(lathe([[0, 0], [0.12, 0], [0.18, 0.35], [0.22, 0.38], [0, 0.5]], iron, 0, 0, 0, 4));
@@ -364,7 +371,13 @@ export function createMap(g: Game): Location {
     lantern.add(glow);
     lantern.position.set(x, 3.0, z);
     lantern.traverse((o) => (o.userData.noPick = true));
-    scene.add(lantern);
+    if (!realLamp) scene.add(lantern);
+    else {
+      glow.removeFromParent();
+      (glow as THREE.Mesh).geometry = new THREE.SphereGeometry(0.12, 10, 8);
+      glow.position.set(x, 3.0, z);
+      if (lampOn) scene.add(glow);
+    }
     if (lampOn) {
       const pl = new THREE.PointLight(0xfff1d0, 6, 9, 1.6);
       pl.position.set(x, 3.1, z);
@@ -372,16 +385,8 @@ export function createMap(g: Game): Location {
     }
   }
 
-  // a dark figure watching from far away, sometimes
-  const watcher = new THREE.Group();
-  watcher.add(cyl(0.18, 0.22, 1.2, mat(0x050505), 0, 0.9, 0, 10));
-  watcher.add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), mat(0x050505)));
-  (watcher.children[1] as THREE.Mesh).position.y = 1.62;
-  watcher.add(cyl(0.22, 0.22, 0.02, mat(0x050505), 0, 1.72, 0, 16));
-  watcher.position.set(-1.8, 0, -9.5);
-  watcher.visible = false;
-  watcher.traverse((o) => (o.userData.noPick = true));
-  scene.add(watcher);
+  // shadows, a pale girl, crows, fog and the man in black
+  const haunt = createHaunts(scene, g);
 
   let tAcc = 0;
   return {
@@ -390,6 +395,7 @@ export function createMap(g: Game): Location {
     scene,
     drone: 'map',
     startView: 'top',
+    exposure: 0.8,
     views: {
       top: { pos: [0, 25, 19], look: [0, 0, -0.5], yaw: 14, pitch: 8, fov: 48 },
     },
@@ -399,9 +405,7 @@ export function createMap(g: Game): Location {
         if (o.userData.spin) o.rotation.y += dt * 1.5;
       });
       tAcc += dt;
-      // the watcher shows up for a few seconds every ~25 s, only after meeting the Merchant
-      watcher.visible = !!g.flag('metMerchant') && tAcc % 25 > 21;
-      void time;
+      haunt(dt, time);
     },
     enter: async () => {
       if (!g.flag('introMap')) {

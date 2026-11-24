@@ -317,5 +317,13 @@
   "mem.bar.4": "Il favore era semplice: continuare a lavorare. Ogni cliente che si siede sulla poltrona si rialza con un anno in più. Aldo ringiovanisce. Il paese invecchia. Nessuno capisce perché.",
   "mem.bar.5": "Una mattina Aldo si guarda allo specchio e non si vede più. Si vede solo da dentro. Da allora aspetta, dietro il vetro, che qualcuno gli riporti il rasoio.",
   "diary.memBarbiere.title": "Ricordo: Aldo, il barbiere",
-  "diary.memBarbiere.text": "1951: Aldo Morandi apre il salone, a ventitré anni.\nGli anni passano nello stesso specchio, e Aldo comincia a odiarlo.\nOttobre 1974: il forestiero vestito di nero gli regala un rasoio d'avorio. «Ogni barba le restituirà un anno.»\nIl favore: continuare a lavorare. Ogni cliente si rialza con un anno in più, Aldo ringiovanisce, il paese invecchia.\nUna mattina Aldo non si vede più nello specchio. Si vede solo da dentro."
+  "diary.memBarbiere.text": "1951: Aldo Morandi apre il salone, a ventitré anni.\nGli anni passano nello stesso specchio, e Aldo comincia a odiarlo.\nOttobre 1974: il forestiero vestito di nero gli regala un rasoio d'avorio. «Ogni barba le restituirà un anno.»\nIl favore: continuare a lavorare. Ogni cliente si rialza con un anno in più, Aldo ringiovanisce, il paese invecchia.\nUna mattina Aldo non si vede più nello specchio. Si vede solo da dentro.",
+  "ui.brightness": "Luminosità",
+  "ui.textSize": "Testo",
+  "ui.br.0": "Scura",
+  "ui.br.1": "Chiara",
+  "ui.br.2": "Molto chiara",
+  "ui.ts.0": "Normale",
+  "ui.ts.1": "Grande",
+  "ui.ts.2": "Molto grande"
 }

@@ -88,6 +88,7 @@ export class Audio {
   drone(kind: DroneKind) {
     if (!this.ctx || kind === this.droneKind) return;
     this.droneKind = kind;
+    this.ambience(kind);
     const ctx = this.ctx;
     const old = this.droneGain;
     const oldNodes = this.droneNodes;
@@ -170,6 +171,15 @@ export class Audio {
     const ctx = this.ctx;
     const t = this.now;
     const out = this.bus;
+    // a real recording when there is one
+    const rec: Partial<Record<typeof name, () => boolean>> = {
+      unlock: () => this.sample('latch', { gain: 1.2 }),
+      clunk: () => this.sample('latch', { gain: 1.3, rate: 0.8 }),
+      paper: () => this.sample('page', { gain: 1.2 }),
+      breath: () => this.sample('inhale', { gain: 0.9, rate: 0.85 }),
+    };
+    if (rec[name]?.()) return;
+    if (name === 'trapdoor') this.sample('chains', { gain: 0.8, dur: 3 });
     switch (name) {
       case 'click': {
         const o = ctx.createOscillator();
@@ -461,14 +471,52 @@ export class Audio {
     if (!this.ctx || this.samplesLoading) return;
     this.samplesLoading = true;
     const ctx = this.ctx;
-    for (const n of ['laugh', 'footsteps', 'hinge']) {
+    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil']) {
       fetch(`sounds/${n}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .then((b) => ctx.decodeAudioData(b))
-        .then((buf) => (this.samples[n] = buf))
+        .then((buf) => {
+          this.samples[n] = buf;
+          if (n.startsWith('amb_') || n === 'clock') this.ambience(this.droneKind);
+        })
         .catch(() => {});
     }
   }
+  /** recorded room tone under the synthesized drone: rain on the square, the hum of the cold room… */
+  private ambNodes: { src: AudioBufferSourceNode; g: GainNode }[] = [];
+  private ambKind: string | null = null;
+  ambience(kind: DroneKind) {
+    if (!this.ctx) return;
+    const beds: Record<DroneKind, [string, number][]> = {
+      map: [['amb_storm', 0.35]],
+      emporio: [['amb_evil', 0.22], ['clock', 0.28]],
+      macelleria: [['amb_fridge', 0.4], ['amb_evil', 0.12]],
+      barbiere: [['amb_evil', 0.18], ['clock', 0.12]],
+      none: [],
+    };
+    const want = beds[kind].filter(([n]) => this.samples[n]);
+    const key = kind + want.map(([n]) => n).join();
+    if (key === this.ambKind) return;
+    this.ambKind = key;
+    const t = this.now;
+    for (const a of this.ambNodes) {
+      a.g.gain.setTargetAtTime(0.0001, t, 0.8);
+      const src = a.src;
+      setTimeout(() => { try { src.stop(); } catch { /* */ } }, 4000);
+    }
+    this.ambNodes = want.map(([n, v]) => {
+      const src = this.ctx!.createBufferSource();
+      src.buffer = this.samples[n];
+      src.loop = true;
+      const g = this.ctx!.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.setTargetAtTime(v, t, 1.2);
+      src.connect(g).connect(this.master);
+      src.start(t, Math.random() * Math.max(0, this.samples[n].duration - 1));
+      return { src, g };
+    });
+  }
+
   /** play a recorded sound (or a slice of it); false if it isn't loaded */
   sample(name: string, o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number; dry?: boolean } = {}) {
     const buf = this.samples[name];
@@ -514,8 +562,15 @@ export class Audio {
       o.stop(t + 1.7);
     }
     this.thump(t, 0.9 * level, 55, 0.6);
-    // and somewhere, someone laughs
-    this.sample('laugh', { gain: 0.55 * level, delay: 0.5, dur: 4.5, rate: 0.92 });
+    // a distorted whisper right in your ear, metal screaming, and somewhere someone laughs
+    this.sample('jumpwhisper', { gain: 0.9 * level, dry: true });
+    this.sample('screech', { gain: 0.45 * level, dur: 3 });
+    this.sample('laugh', { gain: 0.5 * level, delay: 0.9, dur: 4.5, rate: 0.92 });
+  }
+
+  /** named recordings for specific moments (no-op if not loaded) */
+  rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
+    return this.sample(name, o);
   }
 
   steps(count: number, interval = 0.55, heavy = true) {

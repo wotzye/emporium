@@ -721,10 +721,10 @@ export function lightCone(x: number, top: number, z: number, height: number, rad
 export function framed(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: number, h: number) => void, frame: THREE.Material) {
   const g = new THREE.Group();
   g.add(rbox(w + 0.06, h + 0.06, 0.03, 0.008, frame));
-  const pic = mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: canvasTex(256, Math.round((256 * h) / w), draw), roughness: 0.5 }), 0, 0, 0.017);
+  const pic = mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: canvasTex(256, Math.round((256 * h) / w), draw), roughness: 0.85 }), 0, 0, 0.017);
   pic.castShadow = false;
   g.add(pic);
-  const glass = fx(new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.06, roughness: 0.05, metalness: 1 })));
+  const glass = fx(new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, roughness: 0.6, metalness: 0 })));
   glass.position.z = 0.019;
   g.add(glass);
   return g;
