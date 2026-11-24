@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prop } from '../models';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, box, cyl, sphere, mat, mesh, rbox, lathe, fx, dust, textPlane, hitBox, bulb, canvasTex, noise, tileMaterial, woodMaterial, plasterMaterial, liveCanvas, handwheel, lightCone } from '../builders';
 import { t } from '../i18n';
@@ -305,6 +306,13 @@ export function createBarbiereRetro(g: Game): Location {
   helmet.add(lathe([[0, 0], [0.25, 0], [0.25, 0.03], [0, 0.04]], iron, 0, 0, 0, 20));
   helmet.position.set(1.4, 0, 1.2);
   scene.add(helmet);
+  for (const [id, x, z, ry] of [['stool', -0.5, 1.35, 0.4], ['bucket', 1.6, -0.35, 1.2]] as const) {
+    const pr = prop(id);
+    if (!pr) continue;
+    pr.position.set(x, 0, z);
+    pr.rotation.y = ry;
+    scene.add(pr);
+  }
   scene.add(lathe([[0, 0], [0.2, 0], [0.24, 0.35], [0.22, 0.36], [0, 0.02]], woodMaterial({ base: '#6b5a3c' }), -1.6, 0, 1.4, 16));
 
   // door back to the shop

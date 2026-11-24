@@ -3,6 +3,7 @@ import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, box, cyl, mat, mesh, rbox, lathe, fx, dust, textPlane, hitBox, canvasTex, noise, woodMaterial, stoneMaterial, drapedSheet, liveCanvas } from '../builders';
 import { t } from '../i18n';
 import { createBarberGhost } from '../characters';
+import { prop } from '../models';
 
 /**
  * The barber's cellar: dark, damp, full of mirrors covered with sheets.
@@ -53,7 +54,28 @@ export function createBarbiereCantina(g: Game): Location {
   oldChair.add(lathe([[0, 0], [0.28, 0], [0.2, 0.06], [0.07, 0.1], [0, 0.1]], iron, 0.3, 0.1, -0.2, 20).rotateZ(1.4));
   oldChair.position.set(0.3, 0, 0.9);
   oldChair.rotation.y = 0.6;
+  const realChair = prop('barberChair', { height: 1.25 });
+  if (realChair) {
+    // the old chair, dumped on its side
+    oldChair.clear();
+    realChair.rotation.z = Math.PI / 2;
+    realChair.position.set(0.32, 0, 0);
+    oldChair.add(realChair);
+  }
   scene.add(oldChair);
+  // junk: a crate, a bucket, a dead lantern
+  const junk: [Parameters<typeof prop>[0], number, number, number, number?][] = [
+    ['crate', 1.75, -1.75, 0.3],
+    ['bucket', 1.45, 1.75, 0],
+    ['lantern', 1.6, -1.75, 0.9, 0.35],
+  ];
+  for (const [id, x, z, ry, y] of junk) {
+    const pr = prop(id);
+    if (!pr) continue;
+    pr.position.set(x, y ?? 0, z);
+    pr.rotation.y = ry;
+    scene.add(pr);
+  }
 
   // ---------------- the clock (under a sheet) ----------------
   const clock = new THREE.Group();

@@ -30,6 +30,7 @@ export class Audio {
     this.master = this.ctx.createGain();
     this.master.gain.value = this.volume;
     this.master.connect(this.ctx.destination);
+    setTimeout(() => this.loadSamples(), 0);
     // room reverb from a synthetic impulse: decaying, slightly coloured noise
     this.reverb = this.ctx.createConvolver();
     const irLen = Math.floor(this.ctx.sampleRate * 2.4);
@@ -238,6 +239,8 @@ export class Audio {
         break;
       }
       case 'creak': {
+        const hb = this.samples['hinge'];
+        if (hb && this.sample('hinge', { gain: 0.8, offset: Math.random() * Math.max(0, hb.duration - 1.6), dur: 1.4, rate: 0.85 + Math.random() * 0.2 })) break;
         const o = ctx.createOscillator();
         o.type = 'sawtooth';
         o.frequency.setValueAtTime(90, t);
@@ -451,6 +454,39 @@ export class Audio {
     }
   }
 
+  // ---------------- recorded sounds (CC0/CC-BY from Freesound), synth fallback ----------------
+  private samples: Record<string, AudioBuffer> = {};
+  private samplesLoading = false;
+  loadSamples() {
+    if (!this.ctx || this.samplesLoading) return;
+    this.samplesLoading = true;
+    const ctx = this.ctx;
+    for (const n of ['laugh', 'footsteps', 'hinge']) {
+      fetch(`sounds/${n}.mp3`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
+        .then((b) => ctx.decodeAudioData(b))
+        .then((buf) => (this.samples[n] = buf))
+        .catch(() => {});
+    }
+  }
+  /** play a recorded sound (or a slice of it); false if it isn't loaded */
+  sample(name: string, o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number; dry?: boolean } = {}) {
+    const buf = this.samples[name];
+    if (!this.ctx || !buf) return false;
+    const t = this.now + (o.delay ?? 0);
+    const s = this.ctx.createBufferSource();
+    s.buffer = buf;
+    s.playbackRate.value = o.rate ?? 1;
+    const g = this.ctx.createGain();
+    const dur = o.dur ?? buf.duration;
+    g.gain.setValueAtTime(o.gain ?? 1, t);
+    g.gain.setValueAtTime(o.gain ?? 1, t + Math.max(0.01, dur - 0.15));
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    s.connect(g).connect(o.dry ? this.master : this.bus);
+    s.start(t, o.offset ?? 0, dur);
+    return true;
+  }
+
   /** The big one. Softer when reduced scares are on. */
   stinger() {
     if (!this.ctx) return;
@@ -478,11 +514,17 @@ export class Audio {
       o.stop(t + 1.7);
     }
     this.thump(t, 0.9 * level, 55, 0.6);
+    // and somewhere, someone laughs
+    this.sample('laugh', { gain: 0.55 * level, delay: 0.5, dur: 4.5, rate: 0.92 });
   }
 
   steps(count: number, interval = 0.55, heavy = true) {
     if (!this.ctx) return;
     const t = this.now;
+    if (this.sample('footsteps', { gain: heavy ? 1.1 : 0.6, rate: heavy ? 0.82 : 1.05, dur: Math.min(count * interval + 0.6, 3.7) })) {
+      if (heavy) for (let i = 0; i < count; i++) this.thump(t + i * interval, 0.25, 70, 0.1);
+      return;
+    }
     for (let i = 0; i < count; i++) {
       this.thump(t + i * interval, heavy ? 0.45 + i * 0.05 : 0.2, heavy ? 90 : 160, 0.12);
     }

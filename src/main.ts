@@ -6,6 +6,8 @@ import { createEmporio } from './locations/emporio';
 import { createMacelleria } from './locations/macelleria';
 import { createBarbiere } from './locations/barbiere';
 import { createBarbiereRetro } from './locations/barbiere_retro';
+import { createLab } from './locations/lab';
+import { preloadModels } from './models';
 import { createBarbiereCantina } from './locations/barbiere_cantina';
 
 const root = document.getElementById('app')!;
@@ -16,9 +18,12 @@ game.register('macelleria', createMacelleria);
 game.register('barbiere', createBarbiere);
 game.register('barbiere_retro', createBarbiereRetro);
 game.register('barbiere_cantina', createBarbiereCantina);
+if (location.search.includes('lab')) game.register('lab', createLab);
 
 // expose for automated tests
 (window as unknown as { __game: Game }).__game = game;
+
+const models = preloadModels();
 
 function title() {
   const el = game.ui.title;
@@ -50,6 +55,9 @@ function title() {
     b.onclick = async () => {
       game.audio.init();
       game.applySettings();
+      // the models usually finish loading while the title is on screen
+      b.textContent = '…';
+      await models;
       el.classList.remove('on');
       if (b.dataset.a === 'continue' && game.continueGame()) {
         game.ui.refreshStatic();
@@ -57,7 +65,7 @@ function title() {
       } else {
         await game.newGame();
         game.audio.drone('map');
-        await game.ui.cards(['intro.1', 'intro.2', 'intro.3', 'intro.4']);
+        await Promise.all([game.ui.cards(['intro.1', 'intro.2', 'intro.3', 'intro.4']), models]);
         await game.go('map');
       }
     };

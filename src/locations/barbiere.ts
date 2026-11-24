@@ -3,6 +3,7 @@ import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, canvasTex, noise, bulb, rbox, lathe, fx, dust, lightCone, framed, tileMaterial, woodMaterial, plasterMaterial } from '../builders';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { createBarberGhost } from '../characters';
+import { prop } from '../models';
 import { t } from '../i18n';
 
 /** Chair facing: 0 = mirror, 1 = left wall, 2 = door, 3 = right wall. */
@@ -365,6 +366,20 @@ export function createBarbiere(g: Game): Location {
   const footrests: THREE.Object3D[] = [];
   [-1.45, 0, 1.45].forEach((x, i) => {
     const c = new THREE.Group();
+    const real = prop('barberChair', { height: 1.42, turn: Math.PI });
+    if (real) {
+      // a real 1950s barber chair (Poly Haven, CC0)
+      c.add(real);
+      const dummy = new THREE.Group();
+      c.add(dummy);
+      footrests.push(dummy);
+      c.position.set(x, 0, -1.35);
+      c.rotation.y = chairState[i] * (Math.PI / 2);
+      c.userData.passThrough = true;
+      scene.add(c);
+      chairs.push(c);
+      return;
+    }
     // pedestal: wide enamel base, chrome column, hydraulic pump pedal
     c.add(lathe([[0, 0], [0.3, 0], [0.31, 0.02], [0.28, 0.05], [0.1, 0.08], [0.08, 0.12], [0, 0.12]], enamel, 0, 0, 0, 32));
     c.add(cyl(0.065, 0.075, 0.3, chrome, 0, 0.26, 0, 20));

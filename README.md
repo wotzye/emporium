@@ -24,3 +24,8 @@ Ogni push su `main` pubblica il gioco su GitHub Pages tramite `.github/workflows
 - `src/game.ts` — stato di gioco, inventario, dialoghi, aiuti di Lisa
 - `src/locations/` — un file per luogo (mappa, emporio, macelleria, barbiere)
 - `src/i18n/it.json`, `src/i18n/en.json` — tutti i testi, nomi compresi
+
+## Crediti asset
+- Personaggi: "Universal Base Characters" di Quaternius (CC0) — quaternius.com
+- Oggetti 3D: Poly Haven (CC0) — poltrona da barbiere, candelieri, sedia e sgabello, set da tè, valigie, secchio, cassa, lanterna
+- Suoni da Freesound: "demon laugh 1" (noahbangs), "creepy footsteps with reverb" (brandnewhexagon), "squeaky door hinge" (jomungus) — verificare la licenza di ciascuno prima della pubblicazione

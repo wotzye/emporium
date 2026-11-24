@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mesh, rbox, lathe, fx, mat, canvasTex, noise, normalFromCanvas } from './builders';
+import { realCharacters, realMerchant, realBruno, realLisa, realBarberGhost } from './characters_real';
 
 /**
  * Procedurally sculpted characters. Faces are spheres pushed and pulled into shape
@@ -362,6 +363,7 @@ function lookToward(head: THREE.Object3D, target: THREE.Vector3, k: number, maxY
 // The Merchant
 // ======================================================================
 export function createMerchant(handsAt?: { y: number; z: number; spread: number }): Character {
+  if (realCharacters()) return realMerchant(handsAt);
   const g = new THREE.Group();
   const coat = clothMaterial('#141414', 0.85);
   const shirt = clothMaterial('#d8d4cb', 0.8, false);
@@ -465,6 +467,7 @@ export function createMerchant(handsAt?: { y: number; z: number; spread: number 
 // Bruno, the butcher
 // ======================================================================
 export function createBruno(): Character {
+  if (realCharacters()) return realBruno();
   const g = new THREE.Group();
   const shirt = clothMaterial('#3a3835', 0.95);
   const skin = skinMaterial('#a59c90', 0.45, 0.8);
@@ -600,6 +603,7 @@ const ghostFrag = /* glsl */ `
 `;
 
 export function createLisa(floorY = 0): Character & { setOpacity: (v: number) => void } {
+  if (realCharacters()) return realLisa(floorY);
   const g = new THREE.Group();
   const uniforms = { time: { value: 0 }, opacity: { value: 0 }, floorY: { value: floorY }, core: { value: 0.12 } };
   const ghost = new THREE.ShaderMaterial({ vertexShader: ghostVert, fragmentShader: ghostFrag, uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -659,6 +663,7 @@ export function createLisa(floorY = 0): Character & { setOpacity: (v: number) =>
 // The old barber (seen only in the mirror)
 // ======================================================================
 export function createBarberGhost(): Character & { setOpacity: (v: number) => void } {
+  if (realCharacters()) return realBarberGhost();
   const g = new THREE.Group();
   const coatTex = canvasTex(256, 256, (c, w, h) => {
     c.fillStyle = '#e3dfd6';

@@ -1,0 +1,371 @@
+import * as THREE from 'three';
+import { instance, dress, bones, aimAt, turnWorld, saveRest, restore, attachHair, ghostMaterial, hasModel, skinMask } from './models';
+import { lathe, rbox, mesh, mat, canvasTex, noise, fx } from './builders';
+import type { Character } from './characters';
+
+const X = new THREE.Vector3(1, 0, 0);
+const Y = new THREE.Vector3(0, 1, 0);
+const Z = new THREE.Vector3(0, 0, 1);
+
+export const realCharacters = () => hasModel('male') && hasModel('female');
+
+function base(id: 'male' | 'female', scale: number) {
+  const g = new THREE.Group();
+  const body = instance(id)!;
+  body.scale.setScalar(scale);
+  g.add(body);
+  g.updateMatrixWorld(true);
+  const b = bones(body);
+  return { g, body, b };
+}
+
+const wp = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3());
+
+/** two-bone arm: elbow towards `elbow`, hand towards `hand` (world points). */
+function armTo(b: Record<string, THREE.Bone>, side: 'l' | 'r', elbow: THREE.Vector3, hand: THREE.Vector3) {
+  aimAt(b['upperarm_' + side], b['lowerarm_' + side], elbow);
+  aimAt(b['lowerarm_' + side], b['hand_' + side], hand);
+}
+function armDown(b: Record<string, THREE.Bone>, side: 'l' | 'r', out = 0.08, fwd = 0.04, bend = 0.1) {
+  const s = wp(b['upperarm_' + side]);
+  const sx = side === 'l' ? 1 : -1;
+  const len1 = wp(b['lowerarm_' + side]).distanceTo(s);
+  const len2 = wp(b['hand_' + side]).distanceTo(wp(b['lowerarm_' + side]));
+  const e = s.clone().add(new THREE.Vector3(sx * out, -len1, fwd).setLength(len1));
+  armTo(b, side, e, e.clone().add(new THREE.Vector3(sx * out * 0.5, -len2, fwd + bend).setLength(len2)));
+}
+export const CURL_AXIS = new THREE.Vector3(1, 0, 0);
+function curlFingers(b: Record<string, THREE.Bone>, side: 'l' | 'r', amount: number) {
+  const q = new THREE.Quaternion();
+  for (const f of ['index', 'middle', 'ring', 'pinky'])
+    for (const k of ['01', '02', '03']) {
+      const bone = b[`${f}_${k}_${side}`];
+      if (bone) bone.quaternion.multiply(q.setFromAxisAngle(CURL_AXIS, amount * (k === '01' ? 0.8 : 1)));
+    }
+  const th = b['thumb_02_' + side];
+  if (th) th.quaternion.multiply(q.setFromAxisAngle(CURL_AXIS, amount * 0.5));
+}
+/** tint the eyebrows that come with the body */
+function browColor(root: THREE.Object3D, c: THREE.ColorRepresentation) {
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh && /eyebrow/i.test(m.name)) (m.material as THREE.MeshStandardMaterial).color = new THREE.Color(c);
+  });
+}
+function eyesMaterial(root: THREE.Object3D) {
+  let m: THREE.MeshStandardMaterial | null = null;
+  root.traverse((o) => {
+    const mm = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (mm && /eye/i.test(mm.name) && !/brow/i.test(mm.name)) m = mm;
+  });
+  return m as THREE.MeshStandardMaterial | null;
+}
+/** turn the head towards the camera, within limits */
+function makeLook(head: THREE.Bone, g: THREE.Group, maxYaw: number, maxPitch: number) {
+  let yaw = 0, pitch = 0;
+  return (camera: THREE.Camera, k: number, extraTilt = 0) => {
+    const h = wp(head);
+    const c = camera.getWorldPosition(new THREE.Vector3());
+    const local = g.worldToLocal(c.clone()).sub(g.worldToLocal(h.clone()));
+    const ty = THREE.MathUtils.clamp(Math.atan2(local.x, local.z), -maxYaw, maxYaw);
+    const tp = THREE.MathUtils.clamp(-Math.atan2(local.y, Math.hypot(local.x, local.z)), -maxPitch, maxPitch);
+    yaw += (ty - yaw) * k;
+    pitch += (tp - pitch) * k;
+    restore(head);
+    const gq = g.getWorldQuaternion(new THREE.Quaternion());
+    turnWorld(head, Y.clone().applyQuaternion(gq), yaw);
+    turnWorld(head, X.clone().applyQuaternion(gq), pitch);
+    if (extraTilt) turnWorld(head, Z.clone().applyQuaternion(gq), extraTilt);
+  };
+}
+
+// ======================================================================
+export function realMerchant(handsAt?: { y: number; z: number; spread: number }): Character {
+  const { g, body, b } = base('male', 1.08);
+  dress(body, { cloth: '#121212', clothRough: 0.8, puff: 0.014, skinTint: '#e6e1d8', skinBright: 1.08, face: { sockets: 1, grin: 1, gaunt: 1 } });
+  browColor(body, 0x1a1a1a);
+  const H = handsAt ?? { y: 1.07, z: 0.85, spread: 0.24 };
+  // leaning slightly over the counter
+  turnWorld(b.spine_02, X, 0.1);
+  turnWorld(b.spine_03, X, 0.06);
+  for (const side of ['l', 'r'] as const) {
+    const sx = side === 'l' ? 1 : -1;
+    const s = wp(b['upperarm_' + side]);
+    armTo(b, side, new THREE.Vector3(sx * 0.3, s.y - 0.25, s.z + 0.12), new THREE.Vector3(sx * H.spread, H.y + 0.05, H.z - 0.12));
+    // palm down on the wood
+    turnWorld(b['hand_' + side], new THREE.Vector3(0, 0, 1), sx * 0.2);
+    curlFingers(b, side, 0.12);
+  }
+  saveRest(b);
+  // shirt front, tie, lapels — over the chest
+  const chest = wp(b.spine_03);
+  const shirt = new THREE.MeshStandardMaterial({ color: 0xd8d4cb, roughness: 0.8 });
+  const front = mesh(new THREE.PlaneGeometry(0.075, 0.17), shirt, 0, chest.y + 0.12, chest.z + 0.135, false);
+  front.rotation.x = -0.25;
+  g.add(front);
+  g.add(rbox(0.02, 0.17, 0.008, 0.004, mat(0x070707, { roughness: 0.4 }), 0, chest.y + 0.11, chest.z + 0.142).rotateX(-0.25));
+  b.spine_03.attach(front);
+  // long coat skirt from the waist down
+  const pel = wp(b.pelvis);
+  const coat = lathe([[0.17, pel.y + 0.12], [0.2, pel.y - 0.1], [0.27, 0.35], [0.3, 0.06], [0.3, 0.04]].map(([r, y]) => [r, y]) as [number, number][], new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.85, side: THREE.DoubleSide }), 0, 0, pel.z, 28);
+  coat.scale.z = 0.7;
+  g.add(coat);
+  // fedora on the head bone
+  const head = b.Head;
+  const hp = wp(head);
+  const hat = lathe([[0, 0], [0.2, 0], [0.215, 0.008], [0.2, 0.015], [0.12, 0.02], [0.115, 0.11], [0.1, 0.135], [0.05, 0.13], [0, 0.12]], new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.5 }), 0, hp.y + 0.135, hp.z - 0.005, 28);
+  hat.add(mesh(new THREE.CylinderGeometry(0.118, 0.118, 0.025, 28, 1, true), mat(0x222222), 0, 0.035, 0, false));
+  hat.rotation.x = -0.12;
+  hat.scale.setScalar(0.92);
+  g.add(hat);
+  head.attach(hat);
+  const eyes = eyesMaterial(body);
+  const look = makeLook(head, g, 0.8, 0.35);
+  let nextTwitch = 6 + Math.random() * 5, twitch = 0;
+  const fingerBones = ['index', 'middle', 'ring', 'pinky'].map((f) => b[`${f}_01_l`]).filter(Boolean);
+  g.traverse((o) => (o.castShadow = true));
+  return {
+    group: g,
+    head,
+    setEyes: (on) => {
+      if (eyes) {
+        eyes.emissive = new THREE.Color(0xffffff);
+        eyes.emissiveIntensity = on ? 0.35 : 0;
+      }
+    },
+    update: (dt, t, camera) => {
+      nextTwitch -= dt;
+      if (nextTwitch < 0) {
+        twitch = 1;
+        nextTwitch = 7 + Math.random() * 8;
+      }
+      twitch = Math.max(0, twitch - dt * 2.5);
+      look(camera, Math.min(dt * 1.2, 1), Math.sin(t * 0.4) * 0.12 + twitch * 0.35);
+      restore(b.spine_03);
+      turnWorld(b.spine_03, X.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 1.1) * 0.015);
+      fingerBones.forEach((f, i) => {
+        restore(f);
+        const phase = (t * 3.2 - i * 0.35) % 4;
+        const lift = phase > 0 && phase < 0.35 ? Math.sin((phase / 0.35) * Math.PI) : 0;
+        if (lift) turnWorld(f, X.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), -lift * 0.5);
+      });
+    },
+  };
+}
+
+// ======================================================================
+export function realBruno(): Character {
+  const { g, body, b } = base('male', 1.13);
+  const stains = (c: CanvasRenderingContext2D, w: number, h: number) => {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 30; i++) {
+      c.fillStyle = `rgba(60,25,20,${0.2 + Math.random() * 0.35})`;
+      c.beginPath();
+      c.arc(Math.random() * w, Math.random() * h, 4 + Math.random() * 22, 0, Math.PI * 2);
+      c.fill();
+    }
+  };
+  dress(body, { cloth: '#2c2a27', clothRough: 0.95, puff: 0.022, face: { sockets: 0.8 }, skinTint: '#b3a99c', skinBright: 0.85, bare: /^lowerarm_/, pattern: stains });
+  browColor(body, 0x111111);
+  attachHair(body, 'beard', 0x2a2724);
+  // hunched, head pushed forward, looking from under the brow
+  turnWorld(b.spine_01, X, 0.12);
+  turnWorld(b.spine_02, X, 0.12);
+  turnWorld(b.spine_03, X, 0.1);
+  turnWorld(b.neck_01, X, 0.2);
+  turnWorld(b.Head, X, -0.25);
+  armDown(b, 'l', 0.16, 0.12, 0.15);
+  curlFingers(b, 'l', 0.6);
+  // right arm hanging, the cleaver along his leg
+  armDown(b, 'r', 0.2, 0.1, 0.12);
+  curlFingers(b, 'r', 1.1);
+  saveRest(b);
+  // apron
+  const apronTex = canvasTex(256, 512, (c, w, h) => {
+    c.fillStyle = '#c9c3b6';
+    c.fillRect(0, 0, w, h);
+    noise(c, w, h, 8000, 0.1);
+    for (let i = 0; i < 26; i++) {
+      const x = Math.random() * w, y = h * 0.2 + Math.random() * h * 0.8, r = 10 + Math.random() * 45;
+      const gr = c.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(30,10,8,0.85)');
+      gr.addColorStop(1, 'rgba(40,14,10,0)');
+      c.fillStyle = gr;
+      c.fillRect(0, 0, w, h);
+    }
+    for (let i = 0; i < 18; i++) {
+      c.fillStyle = 'rgba(25,8,6,0.7)';
+      c.fillRect(Math.random() * w, h * 0.4 + Math.random() * h * 0.4, 2 + Math.random() * 4, 40 + Math.random() * 120);
+    }
+  });
+  const apronM = new THREE.MeshStandardMaterial({ map: apronTex, roughness: 0.75, side: THREE.DoubleSide });
+  const ch = wp(b.spine_03), pe = wp(b.pelvis);
+  const apron = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0.2, 0.42 - pe.y), new THREE.Vector2(0.21, -0.05), new THREE.Vector2(0.2, ch.y - pe.y - 0.02), new THREE.Vector2(0.15, ch.y - pe.y + 0.2)], 18, -Math.PI * 0.4, Math.PI * 0.8), apronM);
+  apron.position.set(0, pe.y, pe.z + 0.02);
+  apron.scale.set(1.05, 1, 0.85);
+  g.add(apron);
+  b.spine_01.attach(apron);
+  // cleaver in the right fist
+  const steel = new THREE.MeshStandardMaterial({ color: 0xb8b8b8, metalness: 1, roughness: 0.3 });
+  const cleaver = new THREE.Group();
+  cleaver.add(rbox(0.03, 0.13, 0.025, 0.008, mat(0x1a120c), 0, 0, 0));
+  cleaver.add(rbox(0.008, 0.15, 0.28, 0.004, steel, 0, -0.12, 0.09));
+  cleaver.add(mesh(new THREE.PlaneGeometry(0.2, 0.08), new THREE.MeshStandardMaterial({ color: 0x1a0806, roughness: 0.2, transparent: true, opacity: 0.8 }), 0.0051, -0.14, 0.1, false).rotateY(Math.PI / 2));
+  const hr = wp(b.middle_01_r ?? b.hand_r);
+  cleaver.position.copy(hr).add(new THREE.Vector3(-0.01, -0.03, 0.0));
+  cleaver.rotation.set(0.15, 0, -0.1);
+  g.add(cleaver);
+  b.hand_r.attach(cleaver);
+  const eyes = eyesMaterial(body);
+  const look = makeLook(b.Head, g, 0.5, 0.3);
+  let walk = 0;
+  g.traverse((o) => (o.castShadow = true));
+  return {
+    group: g,
+    head: b.Head,
+    setEyes: (on) => {
+      if (eyes) {
+        eyes.emissive = new THREE.Color(0xff1010);
+        eyes.emissiveIntensity = on ? 3 : 0;
+        eyes.color.setScalar(on ? 0.2 : 1);
+      }
+    },
+    update: (dt, t, camera) => {
+      const gq = g.getWorldQuaternion(new THREE.Quaternion());
+      const ax = X.clone().applyQuaternion(gq), az = Z.clone().applyQuaternion(gq);
+      const moving = g.userData.moving ? 1 : 0;
+      walk += dt * moving * 4;
+      for (const n of ['spine_03', 'thigh_l', 'thigh_r', 'calf_l', 'calf_r', 'spine_01']) restore(b[n]);
+      // heavy breathing
+      turnWorld(b.spine_03, ax, Math.sin(t * 1.8) * 0.03);
+      if (moving) {
+        // a lurching, dragging gait
+        turnWorld(b.thigh_l, ax, -Math.sin(walk) * 0.45);
+        turnWorld(b.thigh_r, ax, Math.sin(walk) * 0.45);
+        turnWorld(b.calf_l, ax, Math.max(0, Math.cos(walk)) * 0.5);
+        turnWorld(b.calf_r, ax, Math.max(0, -Math.cos(walk)) * 0.5);
+        turnWorld(b.spine_01, az, Math.sin(walk) * 0.1);
+      }
+      look(camera, Math.min(dt * 0.8, 1), Math.sin(t * 0.5) * 0.05);
+      turnWorld(b.Head, ax, -0.25);
+    },
+  };
+}
+
+// ======================================================================
+export function realLisa(floorY = 0): Character & { setOpacity: (v: number) => void } {
+  const { g, body, b } = base('female', 0.86);
+  const uniforms = { time: { value: 0 }, opacity: { value: 0 }, floorY: { value: floorY } };
+  const ghost = ghostMaterial(uniforms, 0.1);
+  // only head, neck, arms and hands of the body show: the nightgown is the rest
+  const faceGhost = ghostMaterial(uniforms, 0.3, true);
+  body.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const n = (m.material as THREE.Material).name;
+    if (/superhero/i.test(n)) skinMask(m as THREE.SkinnedMesh, /^(lowerarm|upperarm)_/);
+    m.material = /superhero/i.test(n) ? faceGhost : /eye/i.test(n) && !/brow/i.test(n) ? new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0 }) : ghost;
+    m.userData.eyes = /eye/i.test(n) && !/brow/i.test(n);
+  });
+  const hair = attachHair(body, 'hairLong', 0xffffff);
+  hair?.traverse((o) => ((o as THREE.Mesh).isMesh ? ((o as THREE.Mesh).material = ghost) : null));
+  // the eyes are only darkness
+  const eyeMeshes: THREE.Mesh[] = [];
+  body.traverse((o) => (o.userData.eyes ? eyeMeshes.push(o as THREE.Mesh) : null));
+  for (const side of ['l', 'r'] as const) armDown(b, side, 0.06, 0.05, 0.08);
+  turnWorld(b.Head, Z, 0.25);
+  saveRest(b);
+  // nightgown over the body
+  const pe = wp(b.pelvis);
+  const sh = wp(b.upperarm_l).y;
+  const gown = lathe([[0.001, 0.0], [0.3, 0.0], [0.25, 0.3], [0.19, pe.y - 0.05], [0.16, pe.y + 0.1], [0.135, pe.y + 0.2], [0.15, sh - 0.12], [0.14, sh - 0.03], [0.07, sh + 0.02], [0.045, sh + 0.04]], ghost, 0, 0, pe.z, 32);
+  gown.scale.z = 0.66;
+  g.add(gown);
+  fx(g);
+  const look = makeLook(b.Head, g, 0.6, 0.3);
+  return {
+    group: g,
+    head: b.Head,
+    setEyes: () => {},
+    setOpacity: (v: number) => {
+      uniforms.opacity.value = v;
+      eyeMeshes.forEach((m) => (((m.material as THREE.MeshBasicMaterial).opacity = v)));
+    },
+    update: (_dt, t, camera) => {
+      uniforms.time.value = t;
+      g.position.y = Math.sin(t * 1.3) * 0.03;
+      gown.rotation.y = Math.sin(t * 0.7) * 0.08;
+      look(camera, 0.02, 0.25 + Math.sin(t * 0.6) * 0.05);
+    },
+  };
+}
+
+// ======================================================================
+export function realBarberGhost(): Character & { setOpacity: (v: number) => void } {
+  const { g, body, b } = base('male', 1.0);
+  const coatSpots = (c: CanvasRenderingContext2D, w: number, h: number) => {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 14; i++) {
+      c.fillStyle = 'rgba(90,80,70,0.25)';
+      c.beginPath();
+      c.arc(Math.random() * w, Math.random() * h, 5 + Math.random() * 18, 0, Math.PI * 2);
+      c.fill();
+    }
+  };
+  dress(body, { cloth: '#e3dfd6', clothRough: 0.8, puff: 0.018, face: { sockets: 1, gaunt: 0.8 }, skinTint: '#e0dad0', skinBright: 0.95, pattern: coatSpots });
+  attachHair(body, 'hairParted', 0x8a8680);
+  browColor(body, 0x77736d);
+  // arms reaching forward, as if to shave someone who isn't there
+  for (const side of ['l', 'r'] as const) {
+    const sx = side === 'l' ? 1 : -1;
+    const s = wp(b['upperarm_' + side]);
+    armTo(b, side, new THREE.Vector3(s.x + sx * 0.04, s.y - 0.18, s.z + 0.2), new THREE.Vector3(sx * 0.1, s.y - 0.02, s.z + 0.5));
+    curlFingers(b, side, 0.5);
+  }
+  turnWorld(b.Head, X, 0.25);
+  turnWorld(b.Head, Z, -0.15);
+  saveRest(b);
+  // coat skirt
+  const pe = wp(b.pelvis);
+  const coatTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#e3dfd6';
+    c.fillRect(0, 0, w, h);
+    noise(c, w, h, 5000, 0.1);
+  });
+  g.add(lathe([[0.17, pe.y + 0.1], [0.2, pe.y - 0.1], [0.24, 0.55]], new THREE.MeshStandardMaterial({ map: coatTex, roughness: 0.8, side: THREE.DoubleSide }), 0, 0, pe.z, 24));
+  // the razor
+  const razor = rbox(0.015, 0.004, 0.11, 0.002, new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 1, roughness: 0.2 }), 0, 0, 0);
+  razor.position.copy(wp(b.hand_r)).add(new THREE.Vector3(0, 0, 0.08));
+  g.add(razor);
+  b.hand_r.attach(razor);
+  const mats: THREE.Material[] = [];
+  g.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+    if (m && !mats.includes(m)) {
+      m.transparent = true;
+      mats.push(m);
+    }
+  });
+  const eyes = eyesMaterial(body);
+  return {
+    group: g,
+    head: b.Head,
+    setEyes: (on) => {
+      if (eyes) {
+        eyes.emissive = new THREE.Color(0xffffff);
+        eyes.emissiveIntensity = on ? 0.5 : 0;
+      }
+    },
+    setOpacity: (v: number) => {
+      mats.forEach((m) => ((m as THREE.MeshStandardMaterial).opacity = v));
+      g.visible = v > 0.01;
+    },
+    update: (_dt, t) => {
+      g.position.y = Math.sin(t * 2.1) * 0.005;
+      restore(b.Head);
+      turnWorld(b.Head, Z.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 0.7) * 0.06);
+    },
+  };
+}
