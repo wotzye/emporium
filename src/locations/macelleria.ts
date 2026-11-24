@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, canvasTex, noise, rbox, lathe, fx, dust, framed, tileMaterial, woodMaterial, plasterMaterial } from '../builders';
 import { createBruno, createLisa } from '../characters';
+import { prop } from '../models';
 import { t } from '../i18n';
 
 export function createMacelleria(g: Game): Location {
@@ -564,6 +565,13 @@ export function createMacelleria(g: Game): Location {
     } },
   ];
 
+  const rat = prop('rat', { width: 0.32, turn: -Math.PI / 2 });
+  let ratT = -1, ratNext = 6 + Math.random() * 8;
+  if (rat) {
+    rat.visible = false;
+    rat.traverse((o) => (o.userData.noPick = true));
+    scene.add(rat);
+  }
   return {
     id: 'macelleria',
     nameKey: 'place.macelleria',
@@ -581,6 +589,20 @@ export function createMacelleria(g: Game): Location {
     hotspots,
     canLeave: () => !g.busy,
     update: (dt, time) => {
+      if (rat) {
+        ratNext -= dt;
+        if (ratNext < 0 && ratT < 0) {
+          ratT = 0;
+          ratNext = 18 + Math.random() * 20;
+          g.audio.sfx('scrape');
+        }
+        if (ratT >= 0) {
+          ratT += dt / 1.6;
+          rat.visible = ratT < 1;
+          rat.position.set(-3.1 + ratT * 5.6, 0, 2.6 - Math.sin(ratT * Math.PI) * 0.3);
+          if (ratT >= 1) ratT = -1;
+        }
+      }
       // neon: buzzing, sometimes dropping
       motes.update(dt, time);
       const drop = Math.random() < 0.015 ? 0.1 : 1;

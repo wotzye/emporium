@@ -471,7 +471,7 @@ export class Audio {
     if (!this.ctx || this.samplesLoading) return;
     this.samplesLoading = true;
     const ctx = this.ctx;
-    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil']) {
+    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell']) {
       fetch(`sounds/${n}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .then((b) => ctx.decodeAudioData(b))
@@ -563,13 +563,13 @@ export class Audio {
     }
     this.thump(t, 0.9 * level, 55, 0.6);
     // a distorted whisper right in your ear, metal screaming, and somewhere someone laughs
-    this.sample('jumpwhisper', { gain: 0.9 * level, dry: true });
+    if (!this.sample(Math.random() < 0.5 ? 'jumpwhisper' : 'jumpscare', { gain: 0.9 * level, dry: true })) this.sample('jumpwhisper', { gain: 0.9 * level, dry: true });
     this.sample('screech', { gain: 0.45 * level, dur: 3 });
     this.sample('laugh', { gain: 0.5 * level, delay: 0.9, dur: 4.5, rate: 0.92 });
   }
 
   /** named recordings for specific moments (no-op if not loaded) */
-  rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
+  rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
     return this.sample(name, o);
   }
 

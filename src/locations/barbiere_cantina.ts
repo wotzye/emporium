@@ -32,6 +32,15 @@ export function createBarbiereCantina(g: Game): Location {
   crack.position.set(1.8, H + 0.3, 1.7);
   crack.target.position.set(1.4, 0, 1.2);
   scene.add(crack, crack.target);
+  const cage = prop('cagedLight', { height: 0.45 });
+  const cagePivot = new THREE.Group();
+  if (cage) {
+    cage.position.y = -0.45;
+    cagePivot.add(cage);
+    cagePivot.position.set(-0.2, H, 0.2);
+    cagePivot.traverse((o) => (o.userData.noPick = true));
+    scene.add(cagePivot);
+  }
   const motes = dust([-2.3, 0.1, -2.1], [2.3, 2.3, 2.1], 160);
   scene.add(motes.points);
 
@@ -332,6 +341,9 @@ export function createBarbiereCantina(g: Game): Location {
     interactions,
     dark: () => true,
     update: (dt, time) => {
+      // the dead lamp swings, as if someone just brushed past it
+      cagePivot.rotation.z = Math.sin(time * 1.3) * 0.08 + (g.flag('c.glimpse') ? Math.sin(time * 2.1) * 0.05 : 0);
+      cagePivot.rotation.x = Math.sin(time * 0.9) * 0.04;
       motes.update(dt, time);
       wm.opacity = g.torchOn(writing) * 0.95;
       if (ghostC.group.visible) ghostC.update(dt, time, g.engine.camera);

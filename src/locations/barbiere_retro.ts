@@ -306,6 +306,12 @@ export function createBarbiereRetro(g: Game): Location {
   helmet.add(lathe([[0, 0], [0.25, 0], [0.25, 0.03], [0, 0.04]], iron, 0, 0, 0, 20));
   helmet.position.set(1.4, 0, 1.2);
   scene.add(helmet);
+  const ladder = prop('ladder', { height: 2.2 });
+  if (ladder) {
+    ladder.position.set(-1.2, 0, 1.6);
+    ladder.rotation.set(0.25, 0.1, 0);
+    scene.add(ladder);
+  }
   for (const [id, x, z, ry] of [['stool', -0.5, 1.35, 0.4], ['bucket', 1.6, -0.35, 1.2]] as const) {
     const pr = prop(id);
     if (!pr) continue;

@@ -30,6 +30,11 @@ const FILES = {
   frame: 'models/fancy_picture_frame_01.glb',
   chandelier: 'models/lantern_chandelier_01.glb',
   roundTable: 'models/round_wooden_table_01.glb',
+  rat: 'models/street_rat.glb',
+  wheelchair: 'models/wheelchair_01.glb',
+  trashCan: 'models/metal_trash_can.glb',
+  cagedLight: 'models/caged_hanging_light.glb',
+  ladder: 'models/wooden_ladder_02.glb',
 } as const;
 export type ModelId = keyof typeof FILES;
 

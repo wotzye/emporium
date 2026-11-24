@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Game } from '../game';
 import { canvasTex, fx } from '../builders';
+import { prop } from '../models';
 import { createLisa, createMerchant } from '../characters';
 
 /**
@@ -87,7 +88,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
       lisa.group.rotation.y = ry;
       lisa.group.visible = true;
       lisaT = 0;
-      g.audio.sfx('whisper');
+      if (!g.audio.rec('ghostmove', { gain: 0.5, dur: 5 })) g.audio.sfx('whisper');
     }
     lisaT += dt;
     // fade in, stand still, and vanish all at once (with a flicker)
@@ -186,9 +187,51 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
   updaters.push((dt, t) => {
     wAcc += dt;
     const show = !!g.flag('metMerchant') && wAcc % 31 > 26;
-    if (show && !watcher.group.visible) g.audio.sfx('breath');
+    if (show && !watcher.group.visible && !g.audio.rec('possessed', { gain: 0.35, dur: 5 })) g.audio.sfx('breath');
     watcher.group.visible = show;
     if (show) watcher.update(dt, t, g.engine.camera);
+  });
+
+  // ---------------- an empty wheelchair that rolls a little by itself ----------------
+  const chair = prop('wheelchair', { height: 0.95 });
+  if (chair) {
+    chair.traverse((o) => (o.userData.noPick = true));
+    const base = new THREE.Vector3(2.6, 0, 5.6);
+    chair.position.copy(base);
+    chair.rotation.y = -2.5;
+    scene.add(chair);
+    let roll = 0, next = rnd(10, 20);
+    updaters.push((dt) => {
+      next -= dt;
+      if (next < 0 && roll <= 0) {
+        roll = 3;
+        next = rnd(25, 40);
+        g.audio.sfx('creak');
+      }
+      if (roll > 0) {
+        roll -= dt;
+        // creeping forward towards the fountain, then back next time
+        const dir = new THREE.Vector3(Math.sin(chair.rotation.y), 0, Math.cos(chair.rotation.y));
+        chair.position.addScaledVector(dir, dt * 0.25);
+        if (chair.position.distanceTo(base) > 2) chair.rotation.y += Math.PI;
+      }
+    });
+  }
+  const bin = prop('trashCan', { height: 0.9 });
+  if (bin) {
+    bin.traverse((o) => (o.userData.noPick = true));
+    bin.position.set(6.2, 0, -3.4);
+    bin.rotation.y = 0.4;
+    scene.add(bin);
+  }
+  // the church bell, now and then, one toll
+  let bellNext = rnd(15, 25);
+  updaters.push((dt) => {
+    bellNext -= dt;
+    if (bellNext < 0) {
+      bellNext = rnd(40, 70);
+      g.audio.rec('bell', { gain: 0.45 });
+    }
   });
 
   return (dt: number, t: number) => updaters.forEach((u) => u(dt, t));
