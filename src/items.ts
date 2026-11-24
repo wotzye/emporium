@@ -38,5 +38,6 @@ export const ICONS = {
   diary: '<svg viewBox="0 0 24 24"><path d="M5 3 H18 V21 H5 Z"/><path d="M8 3 V21"/><path d="M11 8 H16 M11 11 H16"/></svg>',
   notebook: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18"/><path d="M8 7 H16 M8 11 H16 M8 15 H13"/><path d="M5 6 H3 M5 10 H3 M5 14 H3 M5 18 H3"/></svg>',
   lisa: '<svg viewBox="0 0 24 24"><path d="M12 3 C8 3 6 6 6 10 V21 L8 19 L10 21 L12 19 L14 21 L16 19 L18 21 V10 C18 6 16 3 12 3 Z"/><circle cx="10" cy="10" r="1"/><circle cx="14" cy="10" r="1"/></svg>',
+  torch: '<svg viewBox="0 0 24 24"><path d="M9 3 H15 V7 L14 10 V21 H10 V10 L9 7 Z"/><path d="M9 7 H15"/><circle cx="12" cy="14" r="1"/></svg>',
   settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2 V5 M12 19 V22 M2 12 H5 M19 12 H22 M4.9 4.9 L7 7 M17 17 L19.1 19.1 M4.9 19.1 L7 17 M17 7 L19.1 4.9"/></svg>',
 };

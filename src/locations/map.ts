@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { box, cyl, mat, mesh, canvasTex, noise, textPlane, hitBox, cursedMat, fx } from '../builders';
+import { box, cyl, sphere, mat, mesh, canvasTex, noise, textPlane, hitBox, cursedMat, fx, rbox, lathe, normalFromCanvas, woodMaterial, plasterMaterial } from '../builders';
 import { LAYER_FX } from '../engine';
 import { t } from '../i18n';
 
@@ -17,6 +17,53 @@ interface Building {
 }
 
 export function createMap(g: Game): Location {
+  const roofMat = (() => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 256;
+    const c = cv.getContext('2d')!;
+    c.fillStyle = '#3e3732';
+    c.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 16)
+      for (let x = (y / 16) % 2 ? 0 : 12; x < 256; x += 24) {
+        const v = 50 + Math.random() * 30;
+        c.fillStyle = `rgb(${v},${v * 0.9},${v * 0.85})`;
+        c.beginPath();
+        c.ellipse(x, y + 8, 11, 9, 0, 0, Math.PI);
+        c.fill();
+        c.fillStyle = 'rgba(0,0,0,0.5)';
+        c.fillRect(x - 12, y + 15, 24, 2);
+      }
+    noise(c, 256, 256, 4000, 0.15);
+    const map = new THREE.CanvasTexture(cv);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.repeat.set(3, 2);
+    return new THREE.MeshStandardMaterial({ map, normalMap: normalFromCanvas(cv, 3, [3, 2]), roughness: 0.8, flatShading: true });
+  })();
+  const glassLit = new THREE.MeshStandardMaterial({ color: 0x302c26, emissive: 0xffd9a0, emissiveIntensity: 0.9, roughness: 0.3 });
+  const glassDark = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.1, metalness: 0.2, envMapIntensity: 1.5 });
+  const shutterMat = woodMaterial({ base: '#3d3a34', repeat: [1, 1] });
+  const frameMat = plasterMaterial({ base: '#b3ada2' });
+  /** window on a facade facing +z at depth d/2: frame, glass, open shutters */
+  const windowWithShutters = (w: number, h: number, lit: boolean, x: number, y: number, z: number) => {
+    const g = new THREE.Group();
+    g.add(rbox(w + 0.16, h + 0.16, 0.06, 0.02, frameMat, 0, 0, 0));
+    g.add(mesh(new THREE.PlaneGeometry(w, h), lit ? glassLit : glassDark, 0, 0, 0.035, false));
+    g.add(box(0.03, h, 0.02, mat(0x222222), 0, 0, 0.045));
+    g.add(box(w, 0.03, 0.02, mat(0x222222), 0, h * 0.15, 0.045));
+    for (const sd of [-1, 1]) {
+      const sh = new THREE.Group();
+      sh.position.set(sd * (w / 2 + 0.08), 0, 0.04);
+      const panel = rbox(w / 2, h, 0.03, 0.01, shutterMat, sd * w / 4, 0, 0);
+      sh.add(panel);
+      for (let k = -4; k <= 4; k++) sh.add(box(w / 2 - 0.04, 0.012, 0.02, mat(0x222222), sd * w / 4, k * (h / 10), 0.02));
+      sh.rotation.y = sd * (1.9 + Math.random() * 0.6);
+      g.add(sh);
+    }
+    g.add(rbox(w + 0.3, 0.06, 0.2, 0.02, frameMat, 0, -h / 2 - 0.1, 0.08));
+    g.position.set(x, y, z + 0.02);
+    return g;
+  };
   const scene = new THREE.Scene();
   const progress = (g.flag('placedRazor') ? 1 : 0) + (g.flag('metMerchant') ? 0.3 : 0);
   const skyShade = progress >= 1 ? 0x1a1c20 : 0x55585c;
@@ -50,20 +97,51 @@ export function createMap(g: Game): Location {
     }
     noise(c, w, h, 6000, 0.12);
   }, [8, 8]);
-  const ground = mesh(new THREE.PlaneGeometry(60, 60), mat(0xffffff, { map: cobble }));
+  const cobbleCanvas = (cobble.image as HTMLCanvasElement);
+  const ground = mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: cobble, normalMap: normalFromCanvas(cobbleCanvas, 4, [8, 8]), normalScale: new THREE.Vector2(1, 1), roughness: 0.75 }));
   ground.rotation.x = -Math.PI / 2;
   ground.castShadow = false;
   scene.add(ground);
 
   // fountain
-  const stone = mat(0x8d8a83);
-  scene.add(cyl(2.2, 2.4, 0.6, stone, 0, 0.3, 0, 32));
-  const water = mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.05, 32), mat(0x2a2d30, { roughness: 0.15, metalness: 0.3 }), 0, 0.58, 0);
+  const stone = plasterMaterial({ base: '#8d8a83', repeat: [3, 1], damp: 0.8 });
+  scene.add(lathe([[0, 0], [2.45, 0], [2.45, 0.1], [2.35, 0.15], [2.35, 0.55], [2.45, 0.6], [2.45, 0.68], [2.1, 0.68], [2.1, 0.3], [0, 0.3]], stone, 0, 0, 0, 48));
+  const water = mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.04, 48), new THREE.MeshStandardMaterial({ color: 0x15181b, roughness: 0.05, metalness: 0.2, envMapIntensity: 1.5 }), 0, 0.55, 0);
+  water.castShadow = false;
   scene.add(water);
-  scene.add(cyl(0.25, 0.35, 1.6, stone, 0, 1.1, 0, 12));
-  scene.add(cyl(0.9, 0.5, 0.25, stone, 0, 1.9, 0, 20));
-  // bench
-  scene.add(box(1.6, 0.08, 0.45, mat(0x4a3a2a), 3.4, 0.45, 2.4));
+  scene.add(lathe([[0, 0], [0.4, 0], [0.32, 0.2], [0.22, 0.4], [0.2, 1.3], [0.28, 1.45], [0.95, 1.6], [0.98, 1.7], [0.6, 1.72], [0.15, 1.8], [0.12, 2.3], [0.2, 2.35], [0, 2.45]], stone, 0, 0.3, 0, 32));
+  // benches
+  for (const [x, z, r] of [[3.6, 2.6, -0.6], [-3.6, 2.6, 0.6], [0, -3.8, 0]] as const) {
+    const bench = new THREE.Group();
+    const wood = woodMaterial({ base: '#4a3a2a' });
+    for (let k = 0; k < 3; k++) bench.add(rbox(1.6, 0.04, 0.12, 0.01, wood, 0, 0.45, -0.15 + k * 0.15));
+    for (let k = 0; k < 2; k++) bench.add(rbox(1.6, 0.1, 0.03, 0.01, wood, 0, 0.62 + k * 0.14, -0.26).rotateX(-0.15));
+    for (const sx of [-0.7, 0.7]) bench.add(rbox(0.05, 0.45, 0.5, 0.01, mat(0x1a1a1a, { metalness: 0.6, roughness: 0.5 }), sx, 0.25, -0.05));
+    bench.position.set(x, 0, z);
+    bench.rotation.y = r;
+    scene.add(bench);
+  }
+  // bare trees around the square
+  const bark = woodMaterial({ base: '#2a2622', repeat: [1, 3] });
+  const branch = (parent: THREE.Object3D, len: number, rad: number, depth: number, seed: number) => {
+    const b = mesh(new THREE.CylinderGeometry(rad * 0.65, rad, len, 7), bark, 0, len / 2, 0);
+    parent.add(b);
+    if (depth === 0) return;
+    const n = depth > 2 ? 2 : 3;
+    for (let i = 0; i < n; i++) {
+      const j = new THREE.Group();
+      j.position.y = len * (0.6 + 0.35 * ((i + seed) % 2));
+      j.rotation.set(0.5 + ((seed * 7 + i * 3) % 5) * 0.12, ((seed * 13 + i * 2.1) % 6.28), 0);
+      parent.add(j);
+      branch(j, len * 0.68, rad * 0.6, depth - 1, seed + i + 1);
+    }
+  };
+  for (const [x, z, sd] of [[-4.8, 4.8, 1], [4.8, 5.2, 2], [-4.5, -3.2, 3], [12, 8, 4], [-13, -4, 5], [3.5, -10, 6]] as const) {
+    const tree = new THREE.Group();
+    branch(tree, 2.2, 0.16, 4, sd);
+    tree.position.set(x, 0, z);
+    scene.add(tree);
+  }
 
   const buildings: Building[] = [
     { id: 'macelleria', x: -7.5, z: -6, w: 5, d: 4, h: 6.2, rot: 0.25, sign: 'sign.macelleria', color: 0x9b968b },
@@ -115,21 +193,32 @@ export function createMap(g: Game): Location {
     const grp = new THREE.Group();
     grp.position.set(b.x, 0, b.z);
     grp.rotation.y = b.rot;
-    const wallM = mat(b.color);
+    const hex = '#' + b.color.toString(16).padStart(6, '0');
+    const wallM = plasterMaterial({ base: hex, repeat: [b.w / 3, b.h / 3], damp: 0.8 });
     grp.add(box(b.w, b.h, b.d, wallM, 0, b.h / 2, 0));
-    // roof
-    const roof = mesh(new THREE.ConeGeometry(Math.max(b.w, b.d) * 0.78, 1.6, 4), mat(0x3a3430), 0, b.h + 0.8, 0);
+    // plinth and cornice
+    grp.add(rbox(b.w + 0.1, 0.5, b.d + 0.1, 0.03, plasterMaterial({ base: '#55524c', repeat: [b.w / 2, 0.3] }), 0, 0.25, 0));
+    grp.add(rbox(b.w + 0.3, 0.18, b.d + 0.3, 0.04, plasterMaterial({ base: '#77736b', repeat: [b.w / 2, 0.2] }), 0, b.h + 0.06, 0));
+    grp.add(rbox(b.w + 0.12, 0.08, 0.06, 0.02, plasterMaterial({ base: '#77736b' }), 0, 3.0, b.d / 2 + 0.03));
+    // roof with clay tiles
+    const roof = mesh(new THREE.ConeGeometry(Math.max(b.w, b.d) * 0.78, 1.6, 4), roofMat, 0, b.h + 0.95, 0);
     roof.rotation.y = Math.PI / 4;
     roof.scale.set(1, 1, b.d / b.w);
     grp.add(roof);
+    // chimney
+    grp.add(rbox(0.4, 1.2, 0.4, 0.03, wallM, b.w * 0.25, b.h + 1.3, -b.d * 0.15));
     // door & windows on front (+z)
-    const dark = mat(0x111111);
-    const lit = new THREE.MeshBasicMaterial({ color: progress >= 1 ? 0xb8b0a0 : 0x2b2b2b });
-    grp.add(box(0.9, 1.9, 0.08, dark, b.id === 'macelleria' ? -1 : 0, 0.95, b.d / 2 + 0.01));
+    const lit = progress >= 1 && b.id !== 'chiesa';
+    const door = new THREE.Group();
+    door.add(rbox(1.0, 2.1, 0.1, 0.02, plasterMaterial({ base: '#4d4a44' }), 0, 1.05, 0));
+    door.add(rbox(0.86, 1.95, 0.08, 0.02, woodMaterial({ base: '#2a2018', repeat: [1, 2] }), 0, 0.98, 0.03));
+    door.add(sphere(0.035, mat(0x777777, { metalness: 0.8, roughness: 0.4 }), 0.3, 1.0, 0.09, 10));
+    door.position.set(b.id === 'macelleria' ? -1 : 0, 0, b.d / 2 + 0.01);
+    grp.add(door);
     if (b.id !== 'chiesa') {
-      grp.add(box(1.0, 0.9, 0.06, lit, b.w / 2 - 0.9, 1.4, b.d / 2 + 0.02));
-      grp.add(box(0.8, 0.8, 0.06, lit, -b.w / 2 + 0.8, b.h - 1.2, b.d / 2 + 0.02));
-      grp.add(box(0.8, 0.8, 0.06, lit, b.w / 2 - 0.8, b.h - 1.2, b.d / 2 + 0.02));
+      const wins: [number, number, number, number][] = [[b.w / 2 - 0.95, 1.5, 1.1, 1.0], [-b.w / 2 + 0.85, b.h - 1.3, 0.75, 1.05], [b.w / 2 - 0.85, b.h - 1.3, 0.75, 1.05]];
+      if (b.h > 5) wins.push([0, b.h - 1.3, 0.75, 1.05]);
+      for (const [wx, wy, ww, wh] of wins) grp.add(windowWithShutters(ww, wh, lit && Math.random() < 0.7, wx, wy, b.d / 2));
     } else {
       // church: bell tower
       grp.add(box(1.4, 4, 1.4, wallM, 0, b.h + 2, -1.5));
@@ -264,12 +353,18 @@ export function createMap(g: Game): Location {
 
   // street lamps (lit when it gets dark)
   for (const [x, z] of [[-3.5, -3], [3.5, -3], [-3.5, 4], [3.5, 4]]) {
-    scene.add(cyl(0.05, 0.07, 3.2, mat(0x1a1a1a), x, 1.6, z, 8));
+    const iron = mat(0x161616, { metalness: 0.5, roughness: 0.5 });
+    scene.add(lathe([[0, 0], [0.18, 0], [0.16, 0.12], [0.08, 0.2], [0.06, 0.5], [0.045, 2.9], [0.07, 3.0], [0, 3.0]], iron, x, 0, z, 12));
     const lampOn = progress >= 1;
-    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshBasicMaterial({ color: lampOn ? 0xfff1d0 : 0x666666 }));
-    lamp.position.set(x, 3.25, z);
-    lamp.userData.noPick = true;
-    scene.add(lamp);
+    const lantern = new THREE.Group();
+    lantern.add(lathe([[0, 0], [0.12, 0], [0.18, 0.35], [0.22, 0.38], [0, 0.5]], iron, 0, 0, 0, 4));
+    const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.1, 0.3, 4, 1, true), new THREE.MeshBasicMaterial({ color: lampOn ? 0xfff1d0 : 0x55585a, side: THREE.DoubleSide }));
+    glow.position.y = 0.18;
+    glow.userData.noPick = true;
+    lantern.add(glow);
+    lantern.position.set(x, 3.0, z);
+    lantern.traverse((o) => (o.userData.noPick = true));
+    scene.add(lantern);
     if (lampOn) {
       const pl = new THREE.PointLight(0xfff1d0, 6, 9, 1.6);
       pl.position.set(x, 3.1, z);

@@ -238,5 +238,11 @@
   "ui.q.high": "Alta",
   "ui.q.medium": "Media",
   "ui.q.low": "Bassa",
-  "bar.closed": "CHIUSO"
+  "bar.closed": "CHIUSO",
+  "ui.torch": "Torcia",
+  "ui.torchOn": "Hai acceso la torcia",
+  "item.torch": "Torcia",
+  "mac.enterHint": "Se papà ha lasciato qualcosa, è qui: il bancone, il suo registro delle consegne, la nostra foto sul muro di sinistra.",
+  "emp.torch1": "Ah, un'ultima cosa. Prenda questa: un omaggio della casa. Laggiù è buio, e non vorrei che inciampasse proprio adesso.",
+  "emp.torch2": "Una torcia di metallo, pesante. Quando la accendi, per un attimo la luce trema."
 }

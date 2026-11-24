@@ -238,5 +238,11 @@
   "ui.q.high": "High",
   "ui.q.medium": "Medium",
   "ui.q.low": "Low",
-  "bar.closed": "CLOSED"
+  "bar.closed": "CLOSED",
+  "ui.torch": "Torch",
+  "ui.torchOn": "You switched on the torch",
+  "item.torch": "Torch",
+  "mac.enterHint": "If Dad left anything behind, it's here: the counter, his delivery ledger, our photo on the left wall.",
+  "emp.torch1": "Ah, one last thing. Take this: a gift from the house. It's dark out there, and I wouldn't want you to trip just now.",
+  "emp.torch2": "A heavy metal torch. When you switch it on, the light trembles for a moment."
 }

@@ -34,6 +34,10 @@ export interface Location {
   canLeave?: () => boolean;
   /** what the "back" button does at the root view; default goes to the map */
   exitTo?: string;
+  /** dark place: the torch switches on by itself the first time */
+  dark?: () => boolean;
+  /** handles for tests and screenshots */
+  debug?: Record<string, unknown>;
 }
 
 export type LocationFactory = (g: Game) => Location;
@@ -67,6 +71,7 @@ export class Game {
     this.ui.onNotebook = () => this.openNotebook();
     this.ui.onLisa = () => this.askLisa();
     this.ui.onSettings = () => this.openSettings();
+    this.ui.onTorch = () => this.toggleTorch();
     this.applySettings();
     this.ui.showHud(false);
   }
@@ -187,6 +192,13 @@ export class Game {
     this.updateBack();
     this.updateLisaBadge();
     this.audio.drone(L.drone);
+    this.engine.torchFlicker = 0;
+    if (L.id === 'map') this.setTorch(false, true);
+    else if (this.flag('hasTorch') && L.dark?.() && !this.flag('torchAuto.' + L.id)) {
+      this.set('torchAuto.' + L.id);
+      this.setTorch(true);
+      this.ui.toast(t('ui.torchOn'));
+    } else this.setTorch(!!this.flag('torchOn') && L.id !== 'map', true);
     if (fade) await this.ui.fadeIn(600);
     if (L.enter) {
       this.busy = true;
@@ -319,6 +331,21 @@ export class Game {
     this.deselect();
     const keys = ['nope.1', 'nope.2', 'nope.3'];
     await this.say(keys[Math.floor(Math.random() * keys.length)]);
+  }
+
+  // ---------------- torch ----------------
+  setTorch(on: boolean, silent = false) {
+    const has = !!this.flag('hasTorch');
+    on = on && has && this.loc?.id !== 'map';
+    if (!silent && on !== this.engine.torchOn) this.audio.sfx('switch');
+    this.engine.torchOn = on;
+    if (this.loc?.id !== 'map') this.save.flags.torchOn = on;
+    this.ui.setTorch(has && this.loc?.id !== 'map', on);
+  }
+  toggleTorch() {
+    if (this.busy && !this.engine.torchOn) return;
+    this.setTorch(!this.engine.torchOn);
+    this.persist();
   }
 
   // ---------------- scares ----------------

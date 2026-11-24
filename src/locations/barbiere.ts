@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, canvasTex, noise, bulb, rbox, lathe, fx, dust, lightCone, framed, tileMaterial, woodMaterial, plasterMaterial } from '../builders';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
+import { createBarberGhost } from '../characters';
 import { t } from '../i18n';
 
 /** Chair facing: 0 = mirror, 1 = left wall, 2 = door, 3 = right wall. */
@@ -250,7 +251,7 @@ export function createBarbiere(g: Game): Location {
       c.clearRect(0, 0, 1024, 256);
       c.drawImage(edges, 0, 0);
     } else c.drawImage(base, 0, 0);
-    if (ghost > 0) {
+    if (ghost > 0 && !hiQ) {
       // the barber, old, standing behind you in the reflection
       c.save();
       c.globalAlpha = ghost;
@@ -331,6 +332,14 @@ export function createBarbiere(g: Game): Location {
     scene.add(cyl(0.03, 0.03, 0.12, chrome, x, 1.9, -2.42, 10).rotateX(Math.PI / 2));
     scene.add(lathe([[0, 0], [0.05, 0], [0.08, 0.12], [0.07, 0.14], [0, 0.14]], new THREE.MeshStandardMaterial({ color: 0xd8d4ca, roughness: 0.3 }), x, 1.92, -2.34, 16));
   }
+
+  // the old barber: he stands behind you, so you only ever see him in the mirror
+  const barberC = createBarberGhost();
+  barberC.group.position.set(0.4, 0, 0.55);
+  barberC.group.rotation.y = Math.PI;
+  barberC.group.traverse((o) => (o.userData.noPick = true));
+  barberC.setOpacity(0);
+  scene.add(barberC.group);
 
   // steam particles
   const steamTex = canvasTex(64, 64, (c, w, h) => {
@@ -574,14 +583,16 @@ export function createBarbiere(g: Game): Location {
     g.audio.sfx('heart');
     for (let i = 0; i <= 30; i++) {
       ghost = i / 30;
-      drawMirror();
-      await sleep(60);
+      if (hiQ) barberC.setOpacity(ghost);
+      else drawMirror();
+      await sleep(70);
     }
     g.setFlicker(true, 0.8);
     await g.say([{ who: 'narr', key: 'bar.ghost1' }]);
     await g.scare('barber');
     setLights(0);
     ghost = 0;
+    barberC.setOpacity(0);
     drawMirror();
     g.setFlicker(false);
     await sleep(500);
@@ -773,6 +784,7 @@ export function createBarbiere(g: Game): Location {
     hotspots,
     update: (dt, time) => {
       motes.update(dt, time);
+      if (barberC.group.visible) barberC.update(dt, time, g.engine.camera);
       puffs.forEach((p) => {
         const ph = (p.userData.phase + time * 0.35) % 1;
         p.position.set(1.65 + Math.sin(ph * 9 + p.userData.phase * 6) * 0.12 - ph * 0.6, 1.4 + ph * 1.2, -2.2 + ph * 0.1);
@@ -799,6 +811,8 @@ export function createBarbiere(g: Game): Location {
       if (!g.flag('razor')) return 'hint.bar.case';
       return 'hint.bar.leave';
     },
+    dark: () => !g.flag('b.lights'),
+    debug: { barber: barberC },
   };
 }
 

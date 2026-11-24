@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, figure, ghostSprite, canvasTex, noise, rbox, lathe, fx, dust, framed, tileMaterial, woodMaterial, plasterMaterial } from '../builders';
+import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, canvasTex, noise, rbox, lathe, fx, dust, framed, tileMaterial, woodMaterial, plasterMaterial } from '../builders';
+import { createBruno, createLisa } from '../characters';
 import { t } from '../i18n';
 
 export function createMacelleria(g: Game): Location {
@@ -55,12 +56,12 @@ export function createMacelleria(g: Game): Location {
     scene.add(band);
   }
   // the cold room itself, seen only through the door
-  const cellaRoom = mesh(new THREE.BoxGeometry(1.3, 2.2, 1.5), new THREE.MeshStandardMaterial({ color: 0x9aa0a6, side: THREE.BackSide, roughness: 0.35, metalness: 0.5 }), 1.9, 1.1, -3.75);
+  const cellaRoom = mesh(new THREE.BoxGeometry(1.3, 2.2, 1.5), new THREE.MeshStandardMaterial({ color: 0x7d8388, side: THREE.BackSide, roughness: 0.8, metalness: 0 }), 1.9, 1.1, -3.75);
   cellaRoom.castShadow = false;
   scene.add(cellaRoom);
 
   // ---------------- neon fixture, flickering ----------------
-  scene.add(new THREE.AmbientLight(0xffffff, 0.03));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.06));
   const fixture = rbox(1.75, 0.06, 0.2, 0.02, new THREE.MeshStandardMaterial({ color: 0xbdbab2, roughness: 0.5 }), -0.4, H - 0.05, -0.2);
   scene.add(fixture);
   const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.6, 12), new THREE.MeshBasicMaterial({ color: 0xf4f7ff }));
@@ -348,7 +349,8 @@ export function createMacelleria(g: Game): Location {
   }
 
   // Bruno
-  const bruno = figure({ height: 2.05, bulk: 1.35, apron: true, cleaver: true });
+  const brunoC = createBruno();
+  const bruno = brunoC.group;
   bruno.position.set(cellaX, 0, -3.9);
   bruno.visible = false;
   bruno.traverse((o) => (o.userData.noPick = true));
@@ -409,10 +411,13 @@ export function createMacelleria(g: Game): Location {
   scene.add(exitG);
 
   // Lisa
-  const lisa = ghostSprite(1.55);
-  lisa.position.set(-2.75, 0.95, -1.75);
+  const lisaC = createLisa(0.05);
+  const lisa = lisaC.group;
+  lisa.position.set(-2.75, 0.05, -1.75);
+  lisa.rotation.y = 0.9;
   scene.add(lisa);
   let lisaTarget = 0;
+  let lisaOpacity = 0;
 
   // ---------------- hotspots ----------------
   const hCounter = hitBox(2.5, 0.6, 0.8, -0.5, 1.0, cz, 'counter');
@@ -467,7 +472,7 @@ export function createMacelleria(g: Game): Location {
     await sleep(700);
     // door swings open, cold light, Bruno
     g.audio.sfx('creak');
-    coldLight.intensity = 25;
+    coldLight.intensity = 9;
     bruno.visible = true;
     const t0 = performance.now();
     await new Promise<void>((res) => {
@@ -482,17 +487,23 @@ export function createMacelleria(g: Game): Location {
     neonOn = 0.15;
     g.setFlicker(true, 1);
     g.audio.steps(3, 0.5);
+    // the torch dies as he comes out
+    g.engine.torchFlicker = 1;
+    bruno.userData.moving = true;
     for (let i = 0; i < 30; i++) {
       bruno.position.z = -3.9 + (i / 30) * 1.6;
       await sleep(40);
     }
-    (bruno.userData.eyes as THREE.Group).visible = true;
+    bruno.userData.moving = false;
+    g.engine.torchFlicker = 0;
+    g.setTorch(false, true);
+    brunoC.setEyes(true);
     await g.say([{ who: 'bruno', key: 'mac.bruno1' }]);
     await g.scare('bruno');
     g.audio.sfx('heart');
     const ok = await g.ui.quick(t('ui.run'), 3200);
     if (!ok) {
-      bruno.position.z = -0.2;
+      bruno.position.z = -0.4;
       await g.scare('bruno', 450);
       await g.say([{ who: 'narr', key: 'mac.caught' }]);
     }
@@ -571,14 +582,18 @@ export function createMacelleria(g: Game): Location {
       // neon: buzzing, sometimes dropping
       motes.update(dt, time);
       const drop = Math.random() < 0.015 ? 0.1 : 1;
-      neon.intensity = 14 * neonOn * drop;
+      neon.intensity = 20 * neonOn * drop;
       (tube.material as THREE.MeshBasicMaterial).color.setScalar(neonOn * drop > 0.5 ? 1 : 0.25);
       scene.traverse((o) => {
         if (o.userData.sway !== undefined) o.rotation.z = Math.sin(time * 0.6 + o.userData.sway) * 0.03;
       });
-      const m = lisa.material as THREE.SpriteMaterial;
-      m.opacity += (lisaTarget * (0.85 + Math.sin(time * 7) * 0.1) - m.opacity) * Math.min(dt * 2, 1);
-      lisa.position.y = 0.95 + Math.sin(time * 1.3) * 0.03;
+      lisaOpacity += (lisaTarget - lisaOpacity) * Math.min(dt * 2, 1);
+      lisaC.setOpacity(lisaOpacity);
+      lisa.visible = lisaOpacity > 0.01;
+      if (lisa.visible) lisaC.update(dt, time, g.engine.camera);
+      if (bruno.visible) brunoC.update(dt, time, g.engine.camera);
+      // the torch stutters while Lisa is near
+      if (lisaOpacity > 0.05 && g.engine.torchOn) g.engine.torchFlicker = 0.5;
     },
     enter: async () => {
       g.audio.buzz(true);
@@ -595,11 +610,14 @@ export function createMacelleria(g: Game): Location {
           { who: 'diego', key: 'mac.enter1' },
           { who: 'diego', key: 'mac.enter2' },
           { who: 'narr', key: 'mac.enter3' },
+          { who: 'diego', key: 'mac.enterHint' },
         ]);
       }
     },
     leave: () => g.audio.buzz(false),
     hint: () => 'hint.macelleria',
+    dark: () => true,
+    debug: { bruno: brunoC, lisa: lisaC, door: doorPivot, coldLight, setLisa: (v: number) => (lisaTarget = v) },
   };
 }
 

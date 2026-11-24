@@ -22,6 +22,7 @@ export class UI {
   btnNotebook = el('button');
   btnLisa = el('button');
   btnSettings = el('button');
+  btnTorch = el('button');
   back = el('button');
   inv = el('div');
   invLabel = el('div', 'label');
@@ -41,6 +42,7 @@ export class UI {
   onNotebook: () => void = () => {};
   onLisa: () => void = () => {};
   onSettings: () => void = () => {};
+  onTorch: () => void = () => {};
 
   private toastTimer = 0;
 
@@ -53,7 +55,9 @@ export class UI {
     this.btnNotebook.innerHTML = ICONS.notebook;
     this.btnLisa.innerHTML = ICONS.lisa + '<span class="badge"></span>';
     this.btnSettings.innerHTML = ICONS.settings;
-    btns.append(this.btnDiary, this.btnNotebook, this.btnLisa, this.btnSettings);
+    this.btnTorch.innerHTML = ICONS.torch;
+    this.btnTorch.style.display = 'none';
+    btns.append(this.btnTorch, this.btnDiary, this.btnNotebook, this.btnLisa, this.btnSettings);
     top.append(this.place, btns);
     this.back.id = 'back';
     this.inv.id = 'inv';
@@ -74,6 +78,7 @@ export class UI {
     this.btnNotebook.onclick = () => this.onNotebook();
     this.btnLisa.onclick = () => this.onLisa();
     this.btnSettings.onclick = () => this.onSettings();
+    this.btnTorch.onclick = () => this.onTorch();
     this.back.onclick = () => this.onBack();
     this.refreshStatic();
   }
@@ -84,6 +89,7 @@ export class UI {
     this.btnNotebook.title = t('ui.notebook');
     this.btnLisa.title = t('ui.lisa');
     this.btnSettings.title = t('ui.settings');
+    this.btnTorch.title = t('ui.torch');
   }
 
   showHud(on: boolean) {
@@ -100,6 +106,11 @@ export class UI {
       this.back.hidden = false;
       this.back.textContent = label;
     }
+  }
+
+  setTorch(available: boolean, on: boolean) {
+    this.btnTorch.style.display = available ? '' : 'none';
+    this.btnTorch.classList.toggle('on', on);
   }
 
   setLisaBadge(n: number | null) {

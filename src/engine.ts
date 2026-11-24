@@ -84,6 +84,11 @@ export class Engine {
   private aoCamera: THREE.PerspectiveCamera;
   envTex: THREE.Texture;
   quality: Quality = 'high';
+  /** flashlight held by Diego: a spot light that follows the camera */
+  torch: THREE.SpotLight;
+  torchOn = false;
+  torchFlicker = 0;
+  private torchLevel = 0;
   scene: THREE.Scene = new THREE.Scene();
   private raycaster = new THREE.Raycaster();
   private clock = new THREE.Clock();
@@ -117,6 +122,16 @@ export class Engine {
     this.camera.layers.enable(LAYER_FX);
     this.aoCamera = new THREE.PerspectiveCamera(62, 1, 0.05, 120);
     this.raycaster.layers.enableAll();
+    this.raycaster.params.Points = { threshold: 0.001 };
+    this.torch = new THREE.SpotLight(0xfff4e0, 0, 9, 0.36, 0.55, 1.3);
+    this.torch.castShadow = true;
+    this.torch.shadow.mapSize.set(1024, 1024);
+    this.torch.shadow.bias = -0.0006;
+    this.torch.shadow.camera.near = 0.1;
+    this.torch.position.set(0.12, -0.12, 0.05);
+    this.camera.add(this.torch);
+    this.torch.target.position.set(0, -0.1, -3);
+    this.camera.add(this.torch.target);
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
@@ -154,6 +169,7 @@ export class Engine {
 
   setScene(scene: THREE.Scene) {
     this.scene = scene;
+    scene.add(this.camera); // the torch rides on the camera
     this.renderPass.scene = scene;
     this.gtao.scene = scene;
     if (!scene.environment) {
@@ -260,6 +276,12 @@ export class Engine {
     }
     for (const u of this.updaters) u(dt, t);
     this.film.uniforms.time.value = t;
+    // torch: smooth on/off, flicker when something is near
+    const want = this.torchOn ? 1 : 0;
+    this.torchLevel += (want - this.torchLevel) * Math.min(dt * 12, 1);
+    let tf = 1;
+    if (this.torchFlicker > 0) tf = Math.random() < this.torchFlicker * 0.25 ? Math.random() * 0.2 : 1 - Math.random() * this.torchFlicker * 0.4;
+    this.torch.intensity = 16 * this.torchLevel * tf;
     let flick = 1;
     if (this.flickerAmt > 0) flick = 1 - this.flickerAmt * (Math.random() < 0.08 ? 0.6 : Math.random() * 0.12);
     this.film.uniforms.flicker.value = flick;

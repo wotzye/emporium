@@ -140,7 +140,7 @@ export class Audio {
   }
 
   // ---------------- Effects ----------------
-  sfx(name: 'click' | 'unlock' | 'wrong' | 'bell' | 'creak' | 'thud' | 'steam' | 'whisper' | 'pickup' | 'switch' | 'drawer' | 'heart' | 'paper' | 'seal' | 'glass') {
+  sfx(name: 'click' | 'unlock' | 'wrong' | 'bell' | 'creak' | 'thud' | 'steam' | 'whisper' | 'pickup' | 'switch' | 'drawer' | 'heart' | 'paper' | 'seal' | 'glass' | 'tick') {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t = this.now;
@@ -280,6 +280,11 @@ export class Audio {
       case 'seal': {
         for (const f of [196, 233, 277, 330]) this.tone(t, f, 0.06, 2.5, 'sine');
         this.thump(t, 0.6, 80, 0.5);
+        break;
+      }
+      case 'tick': {
+        // grandfather clock: a dry wooden tock
+        this.thump(t, 0.05, 1400, 0.025);
         break;
       }
       case 'glass': {

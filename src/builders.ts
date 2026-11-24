@@ -438,6 +438,7 @@ export function fx<T extends THREE.Object3D>(o: T): T {
   o.traverse((c) => {
     c.layers.set(LAYER_FX);
     c.userData.noPick = true;
+    c.castShadow = false;
   });
   return o;
 }
