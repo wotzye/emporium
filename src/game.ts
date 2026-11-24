@@ -129,6 +129,7 @@ export class Game {
   applySettings() {
     const s = this.save.settings;
     this.engine.film.uniforms.keepColor.value = s.color ? 1 : 0;
+    if (this.engine.quality !== s.quality) this.engine.setQuality(s.quality);
     this.audio.reduced = s.reducedScares;
     this.audio.setVolume(s.volume);
     this.updateLisaBadge();
@@ -432,6 +433,15 @@ export class Game {
           label: v === 0 ? t('ui.off') : v === 0.4 ? '50%' : '100%',
           on: s.volume === v,
           set: () => { s.volume = v; this.applySettings(); this.persist(); this.openSettings(); },
+        })),
+      },
+      {
+        label: t('ui.quality'),
+        value: '',
+        options: (['high', 'medium', 'low'] as const).map((q) => ({
+          label: t(`ui.q.${q}`),
+          on: s.quality === q,
+          set: () => { s.quality = q; this.applySettings(); this.persist(); this.refreshTexts(); this.openSettings(); },
         })),
       },
       { label: t('ui.reducedScares'), value: '', options: yesNo(s.reducedScares, (v) => (s.reducedScares = v)) },

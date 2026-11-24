@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { LAYER_HIT, LAYER_FX } from './engine';
 
 /** Strong saturated red: the film shader keeps this colour, so cursed objects stand out. */
 export const CURSED = 0xc4101a;
@@ -40,7 +42,7 @@ export function hitBox(w: number, h: number, d: number, x: number, y: number, z:
   o.position.set(x, y, z);
   o.name = name;
   o.userData.hit = true;
-  o.renderOrder = -1;
+  o.layers.set(LAYER_HIT);
   return o;
 }
 
@@ -283,8 +285,7 @@ export function ghostSprite(h = 1.6) {
   const m = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 });
   const s = new THREE.Sprite(m);
   s.scale.set(h * 0.5, h, 1);
-  s.userData.noPick = true;
-  return s;
+  return fx(s);
 }
 
 /** Dark human silhouette (the Merchant, Bruno). */
@@ -425,4 +426,305 @@ export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno') {
   v.addColorStop(1, 'rgba(0,0,0,0.92)');
   c.fillStyle = v;
   c.fillRect(0, 0, w, h);
+}
+
+
+// ======================================================================
+// Detail kit: relief textures, rounded and turned shapes, dust, light cones
+// ======================================================================
+
+/** Put an object (and its children) on the see-through effects layer: drawn, but ignored by ambient occlusion. */
+export function fx<T extends THREE.Object3D>(o: T): T {
+  o.traverse((c) => {
+    c.layers.set(LAYER_FX);
+    c.userData.noPick = true;
+  });
+  return o;
+}
+
+export function rbox(w: number, h: number, d: number, r: number, m: THREE.Material, x = 0, y = 0, z = 0, seg = 3) {
+  return mesh(new RoundedBoxGeometry(w, h, d, seg, Math.min(r, w / 2, h / 2, d / 2) * 0.999), m, x, y, z);
+}
+
+/** Turned shape from a profile of [radius, height] pairs (bottles, jars, columns, bases). */
+export function lathe(profile: [number, number][], m: THREE.Material, x = 0, y = 0, z = 0, seg = 24) {
+  const pts = profile.map(([r, h]) => new THREE.Vector2(Math.max(r, 0.0001), h));
+  return mesh(new THREE.LatheGeometry(pts, seg), m, x, y, z);
+}
+
+/** Normal map from the brightness of a canvas (dark = low). */
+export function normalFromCanvas(src: HTMLCanvasElement, strength = 2, repeat?: [number, number]) {
+  const w = src.width, h = src.height;
+  const sd = src.getContext('2d')!.getImageData(0, 0, w, h).data;
+  const hgt = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) hgt[i] = (sd[i * 4] * 0.299 + sd[i * 4 + 1] * 0.587 + sd[i * 4 + 2] * 0.114) / 255;
+  const out = document.createElement('canvas');
+  out.width = w;
+  out.height = h;
+  const oc = out.getContext('2d')!;
+  const img = oc.createImageData(w, h);
+  const at = (x: number, y: number) => hgt[((y + h) % h) * w + ((x + w) % w)];
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      const len = Math.hypot(dx, dy, 1);
+      const i = (y * w + x) * 4;
+      img.data[i] = ((-dx / len) * 0.5 + 0.5) * 255;
+      img.data[i + 1] = ((dy / len) * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (1 / len) * 255;
+      img.data[i + 3] = 255;
+    }
+  oc.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(out);
+  t.colorSpace = THREE.NoColorSpace;
+  if (repeat) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repeat[0], repeat[1]);
+  }
+  return t;
+}
+
+function paintCanvas(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: number, h: number) => void) {
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  draw(cv.getContext('2d')!, w, h);
+  return cv;
+}
+
+function texFrom(cv: HTMLCanvasElement, repeat?: [number, number]) {
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  if (repeat) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repeat[0], repeat[1]);
+  }
+  return t;
+}
+
+/** Glazed ceramic tiles with real grout relief, chips and grime. */
+export function tileMaterial(o: { a?: string; b?: string; n?: number; repeat?: [number, number]; grout?: string; grime?: number; rough?: number; checker?: boolean } = {}) {
+  const n = o.n ?? 8;
+  const grime = o.grime ?? 0.35;
+  const color = paintCanvas(512, 512, (c, w, h) => {
+    const s = w / n;
+    c.fillStyle = o.grout ?? '#5d5a54';
+    c.fillRect(0, 0, w, h);
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++) {
+        const base = o.checker === false ? (o.a ?? '#d8d6d0') : (i + j) % 2 ? (o.a ?? '#d8d6d0') : (o.b ?? '#bdbab3');
+        c.fillStyle = base;
+        c.fillRect(i * s + 2, j * s + 2, s - 4, s - 4);
+        // glaze highlight and slight per-tile variation
+        const g = c.createLinearGradient(i * s, j * s, i * s + s, j * s + s);
+        g.addColorStop(0, 'rgba(255,255,255,0.10)');
+        g.addColorStop(1, `rgba(0,0,0,${0.04 + Math.random() * 0.08})`);
+        c.fillStyle = g;
+        c.fillRect(i * s + 2, j * s + 2, s - 4, s - 4);
+        if (Math.random() < 0.06) {
+          c.fillStyle = 'rgba(60,55,50,0.6)';
+          c.beginPath();
+          c.arc(i * s + Math.random() * s, j * s + Math.random() * s, 2 + Math.random() * 5, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+    noise(c, w, h, 6000, 0.06);
+    for (let k = 0; k < 10 * grime; k++) {
+      const x = Math.random() * w, y = Math.random() * h, r = 40 + Math.random() * 90;
+      const g = c.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(35,28,22,${0.25 * grime + 0.1})`);
+      g.addColorStop(1, 'rgba(35,28,22,0)');
+      c.fillStyle = g;
+      c.fillRect(0, 0, w, h);
+    }
+    // drips running down
+    for (let k = 0; k < 14 * grime; k++) {
+      const x = Math.random() * w;
+      const y0 = Math.random() * h * 0.5;
+      const g = c.createLinearGradient(0, y0, 0, y0 + 120 + Math.random() * 200);
+      g.addColorStop(0, 'rgba(40,30,25,0.25)');
+      g.addColorStop(1, 'rgba(40,30,25,0)');
+      c.fillStyle = g;
+      c.fillRect(x, y0, 1.5 + Math.random() * 3, 320);
+    }
+  });
+  const height = paintCanvas(512, 512, (c, w, h) => {
+    const s = w / n;
+    c.fillStyle = '#000';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = '#fff';
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++) {
+        c.filter = 'blur(1.5px)';
+        c.fillRect(i * s + 3, j * s + 3, s - 6, s - 6);
+      }
+    c.filter = 'none';
+    noise(c, w, h, 3000, 0.08);
+  });
+  return new THREE.MeshStandardMaterial({
+    map: texFrom(color, o.repeat),
+    normalMap: normalFromCanvas(height, 3, o.repeat),
+    normalScale: new THREE.Vector2(0.9, 0.9),
+    roughness: o.rough ?? 0.28,
+    metalness: 0,
+  });
+}
+
+/** Wood with grain and relief. plank: boards for floors. */
+export function woodMaterial(o: { base?: string; repeat?: [number, number]; plank?: boolean; rough?: number } = {}) {
+  const base = o.base ?? '#5a4632';
+  const color = paintCanvas(512, 512, (c, w, h) => {
+    c.fillStyle = base;
+    c.fillRect(0, 0, w, h);
+    const rows = o.plank ? 6 : 1;
+    for (let r = 0; r < rows; r++) {
+      const y0 = (r * h) / rows;
+      const shade = Math.random() * 0.18;
+      c.fillStyle = `rgba(0,0,0,${shade})`;
+      c.fillRect(0, y0, w, h / rows);
+      for (let i = 0; i < 70; i++) {
+        c.strokeStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,230,200'},${Math.random() * 0.12})`;
+        c.lineWidth = 0.5 + Math.random() * 2;
+        c.beginPath();
+        const y = y0 + Math.random() * (h / rows);
+        c.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) c.lineTo(x, y + Math.sin(x * 0.02 + i) * 3 + (Math.random() - 0.5) * 2);
+        c.stroke();
+      }
+      // knots
+      if (Math.random() < 0.6) {
+        const kx = Math.random() * w, ky = y0 + Math.random() * (h / rows);
+        for (let k = 8; k > 0; k--) {
+          c.strokeStyle = `rgba(30,18,8,${0.08 + k * 0.02})`;
+          c.beginPath();
+          c.ellipse(kx, ky, k * 4, k * 1.6, 0, 0, Math.PI * 2);
+          c.stroke();
+        }
+      }
+      if (o.plank) {
+        c.fillStyle = 'rgba(0,0,0,0.7)';
+        c.fillRect(0, y0, w, 3);
+        c.fillRect(((r * 197) % w), y0, 3, h / rows);
+      }
+    }
+    noise(c, w, h, 5000, 0.07);
+  });
+  return new THREE.MeshStandardMaterial({
+    map: texFrom(color, o.repeat),
+    normalMap: normalFromCanvas(color, 4, o.repeat),
+    normalScale: new THREE.Vector2(0.6, 0.6),
+    roughness: o.rough ?? 0.6,
+  });
+}
+
+/** Old plaster / wallpaper with damp stains, flaking and relief. */
+export function plasterMaterial(o: { base?: string; repeat?: [number, number]; stripes?: boolean; damp?: number } = {}) {
+  const damp = o.damp ?? 0.5;
+  const color = paintCanvas(512, 512, (c, w, h) => {
+    c.fillStyle = o.base ?? '#8a857b';
+    c.fillRect(0, 0, w, h);
+    if (o.stripes) {
+      for (let x = 0; x < w; x += 42) {
+        c.fillStyle = 'rgba(255,255,255,0.06)';
+        c.fillRect(x, 0, 18, h);
+        c.fillStyle = 'rgba(0,0,0,0.08)';
+        c.fillRect(x + 22, 0, 2, h);
+        // small damask dots
+        for (let y = 10; y < h; y += 34) {
+          c.fillStyle = 'rgba(0,0,0,0.07)';
+          c.beginPath();
+          c.ellipse(x + 32, y, 3, 6, 0, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+    }
+    noise(c, w, h, 9000, 0.07);
+    for (let k = 0; k < 7 * damp; k++) {
+      const x = Math.random() * w, y = h * (0.5 + Math.random() * 0.5), r = 60 + Math.random() * 120;
+      const g = c.createRadialGradient(x, y, r * 0.2, x, y, r);
+      g.addColorStop(0, `rgba(40,32,22,${0.3 * damp})`);
+      g.addColorStop(0.8, `rgba(40,32,22,${0.12 * damp})`);
+      g.addColorStop(1, 'rgba(40,32,22,0)');
+      c.fillStyle = g;
+      c.fillRect(0, 0, w, h);
+    }
+    for (let k = 0; k < 6 * damp; k++) {
+      c.fillStyle = 'rgba(210,205,195,0.5)';
+      c.beginPath();
+      const x = Math.random() * w, y = Math.random() * h;
+      c.moveTo(x, y);
+      for (let i = 0; i < 7; i++) c.lineTo(x + (Math.random() - 0.5) * 50, y + (Math.random() - 0.5) * 40);
+      c.fill();
+    }
+  });
+  return new THREE.MeshStandardMaterial({
+    map: texFrom(color, o.repeat),
+    normalMap: normalFromCanvas(color, 2.5, o.repeat),
+    normalScale: new THREE.Vector2(0.5, 0.5),
+    roughness: 0.92,
+  });
+}
+
+/** Floating dust motes inside a box. Returns the points and an update function. */
+export function dust(min: [number, number, number], max: [number, number, number], count = 160) {
+  const tex = canvasTex(32, 32, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+  });
+  const pos = new Float32Array(count * 3);
+  const seed = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    pos[i * 3] = min[0] + Math.random() * (max[0] - min[0]);
+    pos[i * 3 + 1] = min[1] + Math.random() * (max[1] - min[1]);
+    pos[i * 3 + 2] = min[2] + Math.random() * (max[2] - min[2]);
+    seed[i] = Math.random() * 100;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const m = new THREE.PointsMaterial({ size: 0.012, map: tex, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true });
+  const pts = fx(new THREE.Points(geo, m));
+  const update = (dt: number, t: number) => {
+    const a = geo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < count; i++) {
+      let y = a.getY(i) + Math.sin(t * 0.3 + seed[i]) * dt * 0.02 - dt * 0.004;
+      if (y < min[1]) y = max[1];
+      a.setXYZ(i, a.getX(i) + Math.sin(t * 0.21 + seed[i] * 1.7) * dt * 0.025, y, a.getZ(i) + Math.cos(t * 0.17 + seed[i]) * dt * 0.025);
+    }
+    a.needsUpdate = true;
+  };
+  return { points: pts, update };
+}
+
+/** Visible beam of light: an additive cone that fades towards the floor. */
+export function lightCone(x: number, top: number, z: number, height: number, radius: number, opacity = 0.09) {
+  const tex = canvasTex(8, 128, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+  });
+  const geo = new THREE.CylinderGeometry(0.06, radius, height, 32, 1, true);
+  const m = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+  const cone = fx(new THREE.Mesh(geo, m));
+  cone.position.set(x, top - height / 2, z);
+  return cone;
+}
+
+/** Framed picture or certificate on a wall (front faces +z). */
+export function framed(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: number, h: number) => void, frame: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(rbox(w + 0.06, h + 0.06, 0.03, 0.008, frame));
+  const pic = mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: canvasTex(256, Math.round((256 * h) / w), draw), roughness: 0.5 }), 0, 0, 0.017);
+  pic.castShadow = false;
+  g.add(pic);
+  const glass = fx(new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.06, roughness: 0.05, metalness: 1 })));
+  glass.position.z = 0.019;
+  g.add(glass);
+  return g;
 }

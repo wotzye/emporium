@@ -1,6 +1,7 @@
 import type { Lang } from './i18n';
 
 export interface Settings {
+  quality: 'high' | 'medium' | 'low';
   reducedScares: boolean;
   noFlash: boolean;
   color: boolean;
@@ -24,7 +25,8 @@ const KEY = 'cosepreziose.save.v1';
 const SETTINGS_KEY = 'cosepreziose.settings.v1';
 
 export function defaultSettings(): Settings {
-  return { reducedScares: false, noFlash: false, color: true, unlimitedHints: false, volume: 0.8 };
+  const touch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
+  return { quality: touch ? 'medium' : 'high', reducedScares: false, noFlash: false, color: true, unlimitedHints: false, volume: 0.8 };
 }
 
 export function newSave(lang: Lang, settings: Settings): Save {

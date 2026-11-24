@@ -3,6 +3,14 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+/** Render layers: 0 = solid world, 1 = invisible tap targets, 2 = see-through effects (glass, dust, ghosts). */
+export const LAYER_HIT = 1;
+export const LAYER_FX = 2;
+export type Quality = 'high' | 'medium' | 'low';
 
 /**
  * Black & white "old film" look in one pass: everything goes grayscale except strongly
@@ -70,6 +78,12 @@ export class Engine {
   composer: EffectComposer;
   film: ShaderPass;
   private renderPass: RenderPass;
+  private gtao: GTAOPass;
+  private bloom: UnrealBloomPass;
+  /** camera used by the AO pass: sees only solid geometry (layer 0) */
+  private aoCamera: THREE.PerspectiveCamera;
+  envTex: THREE.Texture;
+  quality: Quality = 'high';
   scene: THREE.Scene = new THREE.Scene();
   private raycaster = new THREE.Raycaster();
   private clock = new THREE.Clock();
@@ -100,9 +114,21 @@ export class Engine {
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(62, 1, 0.05, 120);
+    this.camera.layers.enable(LAYER_FX);
+    this.aoCamera = new THREE.PerspectiveCamera(62, 1, 0.05, 120);
+    this.raycaster.layers.enableAll();
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
     this.composer = new EffectComposer(this.renderer);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
+    this.gtao = new GTAOPass(this.scene, this.aoCamera, 2, 2);
+    this.gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.4, thickness: 1.2, scale: 1.2, samples: 12 });
+    this.gtao.blendIntensity = 0.9;
+    this.composer.addPass(this.gtao);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.45, 0.55, 0.9);
+    this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
     this.film = new ShaderPass(FilmShader);
     this.composer.addPass(this.film);
@@ -122,11 +148,31 @@ export class Engine {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.film.uniforms.resolution.value.set(w, h);
+    const pr = this.renderer.getPixelRatio();
+    this.bloom.resolution.set((w * pr) / 2, (h * pr) / 2);
   }
 
   setScene(scene: THREE.Scene) {
     this.scene = scene;
     this.renderPass.scene = scene;
+    this.gtao.scene = scene;
+    if (!scene.environment) {
+      scene.environment = this.envTex;
+      if (scene.userData.envIntensity === undefined) scene.environmentIntensity = 0.12;
+      else scene.environmentIntensity = scene.userData.envIntensity;
+    }
+  }
+
+  setQuality(q: Quality) {
+    this.quality = q;
+    this.gtao.enabled = q === 'high';
+    this.bloom.enabled = q !== 'low';
+    const pr = Math.min(window.devicePixelRatio || 1, 2);
+    const ratio = q === 'high' ? Math.min(pr, 1.5) : q === 'medium' ? Math.min(pr, 1.25) : 1;
+    this.renderer.setPixelRatio(ratio);
+    this.composer.setPixelRatio(ratio);
+    this.renderer.shadowMap.type = q === 'low' ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    this.resize();
   }
 
   addUpdater(fn: (dt: number, t: number) => void) {
@@ -217,6 +263,16 @@ export class Engine {
     let flick = 1;
     if (this.flickerAmt > 0) flick = 1 - this.flickerAmt * (Math.random() < 0.08 ? 0.6 : Math.random() * 0.12);
     this.film.uniforms.flicker.value = flick;
+    if (this.gtao.enabled) {
+      this.aoCamera.position.copy(this.camera.position);
+      this.aoCamera.quaternion.copy(this.camera.quaternion);
+      this.aoCamera.fov = this.camera.fov;
+      this.aoCamera.aspect = this.camera.aspect;
+      this.aoCamera.near = this.camera.near;
+      this.aoCamera.far = this.camera.far;
+      this.aoCamera.updateProjectionMatrix();
+      this.aoCamera.updateMatrixWorld();
+    }
     this.composer.render();
   }
 

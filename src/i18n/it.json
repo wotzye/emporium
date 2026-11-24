@@ -233,5 +233,10 @@
   "label.radio": "Radio TV",
   "label.ada": "Casa di Ada",
   "label.valigia": "Valigia dei Sogni",
-  "label.stazione": "Stazione"
+  "label.stazione": "Stazione",
+  "ui.quality": "Qualità grafica",
+  "ui.q.high": "Alta",
+  "ui.q.medium": "Media",
+  "ui.q.low": "Bassa",
+  "bar.closed": "CHIUSO"
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { box, cyl, mat, mesh, canvasTex, noise, textPlane, hitBox, cursedMat } from '../builders';
+import { box, cyl, mat, mesh, canvasTex, noise, textPlane, hitBox, cursedMat, fx } from '../builders';
+import { LAYER_FX } from '../engine';
 import { t } from '../i18n';
 
 interface Building {
@@ -99,6 +100,7 @@ export function createMap(g: Game): Location {
     sp.scale.set((cw / 96) * k, k, 1);
     sp.position.set(x, y, z);
     sp.renderOrder = 10;
+    sp.layers.set(LAYER_FX);
     if (target) labelFor.push([sp, target]);
     else sp.userData.noPick = true;
     scene.add(sp);
@@ -230,7 +232,7 @@ export function createMap(g: Game): Location {
   );
   alleyFog.position.set(12.5, 1.6, -2.5);
   alleyFog.rotation.y = -Math.PI / 2;
-  alleyFog.userData.noPick = true;
+  fx(alleyFog);
   scene.add(alleyFog);
   scene.add(box(0.6, 5, 6, mat(0x5b5853), 13.8, 2.5, -3.5));
   const vs = textPlane([t('sign.valigia')], 2.2, 0.45, { bg: '#1a1816', fg: '#e8e2d4', size: 60, px: 96 });

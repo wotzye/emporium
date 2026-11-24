@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { room, box, cyl, sphere, mat, mesh, woodTex, wallTex, textPlane, hitBox, figure, cursedMat, bulb } from '../builders';
+import { room, box, cyl, sphere, mat, mesh, woodTex, wallTex, textPlane, hitBox, figure, cursedMat, bulb, fx } from '../builders';
 import { t } from '../i18n';
 
 export function createEmporio(g: Game): Location {
@@ -101,7 +101,7 @@ export function createEmporio(g: Game): Location {
   const glass = mesh(new THREE.PlaneGeometry(3.6, 1.55), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.08, roughness: 0.05, metalness: 0.9 }), caseX - 0.36, 1.4, caseZ);
   glass.rotation.y = -Math.PI / 2;
   glass.castShadow = false;
-  glass.userData.noPick = true;
+  fx(glass);
   scene.add(glass);
   const caseLight = new THREE.SpotLight(0xfff2dd, 6, 4, 0.9, 0.7, 1.5);
   caseLight.position.set(2.2, 2.6, caseZ);
