@@ -3,6 +3,7 @@ import { prop } from '../models';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, cyl, mat, mesh, rbox, lathe, dust, textPlane, hitBox, bulb, lightCone, canvasTex, noise, woodMaterial, plasterMaterial, liveCanvas } from '../builders';
 import { createAdaGhost } from '../characters';
+import { realEttore, realCharacters } from '../characters_real';
 import { t } from '../i18n';
 import { wallpaper, sleep } from './ada_common';
 
@@ -65,7 +66,47 @@ export function createAdaSoggiorno(g: Game): Location {
     tvGroup.add(rbox(0.55, 0.45, 0.4, 0.04, woodDark, 0, 0.225, 0));
   }
   const screen = liveCanvas(256, 192);
-  const screenMat = new THREE.MeshBasicMaterial({ map: screen.tex, color: 0x111111 });
+  // the picture on the set: a small studio with Ettore's face, filmed live and mixed with the snow
+  const studio = new THREE.Scene();
+  studio.background = new THREE.Color(0x141414);
+  const studioCam = new THREE.PerspectiveCamera(28, 4 / 3, 0.05, 10);
+  const ettoreTv = realCharacters() ? realEttore() : null;
+  if (ettoreTv) {
+    studio.add(ettoreTv.group);
+    const hp = ettoreTv.head.getWorldPosition(new THREE.Vector3());
+    studioCam.position.set(0, hp.y + 0.04, 0.62);
+    studioCam.lookAt(0, hp.y + 0.03, 0);
+    const key = new THREE.SpotLight(0xffffff, 6, 3, 0.6, 0.6, 1.2);
+    key.position.set(0.15, hp.y - 0.5, 0.6);
+    key.target.position.set(0, hp.y, 0);
+    studio.add(key, key.target, new THREE.AmbientLight(0xffffff, 0.15));
+  }
+  const rt = new THREE.WebGLRenderTarget(256, 192);
+  const screenMat = new THREE.ShaderMaterial({
+    uniforms: { tFace: { value: rt.texture }, tIdle: { value: screen.tex }, time: { value: 0 }, face: { value: 0 }, on: { value: 0 }, chan: { value: 1 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `
+      uniform sampler2D tFace, tIdle; uniform float time, face, on, chan; varying vec2 vUv;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+      void main(){
+        if (on < 0.5) { gl_FragColor = texture2D(tIdle, vUv); return; }
+        vec2 uv = vUv;
+        // bulging tube, wobbling horizontal sync
+        vec2 cc = uv - 0.5; uv = 0.5 + cc * (1.0 + dot(cc, cc) * 0.25);
+        uv.x += sin(uv.y * 40.0 + time * 9.0) * 0.004 * (1.0 - face * 0.5) + (h(vec2(floor(uv.y * 90.0), floor(time * 24.0))) - 0.5) * 0.012;
+        float snow = h(floor(uv * vec2(256.0, 192.0)) + floor(time * 30.0) * 13.1);
+        vec3 img = texture2D(tFace, uv).rgb;
+        float l = dot(img, vec3(0.3, 0.59, 0.11));
+        // the face comes and goes, as if the signal can't quite hold
+        float hold = face * (0.75 + 0.25 * sin(time * 3.1) * sin(time * 1.7));
+        vec3 c = mix(vec3(snow) * 0.85, vec3(l) * 1.6 + snow * 0.15, hold);
+        float roll = smoothstep(0.0, 0.05, abs(fract(uv.y - time * 0.25) - 0.5) - 0.42);
+        c *= 0.75 + 0.25 * roll;
+        c *= 0.85 + 0.15 * sin(uv.y * 600.0);
+        if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) c = vec3(0.0);
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  });
   const screenMesh = mesh(new THREE.PlaneGeometry(screenW, screenH), screenMat, -0.04, screenY, screenZ, false);
   tvGroup.add(screenMesh);
   // the channel knob, big enough for a thumb
@@ -86,6 +127,20 @@ export function createAdaSoggiorno(g: Game): Location {
   let face = g.flag('a.tv') ? 1 : 0;
   const drawScreen = (time: number) => {
     const c = screen.ctx;
+    screenMat.uniforms.on.value = tvOn ? 1 : 0;
+    screenMat.uniforms.time.value = time;
+    screenMat.uniforms.face.value = face;
+    if (tvOn) {
+      if (ettoreTv && face > 0.01) {
+        ettoreTv.update(time, 1);
+        const r = g.engine.renderer;
+        const prev = r.getRenderTarget();
+        r.setRenderTarget(rt);
+        r.render(studio, studioCam);
+        r.setRenderTarget(prev);
+      }
+      return;
+    }
     if (!tvOn) {
       c.fillStyle = '#151515';
       c.fillRect(0, 0, 256, 192);
@@ -472,7 +527,6 @@ export function createAdaSoggiorno(g: Game): Location {
       if (tvOn) {
         drawScreen(time);
         tvLight.intensity = 1.6 + Math.random() * 1.2;
-        screenMat.color.setScalar(1);
       }
       if (ada.group.visible) ada.update(dt, time, g.engine.camera);
     },

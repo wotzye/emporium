@@ -57,10 +57,15 @@ export function createEmporio(g: Game): Location {
   scene.add(motes.points);
 
   // ---------------- counter ----------------
-  scene.add(rbox(3.6, 0.98, 0.6, 0.03, woodMid, -0.6, 0.49, -1.3));
-  for (let i = 0; i < 4; i++) scene.add(rbox(0.75, 0.6, 0.03, 0.03, woodDark, -1.95 + i * 0.9, 0.5, -0.99));
-  scene.add(rbox(3.8, 0.05, 0.7, 0.02, woodDark, -0.6, 1.0, -1.3));
-  scene.add(rbox(3.8, 0.015, 0.02, 0.006, brass, -0.6, 1.0, -0.95));
+  // a tall old shop counter: you only ever see him from the chest up
+  const CU = 0.34; // how much higher than a normal counter
+  scene.add(rbox(3.6, 0.98 + CU, 0.6, 0.03, woodMid, -0.6, (0.98 + CU) / 2, -1.3));
+  for (let i = 0; i < 4; i++) scene.add(rbox(0.75, 0.6 + CU * 0.8, 0.03, 0.03, woodDark, -1.95 + i * 0.9, 0.5 + CU / 2, -0.99));
+  const onCounter = new THREE.Group();
+  onCounter.position.y = CU;
+  scene.add(onCounter);
+  onCounter.add(rbox(3.8, 0.05, 0.7, 0.02, woodDark, -0.6, 1.0, -1.3));
+  onCounter.add(rbox(3.8, 0.015, 0.02, 0.006, brass, -0.6, 1.0, -0.95));
   // brass till
   const till = new THREE.Group();
   till.add(rbox(0.42, 0.26, 0.36, 0.04, brass, 0, 0.13, 0));
@@ -70,7 +75,7 @@ export function createEmporio(g: Game): Location {
   till.add(textPlane(['£ 0'], 0.2, 0.06, { bg: '#111', fg: '#e8e0c8', size: 30, px: 48 }).translateY(0.42).translateZ(0.02));
   till.position.set(0.6, 1.025, -1.4);
   till.rotation.y = -0.2;
-  scene.add(till);
+  onCounter.add(till);
   // ledger
   const ledger = new THREE.Group();
   ledger.add(rbox(0.42, 0.03, 0.3, 0.01, mat(0x2a1d14, { roughness: 0.6 }), 0, 0, 0));
@@ -96,29 +101,29 @@ export function createEmporio(g: Game): Location {
   ledger.add(cyl(0.004, 0.004, 0.17, mat(0x111111), 0.1, 0.022, 0.04, 6).rotateZ(Math.PI / 2).rotateY(0.6));
   ledger.position.set(-1.2, 1.04, -1.2);
   ledger.rotation.y = 0.2;
-  scene.add(ledger);
+  onCounter.add(ledger);
   // service bell
-  scene.add(lathe([[0, 0], [0.05, 0], [0.05, 0.006], [0.045, 0.02], [0.03, 0.045], [0.008, 0.055], [0.006, 0.07], [0, 0.072]], brass, -2.1, 1.025, -1.15, 20));
+  onCounter.add(lathe([[0, 0], [0.05, 0], [0.05, 0.006], [0.045, 0.02], [0.03, 0.045], [0.008, 0.055], [0.006, 0.07], [0, 0.072]], brass, -2.1, 1.025, -1.15, 20));
 
   // candles in brass holders
   const candles: THREE.PointLight[] = [];
   let candleBase = 2.6;
   const flames: THREE.Mesh[] = [];
   for (const x of [-1.9, 0.0]) {
-    scene.add(lathe([[0, 0], [0.07, 0], [0.07, 0.01], [0.02, 0.03], [0.015, 0.12], [0.035, 0.14], [0.03, 0.15], [0, 0.15]], brass, x, 1.025, -1.15, 20));
+    onCounter.add(lathe([[0, 0], [0.07, 0], [0.07, 0.01], [0.02, 0.03], [0.015, 0.12], [0.035, 0.14], [0.03, 0.15], [0, 0.15]], brass, x, 1.025, -1.15, 20));
     const candle = lathe([[0, 0], [0.028, 0], [0.03, 0.02], [0.029, 0.15], [0.034, 0.16], [0.026, 0.19], [0.0, 0.19]], new THREE.MeshStandardMaterial({ color: 0xe6e0d0, roughness: 0.5, emissive: 0xffe0b0, emissiveIntensity: 0.15 }), x, 1.17, -1.15, 16);
-    scene.add(candle);
+    onCounter.add(candle);
     const flame = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfff0c8 }));
     flame.scale.y = 2.4;
     flame.position.set(x, 1.39, -1.15);
     flame.userData.noPick = true;
-    scene.add(flame);
+    onCounter.add(flame);
     flames.push(flame);
     const pl = new THREE.PointLight(0xffc887, 2.6, 6, 1.4);
     pl.position.set(x, 1.42, -1.1);
     pl.castShadow = x === 0.0;
     pl.shadow.mapSize.set(512, 512);
-    scene.add(pl);
+    onCounter.add(pl);
     candles.push(pl);
   }
 
@@ -135,7 +140,7 @@ export function createEmporio(g: Game): Location {
   scene.add(rbox(2.8, 0.05, 0.05, 0.02, brass, -0.8, 2.62, -2.75));
 
   // the Merchant: sculpted, never fully lit, always watching
-  const merchantC = createMerchant({ y: 1.07, z: 0.82, spread: 0.24 });
+  const merchantC = createMerchant({ y: 1.07 + CU, z: 0.82, spread: 0.24 });
   const merchant = merchantC.group;
   // rim light from behind and above: he is a silhouette cut out of the dark
   const rim = new THREE.SpotLight(0xe8eef5, 9, 4.2, 0.32, 0.6, 1.2);
@@ -380,7 +385,7 @@ export function createEmporio(g: Game): Location {
   const hSlotAda = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[4], 'slotAda');
   scene.add(hSlotAda);
   const hShelves = hitBox(0.6, 2.4, 4.6, -3.2, 1.3, -0.5, 'shelves');
-  const hLedger = hitBox(0.6, 0.3, 0.5, -1.2, 1.1, -1.2, 'ledger');
+  const hLedger = hitBox(0.6, 0.3, 0.5, -1.2, 1.1 + CU, -1.2, 'ledger');
   scene.add(hMerchant, hCase, hSlot, hShelves, hLedger);
 
   const giveTorch = async () => {
@@ -508,7 +513,7 @@ export function createEmporio(g: Game): Location {
     startView: 'main',
     views: {
       main: { pos: [0, 1.6, 2.5], look: [0, 1.25, -2], yaw: 40, pitch: 15 },
-      counter: { pos: [-0.75, 1.5, 0.2], look: [-0.8, 1.45, -2.1], parent: 'main', yaw: 20, pitch: 10 },
+      counter: { pos: [-0.75, 1.75, 0.3], look: [-0.8, 1.7, -2.1], parent: 'main', yaw: 20, pitch: 10 },
       case: { pos: [1.35, 1.35, -0.4], look: [3.1, 1.05, -0.4], parent: 'main', yaw: 30, pitch: 14, fov: 58 },
     },
     hotspots,

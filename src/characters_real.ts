@@ -161,13 +161,17 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
   const coat = lathe([[shoulderW * 0.86, pel.y - 0.1], [0.27, 0.35], [0.3, 0.06], [0.3, 0.04]], suit, 0, 0, pel.z, 28);
   coat.scale.z = 0.7;
   g.add(coat);
-  // fedora on the head bone
+  // a tall black top hat, a little too tall, with a dull silk band
   const head = b.Head;
   const hp = wp(head);
-  const hat = lathe([[0, 0], [0.2, 0], [0.215, 0.008], [0.2, 0.015], [0.12, 0.02], [0.115, 0.11], [0.1, 0.135], [0.05, 0.13], [0, 0.12]], new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.5 }), 0, hp.y + 0.135, hp.z - 0.005, 28);
-  hat.add(mesh(new THREE.CylinderGeometry(0.118, 0.118, 0.025, 28, 1, true), mat(0x222222), 0, 0.035, 0, false));
-  hat.rotation.x = -0.12;
-  hat.scale.setScalar(0.92);
+  const silk = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.35, metalness: 0.05 });
+  const hat = new THREE.Group();
+  hat.add(lathe([[0, 0], [0.2, 0], [0.215, 0.006], [0.205, 0.016], [0.118, 0.018], [0, 0.018]], silk, 0, 0, 0, 32)); // brim
+  hat.add(lathe([[0.108, 0.012], [0.112, 0.08], [0.118, 0.2], [0.124, 0.26], [0, 0.262]], silk, 0, 0, 0, 32)); // crown, slightly flared
+  hat.add(mesh(new THREE.CylinderGeometry(0.113, 0.111, 0.04, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d1a18, roughness: 0.8, side: THREE.DoubleSide }), 0, 0.04, 0, false)); // band
+  hat.position.set(0, hp.y + 0.115, hp.z - 0.01);
+  hat.rotation.x = -0.08;
+  hat.scale.set(0.93, 1, 0.93);
   g.add(hat);
   head.attach(hat);
   const eyes = eyesMaterial(body);
@@ -437,58 +441,195 @@ export function realBarberGhost(scare = false): Character & { setOpacity: (v: nu
 }
 
 // ======================================================================
-// Ada: an old widow in a dark dress, grey hair in a bun. Seen only as a ghost.
+// Ada: an old widow, long grey hair loose over her face, a nightgown that moves on its own.
+// Half there: a pale translucent body with a cold glow at the edges, wisps where her feet should be.
 export function realAdaGhost(): Character & { setOpacity: (v: number) => void } {
   const { g, body, b } = base('female', 0.92);
-  dress(body, { cloth: '#34302c', clothRough: 0.9, puff: 0.02, skinTint: '#e2ddd5', skinBright: 1.05, bare: /^lowerarm_/ });
+  dress(body, { cloth: '#c9c5bd', clothRough: 0.95, puff: 0.045, skinTint: '#d8dde0', skinBright: 1.0, bare: /^lowerarm_/, face: { sockets: 1, gaunt: 1 } });
+  const faceU = body.userData.faceU;
+  if (faceU) faceU.uScare.value = 0.55; // dark hollow eyes, veins, the mouth a little open
   browColor(body, 0x8d8983);
-  attachHair(body, 'hairBuns', 0x9c9890);
-  // hunched a little, arms reaching out — she wants them back
-  turnWorld(b.spine_02, X, 0.12);
-  turnWorld(b.spine_03, X, 0.08);
-  turnWorld(b.neck_01, X, 0.15);
+  const hair = attachHair(body, 'hairLong', 0xb9b6b0);
+  // long grey hair hanging straight down over the face, parted just enough to show one eye
+  const strands = canvasTex(256, 512, (c, w, h) => {
+    c.clearRect(0, 0, w, h);
+    for (let i = 0; i < 260; i++) {
+      let x = Math.random() * w;
+      if (Math.abs(x - w * 0.42) < 16 && Math.random() < 0.85) continue; // the parting
+      const shade = 150 + Math.random() * 70;
+      c.strokeStyle = `rgba(${shade},${shade - 4},${shade - 10},${0.35 + Math.random() * 0.5})`;
+      c.lineWidth = 0.8 + Math.random() * 2.2;
+      c.beginPath();
+      c.moveTo(x, 0);
+      const len = h * (0.55 + Math.random() * 0.45);
+      c.bezierCurveTo(x + (Math.random() - 0.5) * 20, len * 0.4, x + (Math.random() - 0.5) * 30, len * 0.7, x + (Math.random() - 0.5) * 40, len);
+      c.stroke();
+    }
+  });
+  const hairVeil = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.5, 6, 8), new THREE.MeshStandardMaterial({ map: strands, transparent: true, alphaTest: 0.08, side: THREE.DoubleSide, roughness: 0.8, depthWrite: false }));
+  {
+    // curve it around the face
+    const p = hairVeil.geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < p.count; i++) p.setZ(i, -Math.pow(p.getX(i) / 0.12, 2) * 0.06);
+    hairVeil.geometry.computeVertexNormals();
+  }
+  const hp0 = wp(b.Head);
+  hairVeil.position.set(0, hp0.y - 0.12, hp0.z + 0.11);
+  g.add(hairVeil);
+  b.Head.attach(hairVeil);
+  const veilBase = (hairVeil.geometry.attributes.position as THREE.BufferAttribute).array.slice() as Float32Array;
+
+  // slumped, head hanging forward and to the side, arms reaching
+  turnWorld(b.spine_02, X, 0.14);
+  turnWorld(b.spine_03, X, 0.1);
+  turnWorld(b.neck_01, X, 0.28);
   for (const side of ['l', 'r'] as const) {
     const sx = side === 'l' ? 1 : -1;
-    const s = wp(b['upperarm_' + side]);
-    armTo(b, side, new THREE.Vector3(s.x + sx * 0.03, s.y - 0.2, s.z + 0.14), new THREE.Vector3(s.x - sx * 0.02, s.y - 0.18, s.z + 0.42));
-    curlFingers(b, side, 0.35);
+    const sh = wp(b['upperarm_' + side]);
+    armTo(b, side, new THREE.Vector3(sh.x + sx * 0.05, sh.y - 0.22, sh.z + 0.12), new THREE.Vector3(sh.x - sx * 0.01, sh.y - 0.24, sh.z + 0.42));
+    curlFingers(b, side, 0.55);
   }
-  turnWorld(b.Head, Z, 0.18);
+  turnWorld(b.Head, Z, 0.32);
   saveRest(b);
-  // long skirt down to the floor
-  const pe = wp(b.pelvis);
-  const skirtTex = canvasTex(256, 256, (c, w, h) => {
-    c.fillStyle = '#34302c';
-    c.fillRect(0, 0, w, h);
-    noise(c, w, h, 6000, 0.12);
-    for (let x = 0; x < w; x += 18) {
-      c.fillStyle = 'rgba(0,0,0,0.25)';
-      c.fillRect(x, 0, 6, h);
-    }
-  });
-  g.add(lathe([[0.14, pe.y + 0.12], [0.17, pe.y - 0.05], [0.25, 0.45], [0.3, 0.02], [0.29, 0.0]], new THREE.MeshStandardMaterial({ map: skirtTex, roughness: 0.9, side: THREE.DoubleSide }), 0, 0, pe.z, 28));
-  const mats: THREE.Material[] = [];
-  g.traverse((o) => {
+
+  // translucent: all body materials fade together
+  const solid: THREE.Material[] = [];
+  body.traverse((o) => {
     const m = (o as THREE.Mesh).material as THREE.Material | undefined;
-    if (m && !mats.includes(m)) {
+    if (m && !solid.includes(m)) {
       m.transparent = true;
-      mats.push(m);
+      (m as THREE.MeshStandardMaterial).depthWrite = true;
+      solid.push(m);
     }
   });
-  const eyes = eyesMaterial(body);
-  if (eyes) eyes.color.setScalar(0.05); // no eyes, only darkness
+  // a cold fresnel glow over the same skeleton, slightly larger: the ghost's edge
+  const uni = { time: { value: 0 }, opacity: { value: 0 }, floorY: { value: 0 } };
+  const glow = ghostMaterial(uni, 0.02);
+  glow.polygonOffset = true;
+  glow.polygonOffsetFactor = -2;
+  glow.polygonOffsetUnits = -2;
+  body.traverse((o) => {
+    const sm = o as THREE.SkinnedMesh;
+    if (!sm.isSkinnedMesh || !/superhero/i.test(((sm.material as THREE.Material).name || '') + 'superhero')) return;
+    if (/eye/i.test(sm.name)) return;
+    if (/hair|brow/i.test(sm.name + (sm.material as THREE.Material).name)) return;
+    const shell = new THREE.SkinnedMesh(sm.geometry, glow);
+    shell.bind(sm.skeleton, sm.bindMatrix);
+    shell.frustumCulled = false;
+    shell.renderOrder = 3;
+    sm.parent!.add(shell);
+  });
+  solid.push(hairVeil.material as THREE.Material);
+  if (hair) {
+    const hm = (hair as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    hm.transparent = true;
+    solid.push(hm);
+  }
+
+  // the nightgown: long, ragged at the hem, moving as if under water
+  const pe = wp(b.pelvis);
+  const sh = wp(b.upperarm_l).y;
+  const gownTex = canvasTex(256, 512, (c, w, h) => {
+    c.fillStyle = '#ddd8ce';
+    c.fillRect(0, 0, w, h);
+    noise(c, w, h, 8000, 0.12);
+    for (let x = 0; x < w; x += 11) {
+      c.fillStyle = 'rgba(0,0,0,0.12)';
+      c.fillRect(x, 0, 4, h);
+    }
+    // stains and a torn, see-through hem
+    for (let i = 0; i < 14; i++) {
+      c.fillStyle = `rgba(80,70,55,${0.1 + Math.random() * 0.2})`;
+      c.beginPath();
+      c.arc(Math.random() * w, h * 0.5 + Math.random() * h * 0.5, 8 + Math.random() * 30, 0, Math.PI * 2);
+      c.fill();
+    }
+    const gr = c.createLinearGradient(0, h * 0.72, 0, h);
+    gr.addColorStop(0, 'rgba(0,0,0,0)');
+    gr.addColorStop(1, 'rgba(0,0,0,1)');
+    c.globalCompositeOperation = 'destination-out';
+    c.fillStyle = gr;
+    c.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 6) c.fillRect(x, h * (0.8 + Math.random() * 0.2), 4, h);
+  });
+  gownTex.wrapS = THREE.RepeatWrapping;
+  const gownMat = new THREE.MeshStandardMaterial({ map: gownTex, roughness: 0.95, side: THREE.DoubleSide, transparent: true, alphaTest: 0.02, depthWrite: false });
+  const prof: [number, number][] = [[0.38, -0.05], [0.32, 0.25], [0.25, pe.y - 0.1], [0.21, pe.y + 0.1], [0.2, pe.y + 0.25], [0.22, sh - 0.14], [0.215, sh - 0.04], [0.12, sh + 0.03], [0.06, sh + 0.06]];
+  const gownGeo = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)).reverse(), 40, 0, Math.PI * 2);
+  // uv.y from the profile order: make the ragged (bottom of the texture) edge sit at the hem
+  const uv = gownGeo.attributes.uv as THREE.BufferAttribute;
+  const pa = gownGeo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, THREE.MathUtils.clamp(pa.getY(i) / (sh + 0.04), 0, 1));
+  const gown = new THREE.Mesh(gownGeo, gownMat);
+  gown.position.set(0, 0, pe.z);
+  gown.scale.z = 0.78;
+  const base0 = (gownGeo.attributes.position as THREE.BufferAttribute).array.slice() as Float32Array;
+  g.add(gown);
+  solid.push(gownMat);
+
+  const look = makeLook(b.Head, g, 0.5, 0.3);
+  let glitch = 0;
+  const setOpacity = (v: number) => {
+    for (const m of solid) (m as THREE.MeshStandardMaterial).opacity = v * 0.78;
+    uni.opacity.value = v;
+    g.visible = v > 0.01;
+  };
   return {
     group: g,
     head: b.Head,
     setEyes: () => {},
-    setOpacity: (v: number) => {
-      mats.forEach((m) => ((m as THREE.MeshStandardMaterial).opacity = v));
-      g.visible = v > 0.01;
+    setOpacity,
+    update: (dt, t, camera) => {
+      uni.time.value = t;
+      // the gown ripples, more towards the hem
+      const pos = gownGeo.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < pos.count; i++) {
+        const x = base0[i * 3], y = base0[i * 3 + 1], z = base0[i * 3 + 2];
+        const k = Math.max(0, 1 - y / (pe.y + 0.1));
+        const a = Math.atan2(z, x);
+        const w = Math.sin(a * 5 + t * 1.6 + y * 3) * 0.035 * k + Math.sin(a * 11 - t * 2.3) * 0.012 * k;
+        pos.setXYZ(i, x * (1 + w * 3), y + Math.sin(t * 1.1 + a * 3) * 0.01 * k, z * (1 + w * 3));
+      }
+      pos.needsUpdate = true;
+      const vp = hairVeil.geometry.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < vp.count; i++) {
+        const y = veilBase[i * 3 + 1];
+        const k = (0.25 - y) / 0.5;
+        vp.setX(i, veilBase[i * 3] + Math.sin(t * 0.8 + y * 9) * 0.012 * k);
+      }
+      vp.needsUpdate = true;
+      // floating, and every so often a jerk, as if a frame of film were missing
+      glitch -= dt;
+      if (glitch < -2.5 - Math.random() * 4) glitch = 0.12;
+      g.position.y = Math.sin(t * 1.3) * 0.03 + (glitch > 0 ? 0.04 : 0);
+      g.position.x += glitch > 0 ? (Math.random() - 0.5) * 0.02 : 0;
+      look(camera, 0.015, 0.32 + Math.sin(t * 0.5) * 0.06);
+      for (const side of ['l', 'r'] as const) {
+        restore(b['lowerarm_' + side]);
+        turnWorld(b['lowerarm_' + side], X.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 0.9 + (side === 'l' ? 0 : 1.7)) * 0.08);
+      }
     },
-    update: (_dt, t) => {
-      g.position.y = Math.sin(t * 1.7) * 0.01;
-      restore(b.Head);
-      turnWorld(b.Head, Z.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 0.6) * 0.08 + 0.18);
+  };
+}
+
+/** Ettore, for the television: an old man's face, grey and hollow-eyed, only ever seen through snow. */
+export function realEttore() {
+  const { g, body, b } = base('male', 1.0);
+  dress(body, { cloth: '#3a3632', clothRough: 0.9, skinTint: '#cfd2d2', skinBright: 0.95, face: { sockets: 1, gaunt: 1 } });
+  if (body.userData.faceU) body.userData.faceU.uScare.value = 0.35;
+  browColor(body, 0x9a968f);
+  attachHair(body, 'hairParted', 0x9f9b94);
+  saveRest(b);
+  const head = b.Head;
+  return {
+    group: g,
+    head,
+    /** the head turns slowly towards the viewer, the jaw (well, the head) nods as it speaks */
+    update: (t: number, talking: number) => {
+      restore(head);
+      turnWorld(head, Y, Math.sin(t * 0.4) * 0.12);
+      turnWorld(head, X, Math.sin(t * 7) * 0.04 * talking + 0.05);
+      turnWorld(head, Z, 0.08 + Math.sin(t * 0.9) * 0.03);
     },
   };
 }
