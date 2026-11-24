@@ -787,6 +787,7 @@ export function createBarbiere(g: Game): Location {
 
   return {
     id: 'barbiere',
+    next: ['barbiere_retro'],
     nameKey: 'place.barbiere',
     scene,
     drone: 'barbiere',

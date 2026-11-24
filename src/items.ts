@@ -32,6 +32,15 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'crank',
     svg: s('<path d="M8 30 H24 V14"/><path d="M24 14 H30"/><rect x="28" y="9" width="5" height="10" rx="2"/><circle cx="8" cy="30" r="3"/>'),
   },
+  crutch: {
+    id: 'crutch',
+    svg: s('<path d="M14 4 H26"/><path d="M16 4 L19 30 M24 4 L21 30"/><path d="M17 16 H23"/><path d="M20 30 V37"/>'),
+  },
+  glasses: {
+    id: 'glasses',
+    cursed: true,
+    svg: s('<circle cx="12" cy="22" r="6"/><circle cx="28" cy="22" r="6"/><path d="M18 21 Q20 18 22 21"/><path d="M6 21 L3 15 M34 21 L37 15"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mesh, rbox, lathe, fx, mat, canvasTex, noise, normalFromCanvas } from './builders';
-import { realCharacters, realMerchant, realBruno, realLisa, realBarberGhost } from './characters_real';
+import { realCharacters, realMerchant, realBruno, realLisa, realBarberGhost, realAdaGhost } from './characters_real';
 
 /**
  * Procedurally sculpted characters. Faces are spheres pushed and pulled into shape
@@ -662,8 +662,8 @@ export function createLisa(floorY = 0): Character & { setOpacity: (v: number) =>
 // ======================================================================
 // The old barber (seen only in the mirror)
 // ======================================================================
-export function createBarberGhost(): Character & { setOpacity: (v: number) => void } {
-  if (realCharacters()) return realBarberGhost();
+export function createBarberGhost(scare = false): Character & { setOpacity: (v: number) => void } {
+  if (realCharacters()) return realBarberGhost(scare);
   const g = new THREE.Group();
   const coatTex = canvasTex(256, 256, (c, w, h) => {
     c.fillStyle = '#e3dfd6';
@@ -728,4 +728,12 @@ export function createBarberGhost(): Character & { setOpacity: (v: number) => vo
       g.position.y = Math.sin(t * 2.1) * 0.005;
     },
   };
+}
+
+/** Ada's ghost (falls back to a pale ghost figure if the models aren't there). */
+export function createAdaGhost(): Character & { setOpacity: (v: number) => void } {
+  if (realCharacters()) return realAdaGhost();
+  const c = createLisa(0);
+  c.group.scale.setScalar(1.15);
+  return c;
 }

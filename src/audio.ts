@@ -166,7 +166,7 @@ export class Audio {
   }
 
   // ---------------- Effects ----------------
-  sfx(name: 'click' | 'unlock' | 'wrong' | 'bell' | 'creak' | 'thud' | 'steam' | 'whisper' | 'pickup' | 'switch' | 'drawer' | 'heart' | 'paper' | 'seal' | 'glass' | 'tick' | 'scrape' | 'rub' | 'valve' | 'hiss' | 'trapdoor' | 'sheet' | 'clunk' | 'water' | 'breath') {
+  sfx(name: 'click' | 'unlock' | 'wrong' | 'bell' | 'creak' | 'thud' | 'steam' | 'whisper' | 'pickup' | 'switch' | 'drawer' | 'heart' | 'paper' | 'seal' | 'glass' | 'tick' | 'scrape' | 'rub' | 'valve' | 'hiss' | 'trapdoor' | 'sheet' | 'clunk' | 'water' | 'breath' | 'whistle') {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t = this.now;
@@ -181,6 +181,34 @@ export class Audio {
     if (rec[name]?.()) return;
     if (name === 'trapdoor') this.sample('chains', { gain: 0.8, dur: 3 });
     switch (name) {
+      case 'whistle': {
+        // a kettle starting to scream
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(1500, t);
+        o.frequency.linearRampToValueAtTime(2300, t + 1.2);
+        const o2 = ctx.createOscillator();
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(1530, t);
+        o2.frequency.linearRampToValueAtTime(2360, t + 1.2);
+        const n = this.noiseSrc();
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 2200;
+        f.Q.value = 3;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.8);
+        g.gain.setValueAtTime(0.12, t + 2.6);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+        o.connect(g);
+        o2.connect(g);
+        n.connect(f).connect(g);
+        g.connect(out);
+        o.start(t); o2.start(t); n.start(t);
+        o.stop(t + 3.3); o2.stop(t + 3.3); n.stop(t + 3.3);
+        break;
+      }
       case 'click': {
         const o = ctx.createOscillator();
         o.type = 'square';

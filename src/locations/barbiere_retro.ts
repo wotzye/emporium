@@ -158,7 +158,7 @@ export function createBarbiereRetro(g: Game): Location {
     small.update();
   };
   drawSmall();
-  const sm = mesh(new THREE.PlaneGeometry(0.42, 0.52), new THREE.MeshStandardMaterial({ map: small.tex, roughness: 0.2, emissive: 0xffffff, emissiveMap: small.tex, emissiveIntensity: 0.08 }), -1.1, 1.55, -1.785, false);
+  const sm = mesh(new THREE.PlaneGeometry(0.42, 0.52), new THREE.MeshStandardMaterial({ map: small.tex, roughness: 0.2, emissive: 0xffffff, emissiveMap: small.tex, emissiveIntensity: 0.12 }), -1.1, 1.55, -1.776, false);
   scene.add(sm);
   scene.add(rbox(0.48, 0.58, 0.02, 0.01, woodDark, -1.1, 1.55, -1.795));
   // towel rack with a cloth
@@ -288,6 +288,8 @@ export function createBarbiereRetro(g: Game): Location {
   arm.add(cyl(0.012, 0.012, 0.14, iron, 0.07, 0, 0, 8).rotateZ(Math.PI / 2));
   arm.add(cyl(0.018, 0.018, 0.07, woodDark, 0.14, 0.035, 0, 8));
   crankInPlace.add(arm);
+  // a generous invisible grip: a finger anywhere on or around the crank takes hold of it
+  crankInPlace.add(hitBox(0.6, 0.4, 0.6, 0, 0.2, 0, 'crankGrip'));
   crankInPlace.position.set(0.78, 0.04, 0.4);
   crankInPlace.visible = !!g.flag('r.crankIn');
   scene.add(crankInPlace);
@@ -519,7 +521,7 @@ export function createBarbiereRetro(g: Game): Location {
     center: new THREE.Vector3(0.78, 0.25, 0.4),
     when: () => !!g.flag('r.crankIn') && !g.flag('r.trap'),
     onTurn: (d) => {
-      if (d <= 0) return;
+      d = Math.abs(d); // either way round works
       crankTurn += d;
       setTrap();
       if (Math.random() < 0.2) g.audio.sfx('creak');
@@ -540,6 +542,7 @@ export function createBarbiereRetro(g: Game): Location {
   return {
     id: 'barbiere_retro',
     nameKey: 'place.barbiereRetro',
+    next: ['barbiere_cantina'],
     scene,
     drone: 'barbiere',
     startView: 'main',

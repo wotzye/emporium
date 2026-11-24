@@ -327,7 +327,7 @@ export function figure(opts: { height?: number; bulk?: number; hat?: boolean; ap
 }
 
 /** Procedural face for jump-scares: a close, blurred, asymmetric face coming out of the dark. */
-export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno') {
+export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno' | 'ada') {
   const w = (cv.width = 960);
   const h = (cv.height = 540);
   const c = cv.getContext('2d')!;
@@ -344,7 +344,7 @@ export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno') {
     // skin: soft, blotchy
     c.filter = 'blur(10px)';
     const sk = c.createRadialGradient(-20, -60, 20, 0, 0, 300);
-    sk.addColorStop(0, kind === 'barber' ? '#cfcac0' : '#a8a196');
+    sk.addColorStop(0, kind === 'bruno' ? '#a8a196' : kind === 'ada' ? '#dcd8d0' : '#cfcac0');
     sk.addColorStop(0.55, '#6f6a62');
     sk.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = sk;
@@ -402,6 +402,20 @@ export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno') {
       c.fill();
     }
     c.filter = 'none';
+    if (kind === 'ada') {
+      // long grey hair, loose, falling over the face
+      c.filter = 'blur(3px)';
+      c.strokeStyle = 'rgba(205,200,190,0.55)';
+      for (let i = 0; i < 70; i++) {
+        const x0 = -150 + Math.random() * 300;
+        c.lineWidth = 1 + Math.random() * 3;
+        c.beginPath();
+        c.moveTo(x0 * 0.6, -230 + Math.random() * 20);
+        c.bezierCurveTo(x0 * 1.1, -60, x0 * 1.25 + (Math.random() - 0.5) * 40, 120, x0 * 1.2 + (Math.random() - 0.5) * 80, 320);
+        c.stroke();
+      }
+      c.filter = 'none';
+    }
     if (kind === 'bruno') {
       c.filter = 'blur(2px)';
       c.fillStyle = 'rgba(150,8,8,0.85)';

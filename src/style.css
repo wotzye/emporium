@@ -91,6 +91,8 @@ button:active { background: rgba(255,255,255,0.08); }
 #dialog .who.mercante { color: #c9c2b2; }
 #dialog .who.lisa { color: #b9d0dc; font-style: italic; }
 #dialog .who.bruno { color: #ff5a5a; }
+#dialog .who.ada { color: #d6cfe0; font-style: italic; }
+#dialog .who.ettore { color: #a9b4b8; font-style: italic; letter-spacing: 0.35em; }
 #dialog .txt { font-size: calc(16px * var(--fs, 1.3)); line-height: 1.45; min-height: 46px; }
 #dialog .txt.lisa { font-style: italic; color: #d6e3ea; }
 #dialog .more { position: absolute; right: 12px; bottom: 6px; font-size: calc(12px * var(--fs, 1.3)); color: var(--ink-dim); animation: blink 1.1s infinite; }

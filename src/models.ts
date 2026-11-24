@@ -14,6 +14,7 @@ const FILES = {
   hairBuzzed: 'models/Hair_Buzzed.glb',
   beard: 'models/Hair_Beard.glb',
   brows: 'models/Eyebrows_Regular.glb',
+  hairBuns: 'models/Hair_Buns.glb',
   // props (CC0, Poly Haven)
   barberChair: 'models/BarberShopChair_01.glb',
   candleholders: 'models/brass_candleholders.glb',
@@ -35,13 +36,27 @@ const FILES = {
   trashCan: 'models/metal_trash_can.glb',
   cagedLight: 'models/caged_hanging_light.glb',
   ladder: 'models/wooden_ladder_02.glb',
+  // Ada's house
+  tv: 'models/television_02.glb',
+  sofa: 'models/Sofa_01.glb',
+  stove: 'models/electric_stove.glb',
+  kettle: 'models/vintage_electric_kettle.glb',
+  crutches: 'models/vintage_crutches_01.glb',
+  chest: 'models/treasure_chest.glb',
+  spectacles: 'models/round_spectacles.glb',
+  frame2: 'models/fancy_picture_frame_02.glb',
+  fisherHat: 'models/fishermans_hat.glb',
+  console: 'models/ClassicConsole_01.glb',
+  sideboard: 'models/WoodenTable_03.glb',
+  armyCrate: 'models/wooden_military_crate.glb',
+  catStatue: 'models/concrete_cat_statue.glb',
 } as const;
 export type ModelId = keyof typeof FILES;
 
 const cache: Partial<Record<ModelId, GLTF>> = {};
 let loading: Promise<void> | null = null;
 
-const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows'];
+const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns'];
 /** Resolves when the characters are in; props keep loading in the background. */
 export function preloadModels(onProgress?: (k: number) => void) {
   if (loading) return loading;
@@ -98,30 +113,47 @@ export function bones(root: THREE.Object3D) {
   return map;
 }
 
-/** sockets, hollow cheeks and a too-wide grin, drawn straight onto the face in bind space */
-const FACE_GLSL = (f: { sockets?: number; grin?: number; gaunt?: number }) => `
+/**
+ * Painted straight onto the face, in bind space: sockets, hollow cheeks, a too-wide grin —
+ * and, for jumpscares (uScare = 1), black holes for eyes, a gaping mouth and veins.
+ */
+const FACE_GLSL = `
   {
     vec3 p = vObjPos;
     float front = smoothstep(0.03, 0.06, p.z);
-    float sk = 0.0;
+    float sk = 0.0, hole = 0.0, veins = 0.0;
     for (int i = 0; i < 2; i++) {
-      vec2 e = vec2(i == 0 ? -0.034 : 0.034, 1.699);
-      float de = length((p.xy - e) * vec2(1.0, 1.25));
-      sk += 1.0 - smoothstep(0.014, 0.034, de);
-      vec2 ch = vec2(i == 0 ? -0.048 : 0.048, 1.648);
-      diffuseColor.rgb *= 1.0 - ${(f.gaunt ?? 0).toFixed(2)} * 0.35 * (1.0 - smoothstep(0.004, 0.024, length(p.xy - ch))) * front;
+      vec2 e = vec2(i == 0 ? -uEye.x : uEye.x, uEye.y);
+      vec2 dv = (p.xy - e) * vec2(1.0, 1.25);
+      float de = length(dv);
+      sk += 1.0 - smoothstep(0.014, 0.034 + uScare * 0.012, de);
+      hole += 1.0 - smoothstep(0.012, 0.02, de);
+      float ang = atan(dv.y, dv.x);
+      veins += (1.0 - smoothstep(0.0, 0.08, de)) * smoothstep(0.82, 1.0, sin(ang * 9.0 + de * 120.0)) * smoothstep(0.02, 0.03, de);
+      vec2 ch = vec2(i == 0 ? -0.048 : 0.048, uEye.y - 0.051);
+      diffuseColor.rgb *= 1.0 - uGaunt * 0.35 * (1.0 - smoothstep(0.004, 0.024, length(p.xy - ch))) * front;
     }
-    diffuseColor.rgb *= 1.0 - ${(f.sockets ?? 0).toFixed(2)} * 0.55 * clamp(sk, 0.0, 1.0) * front;
+    diffuseColor.rgb *= 1.0 - uSockets * 0.55 * clamp(sk, 0.0, 1.0) * front;
     float w = 0.046;
     float u = p.x / w;
-    float cy = 1.622 + u * u * 0.012;
+    float cy = uMouth + u * u * 0.012;
     float dy = p.y - cy;
     float inside = (1.0 - smoothstep(0.85, 1.0, abs(u))) * smoothstep(0.055, 0.075, p.z + 0.02 * (1.0 - abs(u)));
     float line = (1.0 - smoothstep(0.0012, 0.0032, abs(dy))) * inside;
     float teeth = step(0.0008, dy) * (1.0 - step(0.0052, dy)) * step(0.25, fract(p.x * 140.0)) * (1.0 - smoothstep(0.75, 0.9, abs(u))) * inside;
-    float grin = ${(f.grin ?? 0).toFixed(2)};
-    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.74, 0.64), teeth * grin);
-    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.02), line * grin);
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.74, 0.64), teeth * uGrin);
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.02), line * uGrin);
+    if (uScare > 0.0) {
+      // dead skin, dark veins, pitch-black eyes and a mouth hanging open
+      diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.82, 0.86, 0.84), uScare * vSkin);
+      diffuseColor.rgb *= 1.0 - uScare * 0.6 * clamp(veins, 0.0, 1.0) * front;
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.0), uScare * clamp(hole, 0.0, 1.0) * front);
+      vec2 mo = (p.xy - vec2(0.0, uMouth - 0.012)) / vec2(0.026, 0.034);
+      float mouth = 1.0 - smoothstep(0.85, 1.0, length(mo));
+      float jag = step(0.6, fract(p.x * 90.0)) * smoothstep(0.55, 0.95, mo.y) * mouth;
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.01), uScare * mouth * front);
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.58, 0.5), uScare * jag * front);
+    }
   }
 `;
 
@@ -184,7 +216,18 @@ export function dress(root: THREE.Object3D, d: Dress) {
       pat.wrapS = pat.wrapT = THREE.RepeatWrapping;
       pat.colorSpace = THREE.SRGBColorSpace;
     }
+    const female = /female/i.test(mat0.name + sm.name);
+    const faceU = {
+      uEye: { value: new THREE.Vector2(0.034, female ? 1.656 : 1.699) },
+      uMouth: { value: female ? 1.58 : 1.622 },
+      uSockets: { value: d.face?.sockets ?? 0 },
+      uGrin: { value: d.face?.grin ?? 0 },
+      uGaunt: { value: d.face?.gaunt ?? 0 },
+      uScare: { value: 0 },
+    };
+    root.userData.faceU = faceU;
     m.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, faceU);
       sh.uniforms.clothCol = { value: cloth };
       sh.uniforms.skinTint = { value: tint };
       sh.uniforms.clothRough = { value: d.clothRough ?? 0.9 };
@@ -195,7 +238,7 @@ export function dress(root: THREE.Object3D, d: Dress) {
       sh.fragmentShader = sh.fragmentShader
         .replace(
           '#include <common>',
-          `#include <common>\nvarying float vSkin;\nvarying vec3 vObjPos;\nuniform vec3 clothCol;\nuniform vec3 skinTint;\nuniform float clothRough;\n${pat ? 'uniform sampler2D pat;' : ''}`,
+          `#include <common>\nvarying float vSkin;\nvarying vec3 vObjPos;\nuniform vec3 clothCol;\nuniform vec3 skinTint;\nuniform float clothRough;\nuniform vec2 uEye;\nuniform float uMouth, uSockets, uGrin, uGaunt, uScare;\n${pat ? 'uniform sampler2D pat;' : ''}`,
         )
         .replace(
           '#include <map_fragment>',
@@ -205,12 +248,12 @@ export function dress(root: THREE.Object3D, d: Dress) {
           // weave: a faint fine noise so cloth isn't plastic
           cl *= 0.92 + 0.08 * fract(sin(dot(floor(vObjPos.xy * 900.0), vec2(12.9898, 78.233))) * 43758.5453);
           diffuseColor.rgb = mix(cl, diffuseColor.rgb * skinTint, vSkin);
-          ${d.face ? FACE_GLSL(d.face) : ''}`,
+          ${FACE_GLSL}`,
         )
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = normalize(mix(nonPerturbedNormal, normal, vSkin * 0.9 + 0.1));')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(clothRough, roughnessFactor, vSkin);');
     };
-    m.customProgramCacheKey = () => 'dress' + (pat ? 'p' : '') + cloth.getHexString() + (d.puff ?? 0.012) + JSON.stringify(d.face ?? '');
+    m.customProgramCacheKey = () => 'dress' + (pat ? 'p' : '') + cloth.getHexString() + (d.puff ?? 0.012);
     sm.material = m;
   });
 }
@@ -381,4 +424,23 @@ export function prop(id: ModelId, o: { height?: number; width?: number; turn?: n
     }
   });
   return outer;
+}
+
+/** Turn a real model into a cursed object: deep red, keeping its surface detail (normals, roughness). */
+export function cursify(o: THREE.Object3D) {
+  o.traverse((c) => {
+    const m = c as THREE.Mesh;
+    if (!m.isMesh) return;
+    const src = m.material as THREE.MeshStandardMaterial;
+    m.material = new THREE.MeshStandardMaterial({
+      color: 0xc4101a,
+      roughness: 0.45,
+      metalness: 0.15,
+      normalMap: src.normalMap ?? null,
+      roughnessMap: src.roughnessMap ?? null,
+      emissive: 0x400004,
+      emissiveIntensity: 0.6,
+    });
+  });
+  return o;
 }

@@ -97,17 +97,68 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
     curlFingers(b, side, 0.12);
   }
   saveRest(b);
-  // shirt front, tie, lapels — over the chest
-  const chest = wp(b.spine_03);
+  // ---- a proper black suit over the body: jacket, lapels, sleeves, shirt and tie ----
+  const suitTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#141414';
+    c.fillRect(0, 0, w, h);
+    noise(c, w, h, 9000, 0.06);
+    // the faintest pinstripe
+    for (let x = 0; x < w; x += 16) {
+      c.fillStyle = 'rgba(255,255,255,0.035)';
+      c.fillRect(x, 0, 1, h);
+    }
+  }, [3, 3]);
+  const suit = new THREE.MeshStandardMaterial({ map: suitTex, color: 0xffffff, roughness: 0.78, side: THREE.DoubleSide });
   const shirt = new THREE.MeshStandardMaterial({ color: 0xd8d4cb, roughness: 0.8 });
-  const front = mesh(new THREE.PlaneGeometry(0.075, 0.17), shirt, 0, chest.y + 0.12, chest.z + 0.135, false);
-  front.rotation.x = -0.25;
-  g.add(front);
-  g.add(rbox(0.02, 0.17, 0.008, 0.004, mat(0x070707, { roughness: 0.4 }), 0, chest.y + 0.11, chest.z + 0.142).rotateX(-0.25));
-  b.spine_03.attach(front);
+  const chest = wp(b.spine_03), mid = wp(b.spine_01), neck = wp(b.neck_01), pel = wp(b.pelvis);
+  const shL = wp(b.upperarm_l), shR = wp(b.upperarm_r);
+  const shoulderW = shL.distanceTo(shR) / 2 + 0.06;
+  const jacket = new THREE.Group();
+  // body of the jacket: a tapered tube from the shoulders to below the hips, open at the front in a V
+  const prof: [number, number][] = [[shoulderW * 0.55, neck.y - 0.02], [shoulderW, shL.y - 0.02], [shoulderW * 0.93, chest.y - 0.1], [shoulderW * 0.8, mid.y], [shoulderW * 0.86, pel.y - 0.12]];
+  const ring = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y - mid.y)), 32, Math.PI * 0.07, Math.PI * 1.86);
+  const jBody = new THREE.Mesh(ring, suit);
+  jBody.scale.z = 0.62;
+  jBody.position.set(0, mid.y, mid.z);
+  jacket.add(jBody);
+  // shirt and tie visible in the V
+  const front = mesh(new THREE.PlaneGeometry(0.11, neck.y - mid.y + 0.02), shirt, 0, (neck.y + mid.y) / 2, mid.z + shoulderW * 0.6 * 0.95, false);
+  front.rotation.x = -0.12;
+  jacket.add(front);
+  jacket.add(rbox(0.024, neck.y - mid.y - 0.04, 0.008, 0.004, mat(0x070707, { roughness: 0.35 }), 0, (neck.y + mid.y) / 2 - 0.01, mid.z + shoulderW * 0.6 * 0.95 + 0.006).rotateX(-0.12));
+  // lapels: two dark slanted panels framing the V
+  for (const sd of [-1, 1]) {
+    const lap = rbox(0.07, (neck.y - mid.y) * 0.95, 0.012, 0.005, suit, sd * 0.07, (neck.y + mid.y) / 2, mid.z + shoulderW * 0.6 + 0.004);
+    lap.rotation.set(-0.12, 0, sd * 0.32);
+    jacket.add(lap);
+  }
+  // collar of the shirt
+  jacket.add(mesh(new THREE.CylinderGeometry(0.062, 0.07, 0.05, 16, 1, true), shirt, 0, neck.y + 0.02, neck.z + 0.005, false));
+  g.add(jacket);
+  b.spine_02.attach(jacket);
+  // sleeves: tubes along the arm bones, wider than the arms underneath
+  const sleeve = (a: THREE.Bone, z: THREE.Object3D, r1: number, r2: number) => {
+    const p1 = wp(a), p2 = wp(z);
+    const len = p1.distanceTo(p2);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r2, r1, len, 14, 1, true), suit);
+    m.position.copy(p1).add(p2).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(p1).normalize());
+    g.add(m);
+    a.attach(m);
+  };
+  for (const sd of ['l', 'r'] as const) {
+    sleeve(b['upperarm_' + sd], b['lowerarm_' + sd], 0.07, 0.058);
+    sleeve(b['lowerarm_' + sd], b['hand_' + sd], 0.058, 0.05);
+    // white cuff at the wrist
+    const wr = wp(b['hand_' + sd]), el = wp(b['lowerarm_' + sd]);
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.03, 14, 1, true), shirt);
+    cuff.position.copy(wr).lerp(el, 0.06);
+    cuff.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), wr.clone().sub(el).normalize());
+    g.add(cuff);
+    b['lowerarm_' + sd].attach(cuff);
+  }
   // long coat skirt from the waist down
-  const pel = wp(b.pelvis);
-  const coat = lathe([[0.17, pel.y + 0.12], [0.2, pel.y - 0.1], [0.27, 0.35], [0.3, 0.06], [0.3, 0.04]].map(([r, y]) => [r, y]) as [number, number][], new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.85, side: THREE.DoubleSide }), 0, 0, pel.z, 28);
+  const coat = lathe([[shoulderW * 0.86, pel.y - 0.1], [0.27, 0.35], [0.3, 0.06], [0.3, 0.04]], suit, 0, 0, pel.z, 28);
   coat.scale.z = 0.7;
   g.add(coat);
   // fedora on the head bone
@@ -122,7 +173,10 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
   const eyes = eyesMaterial(body);
   const look = makeLook(head, g, 0.8, 0.35);
   let nextTwitch = 6 + Math.random() * 5, twitch = 0;
-  const fingerBones = ['index', 'middle', 'ring', 'pinky'].map((f) => b[`${f}_01_l`]).filter(Boolean);
+  // fingers drumming on the wood: a rolling pinky-to-index tap, a pause, again; sometimes he stops
+  const drumFingers = ['pinky', 'ring', 'middle', 'index'].map((f) => [b[`${f}_01_l`], b[`${f}_02_l`]] as const).filter(([a]) => a);
+  const qTmp = new THREE.Quaternion();
+  let drumClock = 0, drumPause = 0;
   g.traverse((o) => (o.castShadow = true));
   return {
     group: g,
@@ -143,11 +197,22 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
       look(camera, Math.min(dt * 1.2, 1), Math.sin(t * 0.4) * 0.12 + twitch * 0.35);
       restore(b.spine_03);
       turnWorld(b.spine_03, X.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 1.1) * 0.015);
-      fingerBones.forEach((f, i) => {
-        restore(f);
-        const phase = (t * 3.2 - i * 0.35) % 4;
-        const lift = phase > 0 && phase < 0.35 ? Math.sin((phase / 0.35) * Math.PI) : 0;
-        if (lift) turnWorld(f, X.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), -lift * 0.5);
+      drumClock += dt;
+      if (drumPause > 0) drumPause -= dt;
+      else if (drumClock > 2.4) {
+        drumClock = 0;
+        if (Math.random() < 0.18) drumPause = 3 + Math.random() * 3;
+      }
+      drumFingers.forEach(([b1, b2], i) => {
+        restore(b1);
+        if (b2) restore(b2);
+        // each finger lifts a little and comes down, 90 ms after the one before
+        const ph = drumPause > 0 ? -1 : (drumClock - i * 0.09) / 0.2;
+        const lift = ph > 0 && ph < 1 ? Math.sin(ph * Math.PI) ** 2 : 0;
+        if (lift > 0) {
+          b1.quaternion.multiply(qTmp.setFromAxisAngle(CURL_AXIS, -lift * 0.32));
+          if (b2) b2.quaternion.multiply(qTmp.setFromAxisAngle(CURL_AXIS, lift * 0.12));
+        }
       });
     },
   };
@@ -302,7 +367,7 @@ export function realLisa(floorY = 0): Character & { setOpacity: (v: number) => v
 }
 
 // ======================================================================
-export function realBarberGhost(): Character & { setOpacity: (v: number) => void } {
+export function realBarberGhost(scare = false): Character & { setOpacity: (v: number) => void } {
   const { g, body, b } = base('male', 1.0);
   const coatSpots = (c: CanvasRenderingContext2D, w: number, h: number) => {
     c.fillStyle = '#ffffff';
@@ -317,8 +382,9 @@ export function realBarberGhost(): Character & { setOpacity: (v: number) => void
   dress(body, { cloth: '#e3dfd6', clothRough: 0.8, puff: 0.018, face: { sockets: 1, gaunt: 0.8 }, skinTint: '#e0dad0', skinBright: 0.95, pattern: coatSpots });
   attachHair(body, 'hairParted', 0x8a8680);
   browColor(body, 0x77736d);
-  // arms reaching forward, as if to shave someone who isn't there
-  for (const side of ['l', 'r'] as const) {
+  // arms reaching forward, as if to shave someone who isn't there (hanging, for the jumpscare)
+  if (scare) for (const side of ['l', 'r'] as const) armDown(b, side, 0.1, 0.05, 0.1);
+  else for (const side of ['l', 'r'] as const) {
     const sx = side === 'l' ? 1 : -1;
     const s = wp(b['upperarm_' + side]);
     armTo(b, side, new THREE.Vector3(s.x + sx * 0.04, s.y - 0.18, s.z + 0.2), new THREE.Vector3(sx * 0.1, s.y - 0.02, s.z + 0.5));
@@ -366,6 +432,63 @@ export function realBarberGhost(): Character & { setOpacity: (v: number) => void
       g.position.y = Math.sin(t * 2.1) * 0.005;
       restore(b.Head);
       turnWorld(b.Head, Z.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 0.7) * 0.06);
+    },
+  };
+}
+
+// ======================================================================
+// Ada: an old widow in a dark dress, grey hair in a bun. Seen only as a ghost.
+export function realAdaGhost(): Character & { setOpacity: (v: number) => void } {
+  const { g, body, b } = base('female', 0.92);
+  dress(body, { cloth: '#34302c', clothRough: 0.9, puff: 0.02, skinTint: '#e2ddd5', skinBright: 1.05, bare: /^lowerarm_/ });
+  browColor(body, 0x8d8983);
+  attachHair(body, 'hairBuns', 0x9c9890);
+  // hunched a little, arms reaching out — she wants them back
+  turnWorld(b.spine_02, X, 0.12);
+  turnWorld(b.spine_03, X, 0.08);
+  turnWorld(b.neck_01, X, 0.15);
+  for (const side of ['l', 'r'] as const) {
+    const sx = side === 'l' ? 1 : -1;
+    const s = wp(b['upperarm_' + side]);
+    armTo(b, side, new THREE.Vector3(s.x + sx * 0.03, s.y - 0.2, s.z + 0.14), new THREE.Vector3(s.x - sx * 0.02, s.y - 0.18, s.z + 0.42));
+    curlFingers(b, side, 0.35);
+  }
+  turnWorld(b.Head, Z, 0.18);
+  saveRest(b);
+  // long skirt down to the floor
+  const pe = wp(b.pelvis);
+  const skirtTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#34302c';
+    c.fillRect(0, 0, w, h);
+    noise(c, w, h, 6000, 0.12);
+    for (let x = 0; x < w; x += 18) {
+      c.fillStyle = 'rgba(0,0,0,0.25)';
+      c.fillRect(x, 0, 6, h);
+    }
+  });
+  g.add(lathe([[0.14, pe.y + 0.12], [0.17, pe.y - 0.05], [0.25, 0.45], [0.3, 0.02], [0.29, 0.0]], new THREE.MeshStandardMaterial({ map: skirtTex, roughness: 0.9, side: THREE.DoubleSide }), 0, 0, pe.z, 28));
+  const mats: THREE.Material[] = [];
+  g.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+    if (m && !mats.includes(m)) {
+      m.transparent = true;
+      mats.push(m);
+    }
+  });
+  const eyes = eyesMaterial(body);
+  if (eyes) eyes.color.setScalar(0.05); // no eyes, only darkness
+  return {
+    group: g,
+    head: b.Head,
+    setEyes: () => {},
+    setOpacity: (v: number) => {
+      mats.forEach((m) => ((m as THREE.MeshStandardMaterial).opacity = v));
+      g.visible = v > 0.01;
+    },
+    update: (_dt, t) => {
+      g.position.y = Math.sin(t * 1.7) * 0.01;
+      restore(b.Head);
+      turnWorld(b.Head, Z.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), Math.sin(t * 0.6) * 0.08 + 0.18);
     },
   };
 }

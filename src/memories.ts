@@ -169,3 +169,173 @@ export function barberMemory(): { title: string; panels: { draw: Draw; text: str
   ];
   return { title: t('mem.bar.title'), panels };
 }
+
+/** Ada and Ettore, 1946–1974. */
+export function adaMemory(): { title: string; panels: { draw: Draw; text: string }[] } {
+  const panels: { draw: Draw; text: string }[] = [
+    {
+      text: t('mem.ada.1'),
+      draw: (c, w, h) => {
+        // the church steps, a bride, a man on crutches
+        c.fillStyle = '#a49e92';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#6e695f';
+        c.fillRect(260, 60, 440, 480);
+        c.fillStyle = '#2a2723';
+        c.beginPath();
+        c.moveTo(400, 540);
+        c.lineTo(400, 300);
+        c.arc(480, 300, 80, Math.PI, 0);
+        c.lineTo(560, 540);
+        c.fill();
+        for (let i = 0; i < 4; i++) {
+          c.fillStyle = i % 2 ? '#8a857b' : '#7b766c';
+          c.fillRect(220 - i * 30, 470 + i * 18, 520 + i * 60, 18);
+        }
+        // the bride
+        c.fillStyle = '#f2eee6';
+        c.beginPath();
+        c.arc(420, 320, 22, 0, Math.PI * 2);
+        c.fill();
+        c.beginPath();
+        c.moveTo(395, 345);
+        c.lineTo(445, 345);
+        c.lineTo(475, 480);
+        c.lineTo(365, 480);
+        c.fill();
+        // the groom, leaning on a crutch
+        figure(c, 535, 480, 0.95, '#1d1b18', false, true);
+        c.strokeStyle = '#1d1b18';
+        c.lineWidth = 6;
+        c.beginPath();
+        c.moveTo(585, 380);
+        c.lineTo(600, 480);
+        c.stroke();
+      },
+    },
+    {
+      text: t('mem.ada.2'),
+      draw: (c, w, h) => {
+        // the kitchen table, every evening: two cups and a teapot
+        c.fillStyle = '#5a554d';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#9aa1a6';
+        c.fillRect(60, 80, 150, 210);
+        c.fillStyle = '#2d2a26';
+        c.fillRect(750, 230, 160, 240);
+        c.fillStyle = '#3e3a34';
+        c.beginPath();
+        c.ellipse(480, 400, 260, 60, 0, 0, Math.PI * 2);
+        c.fill();
+        for (const x of [330, 630]) {
+          c.fillStyle = '#e8e2d6';
+          c.fillRect(x - 18, 360, 36, 26);
+        }
+        c.beginPath();
+        c.ellipse(480, 365, 34, 30, 0, 0, Math.PI * 2);
+        c.fill();
+        figure(c, 220, 470, 1.15, '#1e1c19', false, true);
+        figure(c, 740, 470, 1.15, '#e2ddd2');
+      },
+    },
+    {
+      text: t('mem.ada.3'),
+      draw: (c, w, h) => {
+        // an empty rocking chair in front of the snow on the TV
+        c.fillStyle = '#1b1a18';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#c9cdd0';
+        c.fillRect(560, 160, 260, 190);
+        for (let k = 0; k < 2500; k++) {
+          c.fillStyle = Math.random() < 0.5 ? '#222' : '#eee';
+          c.fillRect(560 + Math.random() * 260, 160 + Math.random() * 190, 2, 2);
+        }
+        c.strokeStyle = '#4a4540';
+        c.lineWidth = 10;
+        c.beginPath();
+        c.moveTo(170, 490);
+        c.quadraticCurveTo(300, 530, 420, 470);
+        c.moveTo(220, 470);
+        c.lineTo(250, 230);
+        c.moveTo(370, 470);
+        c.lineTo(340, 380);
+        c.moveTo(250, 230);
+        c.lineTo(300, 230);
+        c.moveTo(230, 380);
+        c.lineTo(380, 380);
+        c.stroke();
+        // two cups on a tray, still
+        c.fillStyle = '#e8e2d6';
+        c.fillRect(430, 430, 26, 20);
+        c.fillRect(470, 430, 26, 20);
+      },
+    },
+    {
+      text: t('mem.ada.4'),
+      draw: (c, w, h) => {
+        // the man in black, a pair of round glasses glowing red in his open palm
+        c.fillStyle = '#34312d';
+        c.fillRect(0, 0, w, h);
+        figure(c, 620, 540, 1.6, '#050505', true, true);
+        c.fillStyle = '#d6cfc2';
+        c.beginPath();
+        c.ellipse(620, 300, 30, 40, 0, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#0a0a0a';
+        c.fillRect(600, 312, 40, 4);
+        figure(c, 280, 540, 1.2, '#d8d2c6');
+        c.strokeStyle = '#c4101a';
+        c.shadowColor = '#ff2020';
+        c.shadowBlur = 18;
+        c.lineWidth = 6;
+        for (const x of [430, 490]) {
+          c.beginPath();
+          c.arc(x, 380, 24, 0, Math.PI * 2);
+          c.stroke();
+        }
+        c.beginPath();
+        c.moveTo(454, 378);
+        c.quadraticCurveTo(460, 368, 466, 378);
+        c.stroke();
+        c.shadowBlur = 0;
+      },
+    },
+    {
+      text: t('mem.ada.5'),
+      draw: (c, w, h) => {
+        // the attic, an open trunk, and an old woman on her knees in front of it
+        c.fillStyle = '#121110';
+        c.fillRect(0, 0, w, h);
+        const gr = c.createRadialGradient(470, 360, 10, 470, 360, 380);
+        gr.addColorStop(0, 'rgba(180,170,150,0.35)');
+        gr.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = gr;
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#3a2e22';
+        c.fillRect(380, 390, 260, 110);
+        c.save();
+        c.translate(380, 390);
+        c.rotate(-0.9);
+        c.fillRect(0, -16, 260, 18);
+        c.restore();
+        c.fillStyle = '#d6d0c4';
+        c.beginPath();
+        c.arc(300, 360, 26, 0, Math.PI * 2);
+        c.fill();
+        c.beginPath();
+        c.moveTo(270, 385);
+        c.lineTo(340, 385);
+        c.lineTo(360, 500);
+        c.lineTo(240, 500);
+        c.fill();
+        // and behind her, in the dark, a man who can finally go
+        c.fillStyle = 'rgba(200,205,210,0.22)';
+        c.beginPath();
+        c.arc(760, 220, 26, 0, Math.PI * 2);
+        c.fill();
+        c.fillRect(732, 250, 56, 150);
+      },
+    },
+  ];
+  return { title: t('mem.ada.title'), panels };
+}

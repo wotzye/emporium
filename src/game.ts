@@ -5,6 +5,8 @@ import { Audio, DroneKind } from './audio';
 import { t, setLang, getLang, Lang } from './i18n';
 import { Save, newSave, loadSave, writeSave, clearSave, loadPrefs, Settings } from './state';
 import { drawScareFace } from './builders';
+import { createBarberGhost, createBruno, createAdaGhost, Character } from './characters';
+import { realCharacters } from './characters_real';
 
 export interface Hotspot {
   id: string;
@@ -43,6 +45,8 @@ export interface Location {
   dark?: () => boolean;
   /** handles for tests and screenshots */
   debug?: Record<string, unknown>;
+  /** places reachable from here that aren't hotspots or exitTo (for background preloading) */
+  next?: string[];
   /** per-place exposure multiplier (the open square is brighter than the shops) */
   exposure?: number;
   /** direct manipulation: drag objects, rub surfaces, turn dials */
@@ -188,8 +192,39 @@ export class Game {
     return this.built[id];
   }
 
+  /** Places you can reach from here: built and compiled quietly in advance. */
+  private neighbours(L: Location): string[] {
+    const out = new Set<string>([...(L.next ?? [])]);
+    if (L.exitTo) out.add(L.exitTo);
+    if (L.id !== 'map') out.add('map');
+    for (const h of L.hotspots) if (this.factories[h.id]) out.add(h.id);
+    return [...out].filter((id) => this.factories[id] && id !== L.id);
+  }
+  private prewarmTimer = 0;
+  private schedulePrewarm(L: Location) {
+    clearTimeout(this.prewarmTimer);
+    const queue = this.neighbours(L);
+    const step = () => {
+      const id = queue.shift();
+      if (!id || this.loc !== L) return;
+      if (this.busy) {
+        queue.unshift(id);
+        this.prewarmTimer = window.setTimeout(step, 1000);
+        return;
+      }
+      try {
+        const N = this.location(id);
+        this.engine.prewarm(N.scene).finally(() => (this.prewarmTimer = window.setTimeout(step, 400)));
+      } catch (e) {
+        console.warn('prewarm', id, e);
+        this.prewarmTimer = window.setTimeout(step, 400);
+      }
+    };
+    this.prewarmTimer = window.setTimeout(step, 1500);
+  }
+
   async go(id: string, fade = true) {
-    if (fade) await this.ui.fadeOut(500);
+    if (fade) await this.ui.fadeOut(300);
     this.loc?.leave?.();
     this.removeUpdater?.();
     this.selected = null;
@@ -199,6 +234,8 @@ export class Game {
     this.applySettings();
     this.save.location = id;
     this.persist();
+    // compile while the screen is still black (instant if it was prewarmed)
+    await this.engine.prewarm(L.scene);
     this.engine.setScene(L.scene);
     this.viewStack = [];
     this.currentView = L.startView;
@@ -217,7 +254,9 @@ export class Game {
       this.setTorch(true);
       this.ui.toast(t('ui.torchOn'));
     } else this.setTorch(!!this.flag('torchOn') && L.id !== 'map', true);
-    if (fade) await this.ui.fadeIn(600);
+    if (fade) await this.ui.fadeIn(350);
+    this.schedulePrewarm(L);
+    setTimeout(() => this.prepScare(L.id), 800);
     if (L.enter) {
       this.busy = true;
       try {
@@ -483,7 +522,7 @@ export class Game {
   }
 
   // ---------------- scares ----------------
-  async scare(kind: 'barber' | 'bruno', ms = 650) {
+  async scare(kind: 'barber' | 'bruno' | 'ada', ms = 650) {
     this.audio.stinger();
     this.engine.shake(0.08, 0.6);
     if (this.settings.reducedScares || this.settings.noFlash) {
@@ -492,10 +531,107 @@ export class Game {
       await this.ui.fadeIn(400);
       return;
     }
+    if (realCharacters()) return this.scare3d(kind, ms);
     const cv = document.createElement('canvas');
     drawScareFace(cv, kind);
     await this.ui.showScare(cv, ms);
   }
+
+  /** The real thing: the character itself lunges at the camera, lit from below, face filling the screen. */
+  private scareChars: Partial<Record<'barber' | 'bruno' | 'ada', Character & { setOpacity?: (v: number) => void }>> = {};
+  private scareChar(kind: 'barber' | 'bruno' | 'ada') {
+    let c = this.scareChars[kind];
+    if (!c) {
+      c = kind === 'barber' ? createBarberGhost(true) : kind === 'bruno' ? createBruno() : createAdaGhost();
+      c.group.traverse((o) => {
+        o.userData.noPick = true;
+        // the scare version of the face: black holes, veins, a mouth hanging open
+        if (o.userData.faceU) o.userData.faceU.uScare.value = 1;
+        const m = o as THREE.Mesh;
+        if (kind !== 'bruno' && m.isMesh && /^Eyes$/i.test(m.name)) m.visible = false;
+      });
+      this.scareChars[kind] = c;
+    }
+    return c;
+  }
+  /** Build the jumpscare figure for this place and compile it with the room's lights, so it can strike without a stall. */
+  private async prepScare(id: string) {
+    const kind = id.startsWith('barbiere') ? 'barber' : id === 'macelleria' ? 'bruno' : id.startsWith('ada') ? 'ada' : null;
+    if (!kind || !realCharacters() || this.settings.reducedScares) return;
+    const c = this.scareChar(kind);
+    const scene = this.engine.scene;
+    if (scene.userData['scareWarm' + kind]) return;
+    scene.userData['scareWarm' + kind] = true;
+    c.setOpacity?.(1);
+    c.group.visible = true;
+    c.group.position.set(0, -50, 0);
+    const under = new THREE.SpotLight(0xffffff, 0, 3, 0.7, 0.3, 1.2);
+    const fill = new THREE.PointLight(0xdde6ff, 0, 2.5, 2);
+    scene.add(c.group, under, under.target, fill);
+    try {
+      const r = this.engine.renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown> };
+      if (r.compileAsync) await r.compileAsync(scene, this.engine.camera);
+    } catch {
+      /* compiles on first sight instead */
+    }
+    scene.remove(c.group, under, under.target, fill);
+  }
+  private async scare3d(kind: 'barber' | 'bruno' | 'ada', ms: number) {
+    const c = this.scareChar(kind);
+    const cam = this.engine.camera;
+    const scene = this.engine.scene;
+    const camPos = cam.getWorldPosition(new THREE.Vector3());
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
+    fwd.y = 0;
+    fwd.normalize();
+    c.group.position.set(0, 0, 0);
+    c.group.rotation.set(0, 0, 0);
+    c.group.updateMatrixWorld(true);
+    const headOff = c.head.getWorldPosition(new THREE.Vector3());
+    c.setOpacity?.(1);
+    c.setEyes(true);
+    c.group.visible = true;
+    scene.add(c.group);
+    // light from below, white and hard, like a torch held under the chin
+    const under = new THREE.SpotLight(0xffffff, kind === 'barber' ? 1.6 : 3, 3, 0.7, 0.3, 1.2);
+    const fill = new THREE.PointLight(0xdde6ff, 0.4, 2.5, 2);
+    scene.add(under, under.target, fill);
+    const place = (dist: number, t: number) => {
+      const head = camPos.clone().addScaledVector(fwd, dist);
+      head.y = camPos.y - 0.02 + Math.sin(t * 40) * 0.004;
+      c!.group.position.copy(head).sub(headOff);
+      c!.group.rotation.set(0, Math.atan2(camPos.x - c!.group.position.x, camPos.z - c!.group.position.z), 0);
+      // the head tilts, wrong
+      c!.head.rotation.z += Math.sin(t * 23) * 0.004;
+      under.position.copy(head).add(new THREE.Vector3(0, -0.55, 0)).addScaledVector(fwd, -0.25);
+      under.target.position.copy(head);
+      fill.position.copy(head).addScaledVector(fwd, -0.4);
+    };
+    // let the first frame with it render (any shader compile happens here) before the clock starts
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const t0 = performance.now();
+    const total = Math.max(ms, 600);
+    this.engine.flickerAmt = 1;
+    await new Promise<void>((res) => {
+      const step = () => {
+        const k = (performance.now() - t0) / total;
+        // rushes in from 1.6 m to a hand's breadth in the first fifth, then hangs there, twitching
+        const e = Math.min(k / 0.2, 1);
+        const dist = 1.6 - (1.6 - 0.32) * (1 - Math.pow(1 - e, 3));
+        place(dist, k);
+        c!.update(0.016, performance.now() / 1000, cam);
+        if (k < 1) requestAnimationFrame(step);
+        else res();
+      };
+      step();
+    });
+    this.engine.flickerAmt = 0;
+    scene.remove(c.group, under, under.target, fill);
+    c.setEyes(false);
+    await this.ui.fadeOut(80);
+    await this.ui.fadeIn(250);
+  }
+
 
   setFlicker(on: boolean, amt = 1) {
     this.engine.flickerAmt = on && !this.settings.noFlash ? amt : 0;

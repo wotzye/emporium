@@ -30,5 +30,6 @@ Ogni push su `main` pubblica il gioco su GitHub Pages tramite `.github/workflows
 - Oggetti 3D: Poly Haven (CC0) — poltrona da barbiere, candelieri, sedia e sgabello, set da tè, valigie, secchio, cassa, lanterna
 - Suoni dal Sonniss GDC 2026 Game Audio Bundle (licenza royalty-free Sonniss): Barbershop, Antique Clocks, Ghostly Presences (344 Audio), Haunted House Scare Kit, HD Lock and Mechanism, Humanoid Creatures 4 (Epic Stock Media), Music Boxes, Stormy Night (Sonic Bat), Fridge Hums (Jake Fielding), Moaning Metal (The Noisery), Sinister Textures 5 (InMotionAudio), Paper Foley (Cinematic Sound Design)
 - Oggetti 3D Poly Haven aggiunti: sedia a dondolo, lampioni, cornici, lampadario, tavolo rotondo, cancello
+- Casa di Ada (Poly Haven): televisore, divano, cucina elettrica, bollitore, stampelle, baule, occhiali tondi, cornice, cappello da pesca, consolle, credenza, cassa militare, statua del gatto
 - Altri oggetti Poly Haven: ratto, sedia a rotelle, bidone, lampada a gabbia, scala
 - Suoni da Freesound: "old possessed voice" (fusagawi), "random jumpscare" (enclosurex_studios), "spooky metallic ghost moving" (robinhood76), "scary halloween bell strike" (elisfir), "sfx chains" (tosimos), "demon laugh 1" (noahbangs), "creepy footsteps with reverb" (brandnewhexagon), "squeaky door hinge" (jomungus) — verificare la licenza di ciascuno prima della pubblicazione

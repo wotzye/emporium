@@ -7,6 +7,9 @@ import { createMacelleria } from './locations/macelleria';
 import { createBarbiere } from './locations/barbiere';
 import { createBarbiereRetro } from './locations/barbiere_retro';
 import { createLab } from './locations/lab';
+import { createAdaSoggiorno } from './locations/ada_soggiorno';
+import { createAdaCucina } from './locations/ada_cucina';
+import { createAdaSoffitta } from './locations/ada_soffitta';
 import { preloadModels } from './models';
 import { createBarbiereCantina } from './locations/barbiere_cantina';
 
@@ -18,6 +21,9 @@ game.register('macelleria', createMacelleria);
 game.register('barbiere', createBarbiere);
 game.register('barbiere_retro', createBarbiereRetro);
 game.register('barbiere_cantina', createBarbiereCantina);
+game.register('ada_soggiorno', createAdaSoggiorno);
+game.register('ada_cucina', createAdaCucina);
+game.register('ada_soffitta', createAdaSoffitta);
 if (location.search.includes('lab')) game.register('lab', createLab);
 
 // expose for automated tests

@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, cursedMat, bulb, fx, rbox, lathe, dust, lightCone, canvasTex, noise, woodMaterial, plasterMaterial } from '../builders';
 import { createMerchant } from '../characters';
-import { barberMemory } from '../memories';
-import { prop } from '../models';
+import { barberMemory, adaMemory } from '../memories';
+import { prop, cursify } from '../models';
 import { t } from '../i18n';
 
 export function createEmporio(g: Game): Location {
@@ -286,9 +286,13 @@ export function createEmporio(g: Game): Location {
   shoe.rotation.y = Math.PI / 2 + 0.3;
   // 2. statuette
   const statue = new THREE.Group();
-  statue.add(cyl(0.06, 0.07, 0.04, cm, 0, 0.02, 0));
-  statue.add(cyl(0.035, 0.05, 0.22, cm, 0, 0.15, 0, 10));
-  statue.add(sphere(0.04, cm, 0, 0.3, 0, 10));
+  const cat = prop('catStatue', { height: 0.3, turn: -Math.PI / 2 });
+  if (cat) statue.add(cursify(cat));
+  else {
+    statue.add(cyl(0.06, 0.07, 0.04, cm, 0, 0.02, 0));
+    statue.add(cyl(0.035, 0.05, 0.22, cm, 0, 0.15, 0, 10));
+    statue.add(sphere(0.04, cm, 0, 0.3, 0, 10));
+  }
   statue.position.set(caseX, topY, zs[1]);
   // 3. doll
   const doll = new THREE.Group();
@@ -346,6 +350,17 @@ export function createEmporio(g: Game): Location {
   razor.visible = !!g.flag('placedRazor');
   scene.add(razor);
 
+  // Ada's glasses on their pedestal (hidden until placed)
+  const specsOnShelf = new THREE.Group();
+  const specModel = prop('spectacles', { width: 0.16 });
+  if (specModel) {
+    specsOnShelf.add(cursify(specModel));
+  } else for (const sd of [-1, 1]) specsOnShelf.add(mesh(new THREE.TorusGeometry(0.035, 0.005, 6, 20), cm, sd * 0.04, 0.03, 0));
+  specsOnShelf.position.set(caseX, lowY + 0.09, lowZ[4]);
+  specsOnShelf.rotation.y = -Math.PI / 2;
+  specsOnShelf.visible = !!g.flag('placedGlasses');
+  scene.add(specsOnShelf);
+
   // door with a bell behind the player
   scene.add(rbox(1.0, 2.1, 0.06, 0.02, woodDark, 0, 1.05, D / 2 - 0.04));
   scene.add(lathe([[0, 0], [0.04, 0], [0.035, 0.03], [0.015, 0.06], [0, 0.065]], brass, 0.3, 2.2, D / 2 - 0.12, 16).rotateX(Math.PI));
@@ -354,6 +369,8 @@ export function createEmporio(g: Game): Location {
   const hMerchant = hitBox(1.4, 2.2, 1.2, -0.8, 1.1, -1.8, 'merchant');
   const hCase = hitBox(0.9, 1.8, 3.8, caseX, 1.3, caseZ, 'case');
   const hSlot = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[0], 'slot');
+  const hSlotAda = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[4], 'slotAda');
+  scene.add(hSlotAda);
   const hShelves = hitBox(0.6, 2.4, 4.6, -3.2, 1.3, -0.5, 'shelves');
   const hLedger = hitBox(0.6, 0.3, 0.5, -1.2, 1.1, -1.2, 'ledger');
   scene.add(hMerchant, hCase, hSlot, hShelves, hLedger);
@@ -372,6 +389,10 @@ export function createEmporio(g: Game): Location {
     try {
       if (g.has('razor') && !g.flag('placedRazor')) {
         await g.say([{ who: 'mercante', key: 'emp.haveRazor' }]);
+      } else if (g.has('glasses')) {
+        await g.say([{ who: 'mercante', key: 'emp.haveGlasses' }]);
+      } else if (g.flag('placedGlasses')) {
+        await g.say([{ who: 'mercante', key: 'emp.afterAda1' }, { who: 'mercante', key: 'emp.afterAda2' }]);
       } else if (g.flag('placedRazor')) {
         await g.say([{ who: 'mercante', key: 'emp.after1' }, { who: 'mercante', key: 'emp.after2' }]);
       } else if (g.flag('fledButcher')) {
@@ -388,12 +409,13 @@ export function createEmporio(g: Game): Location {
     }
   };
 
-  const placeRazor = async () => {
+  const placeObject = async (item: 'razor' | 'glasses') => {
+    const isRazor = item === 'razor';
     g.deselect();
-    g.take('razor');
-    g.set('placedRazor');
+    g.take(item);
+    g.set(isRazor ? 'placedRazor' : 'placedGlasses');
     g.rebuild('map');
-    razor.visible = true;
+    (isRazor ? razor : specsOnShelf).visible = true;
     g.audio.sfx('glass');
     g.setFlicker(true, 0.8);
     candleBase = 0.4;
@@ -405,27 +427,35 @@ export function createEmporio(g: Game): Location {
     candleBase = 3.2;
     g.setFlicker(false);
     await g.say([{ who: 'narr', key: 'emp.sealed' }]);
-    // the object remembers: the story of the man it belonged to, to a music box
+    // the object remembers: the story of whoever it belonged to, to a music box
     g.audio.rec('windup', { gain: 0.8 });
     g.audio.rec('musicbox', { gain: 0.7, delay: 1.4 });
     g.audio.rec('musicbox', { gain: 0.55, delay: 4.2, rate: 0.94 });
     g.audio.rec('musicbox', { gain: 0.4, delay: 7.0, rate: 0.88 });
     await g.ui.fadeOut(800);
-    const m = barberMemory();
+    const m = isRazor ? barberMemory() : adaMemory();
     await g.ui.memory(m.title, m.panels);
-    g.diaryPage('memBarbiere');
+    g.diaryPage(isRazor ? 'memBarbiere' : 'memAda');
     await g.ui.fadeIn(800);
-    await g.say([
-      { who: 'mercante', key: 'emp.placed1' },
-      { who: 'mercante', key: 'emp.placed2' },
-      { who: 'diego', key: 'emp.placed3' },
-    ]);
+    if (isRazor)
+      await g.say([
+        { who: 'mercante', key: 'emp.placed1' },
+        { who: 'mercante', key: 'emp.placed2' },
+        { who: 'diego', key: 'emp.placed3' },
+      ]);
+    else
+      await g.say([
+        { who: 'mercante', key: 'emp.placedAda1' },
+        { who: 'mercante', key: 'emp.placedAda2' },
+        { who: 'diego', key: 'emp.placedAda3' },
+      ]);
     await g.view('main');
   };
+  const placeRazor = () => placeObject('razor');
 
   const hotspots: Hotspot[] = [
     { id: 'merchant', obj: hMerchant, view: 'counter', tap: async (item) => {
-      if (item === 'razor') {
+      if (item === 'razor' || item === 'glasses') {
         await g.say([{ who: 'mercante', key: 'emp.notToMe' }]);
         g.deselect();
         return;
@@ -435,12 +465,20 @@ export function createEmporio(g: Game): Location {
     } },
     { id: 'slot', obj: hSlot, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'razor') return placeRazor();
+      if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
       if (g.flag('placedRazor')) return g.say('emp.slotFull');
       return g.say('emp.slotEmpty');
     } },
+    { id: 'slotAda', obj: hSlotAda, when: () => g.viewName === 'case', tap: async (item) => {
+      if (item === 'glasses') return placeObject('glasses');
+      if (item) return g.nope();
+      if (g.flag('placedGlasses')) return g.say('emp.slotFull');
+      return g.say('emp.slotEmpty');
+    } },
     { id: 'case', obj: hCase, view: 'case', when: () => g.viewName !== 'case', tap: async (item) => {
       if (item === 'razor') return placeRazor();
+      if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
       await g.say([{ who: 'diego', key: 'emp.case1' }, { who: 'diego', key: 'emp.case2' }]);
     } },
@@ -522,11 +560,17 @@ export function createEmporio(g: Game): Location {
         eyes.visible = true;
         await g.say([{ who: 'mercante', key: 'emp.feelRazor' }]);
         eyes.visible = false;
+      } else if (g.has('glasses')) {
+        await sleep(400);
+        eyes.visible = true;
+        await g.say([{ who: 'mercante', key: 'emp.feelGlasses' }]);
+        eyes.visible = false;
       }
     },
     debug: { rim },
     hint: () => {
-      if (g.has('razor')) return 'hint.emporio.place';
+      if (g.has('razor') || g.has('glasses')) return 'hint.emporio.place';
+      if (g.flag('placedRazor') && !g.flag('placedGlasses')) return 'hint.emporio.ada';
       if (g.flag('placedRazor')) return 'hint.emporio.done';
       return 'hint.emporio.go';
     },

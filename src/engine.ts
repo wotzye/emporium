@@ -194,6 +194,32 @@ export class Engine {
     }
   }
 
+  /**
+   * Compile a scene's shaders in the background, before you walk into it, so that the screen
+   * doesn't sit black while the GPU catches up. A stand-in for the torch keeps the light count
+   * (and so the compiled programs) identical to what will be used for real.
+   */
+  async prewarm(scene: THREE.Scene) {
+    if (scene.userData.warm) return;
+    scene.userData.warm = true;
+    if (!scene.environment) {
+      scene.environment = this.envTex;
+      scene.environmentIntensity = scene.userData.envIntensity ?? 0.12;
+    }
+    const stand = new THREE.SpotLight(0xffffff, 0, 10, 0.4, 0.55, 1.5);
+    stand.castShadow = true;
+    scene.add(stand, stand.target);
+    try {
+      const r = this.renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown> };
+      if (r.compileAsync) await r.compileAsync(scene, this.camera);
+      else r.compile(scene, this.camera);
+    } catch {
+      /* not fatal: it will compile on first sight instead */
+    } finally {
+      scene.remove(stand, stand.target);
+    }
+  }
+
   setQuality(q: Quality) {
     this.quality = q;
     this.gtao.enabled = q === 'high';

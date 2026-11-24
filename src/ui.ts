@@ -2,7 +2,7 @@ import { ICONS, ITEMS } from './items';
 import { t } from './i18n';
 
 export interface Line {
-  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr';
+  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore';
   key: string;
   vars?: Record<string, string | number>;
 }

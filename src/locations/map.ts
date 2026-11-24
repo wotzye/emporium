@@ -67,7 +67,7 @@ export function createMap(g: Game): Location {
     return g;
   };
   const scene = new THREE.Scene();
-  const progress = (g.flag('placedRazor') ? 1 : 0) + (g.flag('metMerchant') ? 0.3 : 0);
+  const progress = (g.flag('placedRazor') ? 1 : 0) + (g.flag('placedGlasses') ? 1 : 0) + (g.flag('metMerchant') ? 0.3 : 0);
   const skyShade = progress >= 1 ? 0x1a1c20 : 0x55585c;
   scene.background = new THREE.Color(skyShade);
   scene.fog = new THREE.Fog(skyShade, 16, 42);
@@ -189,6 +189,7 @@ export function createMap(g: Game): Location {
     emporio: true,
     macelleria: !!g.flag('metMerchant') && !g.flag('fledButcher'),
     barbiere: !!g.flag('fledButcher') && !g.flag('placedRazor'),
+    ada: !!g.flag('placedRazor') && !g.flag('placedGlasses'),
   };
 
   for (const b of buildings) {
@@ -299,6 +300,11 @@ export function createMap(g: Game): Location {
             if (g.flag('placedRazor')) return g.say('map.barberDone');
             return g.go('barbiere');
           }
+          if (b.id === 'ada') {
+            if (!g.flag('placedRazor')) return g.say('map.adaLocked');
+            if (g.flag('placedGlasses')) return g.say('map.adaDone');
+            return g.go('ada_soggiorno');
+          }
           g.ui.toast(t('map.soon'));
         },
       });
@@ -396,6 +402,7 @@ export function createMap(g: Game): Location {
     drone: 'map',
     startView: 'top',
     exposure: 0.8,
+    next: g.flag('placedRazor') && !g.flag('placedGlasses') ? ['ada_soggiorno'] : [],
     views: {
       top: { pos: [0, 25, 19], look: [0, 0, -0.5], yaw: 14, pitch: 8, fov: 48 },
     },
@@ -415,7 +422,11 @@ export function createMap(g: Game): Location {
           { who: 'diego', key: 'map.intro2' },
         ]);
       }
-      if (g.flag('placedRazor') && !g.flag('demoEnd')) {
+      if (g.flag('placedRazor') && !g.flag('chapter2')) {
+        g.set('chapter2');
+        await g.ui.cards(['mid.1', 'mid.2']);
+      }
+      if (g.flag('placedGlasses') && !g.flag('demoEnd')) {
         g.set('demoEnd');
         await g.ui.cards(['end.1', 'end.2', 'end.3']);
       }
@@ -424,7 +435,10 @@ export function createMap(g: Game): Location {
       if (!g.flag('metMerchant')) return 'hint.map.emporio';
       if (!g.flag('fledButcher')) return 'hint.map.macelleria';
       if (!g.flag('razor')) return 'hint.map.barbiere';
-      return 'hint.map.return';
+      if (!g.flag('placedRazor')) return 'hint.map.return';
+      if (!g.flag('glasses')) return 'hint.map.ada';
+      if (!g.flag('placedGlasses')) return 'hint.map.returnGlasses';
+      return 'hint.map.done';
     },
   };
 }
