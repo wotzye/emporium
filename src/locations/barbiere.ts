@@ -732,7 +732,7 @@ export function createBarbiere(g: Game): Location {
     { id: 'till', obj: hTill, view: 'till', tap: async (item) => {
       if (item) return g.nope();
       if (g.flag('b.till')) return g.say('bar.tillEmpty');
-      if (!lit()) return g.say('bar.tooDark');
+      if (!lit()) return g.say('bar.noPower');
       const ok = await g.ui.keypad(t('bar.tillTitle'), 3, (c) => c === '850', () => g.audio.sfx('click'));
       if (!ok) return;
       g.audio.sfx('bell');
@@ -783,7 +783,7 @@ export function createBarbiere(g: Game): Location {
       lowPriority: true,
       tap: async (item: string | null) => {
         if (item) return g.nope();
-        if (!lit()) return g.say('bar.tooDark');
+        if (!lit()) return g.say('bar.noPower');
         await chairTap(i);
       },
     })),
