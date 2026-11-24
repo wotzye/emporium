@@ -413,21 +413,22 @@ export function createBarbiere(g: Game): Location {
   fuseLabel.position.set(-2.875, 1.85, 1.0);
   fuseLabel.rotation.y = Math.PI / 2;
   scene.add(fuseLabel);
-  // razor cabinet with glass door
-  scene.add(rbox(0.4, 0.95, 0.75, 0.02, woodMid, -2.8, 1.55, -1.0));
-  scene.add(rbox(0.44, 0.06, 0.8, 0.02, woodDark, -2.8, 2.05, -1.0));
+  // door to the back room, locked
+  scene.add(rbox(0.1, 2.15, 1.05, 0.02, woodDark, -2.97, 1.075, -1.0));
+  scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.0), new THREE.MeshBasicMaterial({ color: 0x000000 }), -2.99, 1.0, -1.0, false).rotateY(Math.PI / 2));
   const cabDoorPivot = new THREE.Group();
-  cabDoorPivot.position.set(-2.59, 1.55, -1.37);
-  cabDoorPivot.add(rbox(0.03, 0.9, 0.72, 0.01, woodDark, 0, 0, 0.36));
-  cabDoorPivot.add(sphere(0.022, chrome, 0.03, 0, 0.66, 10));
-  const keyhole = box(0.005, 0.03, 0.012, mat(0x050505), 0.017, -0.05, 0.66);
+  cabDoorPivot.position.set(-2.93, 0, -1.42);
+  cabDoorPivot.add(rbox(0.05, 2.0, 0.84, 0.01, woodMid, 0.0, 1.0, 0.42));
+  for (const y of [0.55, 1.45]) cabDoorPivot.add(rbox(0.02, 0.6, 0.6, 0.02, woodDark, 0.03, y, 0.42));
+  cabDoorPivot.add(sphere(0.03, chrome, 0.06, 1.0, 0.75, 10));
+  const keyhole = box(0.005, 0.035, 0.014, mat(0x050505), 0.04, 0.92, 0.75);
   cabDoorPivot.add(keyhole);
+  const retroSign = textPlane([t('bar.retroSign')], 0.3, 0.1, { bg: '#e2dccd', size: 30, px: 64 });
+  retroSign.position.set(0.035, 1.6, 0.42);
+  retroSign.rotation.y = Math.PI / 2;
+  cabDoorPivot.add(retroSign);
   scene.add(cabDoorPivot);
-  if (g.flag('b.cabinet')) cabDoorPivot.rotation.y = -1.6;
-  for (const y of [1.25, 1.6]) scene.add(box(0.36, 0.015, 0.7, woodDark, -2.8, y, -1.0));
-  const caseMesh = rbox(0.12, 0.06, 0.3, 0.02, mat(0x3a2a1e, { roughness: 0.5 }), -2.75, 1.29, -1.0);
-  caseMesh.visible = !!g.flag('b.cabinet') && !g.has('case') && !g.flag('razor');
-  scene.add(caseMesh);
+  if (g.flag('b.cabinet')) cabDoorPivot.rotation.y = 1.3;
   // diplomas
   const diploma = (lines: string[]) => (c: CanvasRenderingContext2D, w: number, h: number) => {
     c.fillStyle = '#e8e1cf';
@@ -537,7 +538,7 @@ export function createBarbiere(g: Game): Location {
   const hMirror = hitBox(4.2, 1.1, 0.1, 0, 1.6, -2.45, 'mirror');
   const hPrices = hitBox(0.1, 1.2, 1.1, 2.95, 1.75, 0.3, 'prices');
   const hTill = hitBox(0.6, 0.5, 0.6, 2.62, 1.05, -1.25, 'till');
-  const hCabinet = hitBox(0.6, 1.0, 0.85, -2.7, 1.55, -1.0, 'cabinet');
+  const hCabinet = hitBox(0.3, 2.1, 0.95, -2.85, 1.05, -1.0, 'cabinet');
   const hCalendar = hitBox(0.1, 0.6, 0.5, 2.95, 1.7, -1.3, 'calendar');
   const hChairs = [-1.45, 0, 1.45].map((x, i) => hitBox(0.7, 1.4, 0.7, x, 0.7, -1.35, 'chair' + i));
   scene.add(hFuse, hDrawer, hSteamer, hMirror, hPrices, hTill, hCabinet, hCalendar, ...hChairs);
@@ -611,6 +612,12 @@ export function createBarbiere(g: Game): Location {
     g.take('case');
     g.give('razor');
     await g.say([{ who: 'diego', key: 'bar.razor1' }, { who: 'narr', key: 'bar.razor2' }]);
+    if (g.loc?.id !== 'barbiere') {
+      // wherever you are, the shop pulls you back to its mirror
+      await g.say([{ who: 'narr', key: 'bar.pulled' }]);
+      await g.go('barbiere');
+      g.busy = true;
+    }
     await finale();
   };
 
@@ -719,33 +726,30 @@ export function createBarbiere(g: Game): Location {
     { id: 'cabinet', obj: hCabinet, view: 'cabinet', tap: async (item) => {
       if (g.flag('b.cabinet')) {
         if (item) return g.nope();
-        if (caseMesh.visible) {
-          caseMesh.visible = false;
-          g.give('case');
-          return g.say('bar.caseFound');
-        }
-        return g.say('bar.cabinetEmpty');
+        g.audio.sfx('creak');
+        return g.go('barbiere_retro');
       }
       if (item === 'key') {
         g.take('key');
         g.audio.sfx('unlock');
         g.set('b.cabinet');
+        await sleep(300);
+        g.audio.sfx('creak');
         const t0 = performance.now();
         await new Promise<void>((res) => {
           const step = () => {
-            const k = Math.min((performance.now() - t0) / 600, 1);
-            cabDoorPivot.rotation.y = -1.6 * k;
+            const k = Math.min((performance.now() - t0) / 900, 1);
+            cabDoorPivot.rotation.y = 1.3 * k;
             if (k < 1) requestAnimationFrame(step);
             else res();
           };
           step();
         });
-        caseMesh.visible = true;
-        await g.say('bar.cabinetOpen');
+        await g.say('bar.retroOpen');
         return;
       }
       if (item) return g.nope();
-      await g.say('bar.cabinetLocked');
+      await g.say('bar.retroLocked');
     } },
     { id: 'calendar', obj: hCalendar, tap: async (item) => {
       if (item) return g.nope();
@@ -777,7 +781,7 @@ export function createBarbiere(g: Game): Location {
       steamer: { pos: [0.72, 1.75, -0.95], look: [1.65, 1.15, -2.25], parent: 'main', yaw: 15, pitch: 8 },
       chairs: { pos: [0, 2.7, 0.9], look: [0, 0.3, -1.4], parent: 'main', yaw: 20, pitch: 8 },
       fuse: { pos: [-1.7, 1.6, 0.9], look: [-3, 1.6, 0.9], parent: 'main', yaw: 15, pitch: 8 },
-      cabinet: { pos: [-1.4, 1.55, -0.6], look: [-3, 1.45, -1.0], parent: 'main', yaw: 15, pitch: 10 },
+      cabinet: { pos: [-1.0, 1.6, -0.3], look: [-3, 1.2, -1.0], parent: 'main', yaw: 15, pitch: 10 },
       prices: { pos: [1.7, 1.7, 0.3], look: [3, 1.7, 0.3], parent: 'main', yaw: 15, pitch: 8 },
       till: { pos: [1.5, 1.65, -0.5], look: [2.65, 1.0, -1.25], parent: 'main', yaw: 15, pitch: 8 },
     },
@@ -808,6 +812,7 @@ export function createBarbiere(g: Game): Location {
       if (!g.flag('b.till')) return 'hint.bar.till';
       if (!g.flag('b.chairs')) return 'hint.bar.chairs';
       if (!g.flag('b.cabinet')) return 'hint.bar.cabinet';
+      if (!g.has('case') && !g.flag('razor')) return 'hint.bar.goRetro';
       if (!g.flag('razor')) return 'hint.bar.case';
       return 'hint.bar.leave';
     },

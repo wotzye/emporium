@@ -729,3 +729,107 @@ export function framed(w: number, h: number, draw: (c: CanvasRenderingContext2D,
   g.add(glass);
   return g;
 }
+
+/** Rough stone wall: irregular blocks with deep mortar and damp. */
+export function stoneMaterial(repeat: [number, number] = [2, 1], base = '#6b665d') {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 512;
+  const c = cv.getContext('2d')!;
+  c.fillStyle = '#2b2925';
+  c.fillRect(0, 0, 512, 512);
+  let y = 0;
+  while (y < 512) {
+    const rh = 40 + Math.random() * 40;
+    let x = -Math.random() * 60;
+    while (x < 512) {
+      const rw = 60 + Math.random() * 90;
+      const v = parseInt(base.slice(1, 3), 16) + (Math.random() - 0.5) * 40;
+      c.fillStyle = `rgb(${v},${v * 0.96},${v * 0.9})`;
+      c.beginPath();
+      const r = 10;
+      c.roundRect(x + 4, y + 4, rw - 8, rh - 8, r);
+      c.fill();
+      // surface pits
+      for (let k = 0; k < 12; k++) {
+        c.fillStyle = `rgba(0,0,0,${Math.random() * 0.25})`;
+        c.beginPath();
+        c.arc(x + Math.random() * rw, y + Math.random() * rh, 1 + Math.random() * 4, 0, Math.PI * 2);
+        c.fill();
+      }
+      x += rw;
+    }
+    y += rh;
+  }
+  noise(c, 512, 512, 12000, 0.12);
+  for (let k = 0; k < 8; k++) {
+    const gx = Math.random() * 512;
+    const g = c.createLinearGradient(gx, 0, gx, 512);
+    g.addColorStop(0, 'rgba(20,18,14,0.0)');
+    g.addColorStop(1, 'rgba(20,18,14,0.45)');
+    c.fillStyle = g;
+    c.fillRect(gx, 200, 30 + Math.random() * 60, 312);
+  }
+  const map = new THREE.CanvasTexture(cv);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(repeat[0], repeat[1]);
+  return new THREE.MeshStandardMaterial({ map, normalMap: normalFromCanvas(cv, 5, repeat), normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.9 });
+}
+
+/** A cloth sheet draped over something: a plane pushed into soft folds. */
+export function drapedSheet(w: number, h: number, depth: number) {
+  const geo = new THREE.PlaneGeometry(w, h, 24, 24);
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i);
+    const top = (y + h / 2) / h; // 0 bottom .. 1 top
+    let z = Math.sin(x * 11) * 0.025 * (1 - top) + Math.sin(x * 5 + y * 3) * 0.015;
+    z += depth * Math.sin(top * Math.PI * 0.9) * 0.6;
+    const flare = 1 + (1 - top) * 0.08;
+    pos.setXYZ(i, x * flare, y, z);
+  }
+  geo.computeVertexNormals();
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 256;
+  const c = cv.getContext('2d')!;
+  c.fillStyle = '#a9a398';
+  c.fillRect(0, 0, 256, 256);
+  noise(c, 256, 256, 6000, 0.08);
+  for (let i = 0; i < 8; i++) {
+    c.fillStyle = `rgba(60,50,40,${Math.random() * 0.15})`;
+    c.beginPath();
+    c.arc(Math.random() * 256, 140 + Math.random() * 116, 10 + Math.random() * 30, 0, Math.PI * 2);
+    c.fill();
+  }
+  const map = new THREE.CanvasTexture(cv);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const m = mesh(geo, new THREE.MeshStandardMaterial({ map, roughness: 0.95, side: THREE.DoubleSide }));
+  return m;
+}
+
+/** A canvas texture you can redraw: returns the texture and a redraw function. */
+export function liveCanvas(w: number, h: number) {
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return { cv, ctx: cv.getContext('2d')!, tex, update: () => (tex.needsUpdate = true) };
+}
+
+/** Handwheel valve (faces +z). */
+export function handwheel(r: number, m: THREE.Material) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.12, 8, 24), m));
+  for (let k = 0; k < 4; k++) {
+    const sp = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.06, r * 0.06, r * 2, 6), m);
+    sp.rotation.z = (k * Math.PI) / 4;
+    g.add(sp);
+  }
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(r * 0.2, r * 0.2, r * 0.3, 10), m).rotateX(Math.PI / 2));
+  g.traverse((o) => {
+    o.castShadow = true;
+    o.receiveShadow = true;
+  });
+  return g;
+}

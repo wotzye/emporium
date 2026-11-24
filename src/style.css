@@ -201,3 +201,20 @@ button:active { background: rgba(255,255,255,0.08); }
   #dialog .txt { font-size: 15px; }
   #dialog .box { min-height: 72px; padding: 10px 16px 12px; }
 }
+
+#held {
+  position: absolute; right: calc(10px + var(--safe-r)); bottom: calc(12px + var(--safe-b));
+  pointer-events: auto; height: 48px; padding: 0 14px; background: rgba(0,0,0,0.65);
+  font-size: 14px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px;
+}
+#held[hidden] { display: none; }
+#held small { font-size: 10px; color: var(--ink-dim); letter-spacing: 0.05em; }
+
+#card.memory { gap: 10px; }
+#card .memtitle { color: var(--ink-dim); letter-spacing: 0.3em; text-transform: uppercase; font-size: 12px; }
+#card .memframe { width: min(70vw, calc(56vh * 16 / 9)); height: auto; aspect-ratio: 16 / 9; flex: 0 0 auto; overflow: hidden; border: 6px solid #1c1a17; box-shadow: 0 0 40px #000; }
+#card .memframe { position: relative; }
+#card .memframe canvas { position: static; inset: auto; width: 100%; height: 100%; display: block; animation: kenburns 9s ease-out forwards; filter: sepia(0.25) contrast(1.1); }
+@keyframes kenburns { from { transform: scale(1.0); } to { transform: scale(1.12) translate(-2%, -1%); } }
+#card .memtxt { font-size: clamp(14px, 2.1vw, 18px); min-height: 3.2em; max-width: 760px; }
+@media (max-height: 420px) { #card .memframe { width: min(70vw, calc(50vh * 16 / 9)); } #card .memtxt { font-size: 14px; } }

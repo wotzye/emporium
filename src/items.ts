@@ -28,6 +28,10 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<path d="M6 26 L22 10 L28 16 L12 32 Z"/><path d="M22 10 L26 6 Q30 4 32 8 L28 16"/><path d="M10 28 L24 14"/>'),
   },
+  crank: {
+    id: 'crank',
+    svg: s('<path d="M8 30 H24 V14"/><path d="M24 14 H30"/><rect x="28" y="9" width="5" height="10" rx="2"/><circle cx="8" cy="30" r="3"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

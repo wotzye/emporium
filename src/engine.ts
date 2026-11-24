@@ -72,6 +72,13 @@ export interface View {
 
 export type TapHandler = (hits: THREE.Intersection[]) => void;
 
+/** Direct manipulation: return true from start() to take over the gesture (no camera look, no tap). */
+export interface DragHandler {
+  start: (hits: THREE.Intersection[], ray: THREE.Ray, x: number, y: number) => boolean;
+  move: (ray: THREE.Ray, x: number, y: number, hits: () => THREE.Intersection[]) => void;
+  end: (ray: THREE.Ray, x: number, y: number) => void;
+}
+
 export class Engine {
   renderer: THREE.WebGLRenderer;
   camera: THREE.PerspectiveCamera;
@@ -106,6 +113,7 @@ export class Engine {
   private shakeT = 0;
   flickerAmt = 0;
   onTap: TapHandler = () => {};
+  drag: DragHandler | null = null;
   inputEnabled = true;
 
   constructor(container: HTMLElement) {
@@ -123,7 +131,7 @@ export class Engine {
     this.aoCamera = new THREE.PerspectiveCamera(62, 1, 0.05, 120);
     this.raycaster.layers.enableAll();
     this.raycaster.params.Points = { threshold: 0.001 };
-    this.torch = new THREE.SpotLight(0xfff4e0, 0, 9, 0.36, 0.55, 1.3);
+    this.torch = new THREE.SpotLight(0xfff4e0, 0, 10, 0.4, 0.55, 1.5);
     this.torch.castShadow = true;
     this.torch.shadow.mapSize.set(1024, 1024);
     this.torch.shadow.bias = -0.0006;
@@ -281,7 +289,7 @@ export class Engine {
     this.torchLevel += (want - this.torchLevel) * Math.min(dt * 12, 1);
     let tf = 1;
     if (this.torchFlicker > 0) tf = Math.random() < this.torchFlicker * 0.25 ? Math.random() * 0.2 : 1 - Math.random() * this.torchFlicker * 0.4;
-    this.torch.intensity = 16 * this.torchLevel * tf;
+    this.torch.intensity = 13 * this.torchLevel * tf;
     let flick = 1;
     if (this.flickerAmt > 0) flick = 1 - this.flickerAmt * (Math.random() < 0.08 ? 0.6 : Math.random() * 0.12);
     this.film.uniforms.flicker.value = flick;
@@ -300,8 +308,23 @@ export class Engine {
 
   // ---------------- input ----------------
   private dragging = false;
+  private ndc(x: number, y: number) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return new THREE.Vector2(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
+  }
+  rayAt(x: number, y: number) {
+    this.raycaster.setFromCamera(this.ndc(x, y), this.camera);
+    return this.raycaster.ray.clone();
+  }
+  hitsAt(x: number, y: number) {
+    this.raycaster.setFromCamera(this.ndc(x, y), this.camera);
+    const hits = this.raycaster.intersectObjects(this.scene.children, true).filter((h) => !h.object.userData.noPick && isVisibleChain(h.object));
+    // labels (sprites) are drawn on top of everything, so they also win the tap
+    hits.sort((a, b) => Number((b.object as THREE.Sprite).isSprite === true) - Number((a.object as THREE.Sprite).isSprite === true) || a.distance - b.distance);
+    return hits;
+  }
   private bindInput(el: HTMLElement) {
-    let sx = 0, sy = 0, lx = 0, ly = 0, moved = 0, active = false, id = -1;
+    let sx = 0, sy = 0, lx = 0, ly = 0, moved = 0, active = false, id = -1, objectDrag = false;
     el.addEventListener('pointerdown', (e) => {
       if (active) return;
       active = true;
@@ -309,7 +332,11 @@ export class Engine {
       sx = lx = e.clientX;
       sy = ly = e.clientY;
       moved = 0;
+      objectDrag = false;
       el.setPointerCapture?.(e.pointerId);
+      if (this.drag && this.inputEnabled && !this.tween) {
+        objectDrag = this.drag.start(this.hitsAt(e.clientX, e.clientY), this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY);
+      }
     });
     el.addEventListener('pointermove', (e) => {
       if (!active || e.pointerId !== id) return;
@@ -318,6 +345,10 @@ export class Engine {
       lx = e.clientX;
       ly = e.clientY;
       moved += Math.abs(dx) + Math.abs(dy);
+      if (objectDrag) {
+        this.drag?.move(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY, () => this.hitsAt(e.clientX, e.clientY));
+        return;
+      }
       if (moved > 10 && !this.tween && this.inputEnabled) {
         this.dragging = true;
         const s = 0.0035;
@@ -329,8 +360,13 @@ export class Engine {
       if (!active || e.pointerId !== id) return;
       active = false;
       this.dragging = false;
+      if (objectDrag) {
+        objectDrag = false;
+        this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY);
+        return;
+      }
       if (moved <= 10 && Math.hypot(e.clientX - sx, e.clientY - sy) < 12 && this.inputEnabled && !this.tween) {
-        this.tap(e.clientX, e.clientY);
+        this.onTap(this.hitsAt(e.clientX, e.clientY));
       }
     };
     el.addEventListener('pointerup', end);
@@ -338,18 +374,12 @@ export class Engine {
       if (e.pointerId === id) {
         active = false;
         this.dragging = false;
+        if (objectDrag) {
+          objectDrag = false;
+          this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY);
+        }
       }
     });
-  }
-
-  private tap(x: number, y: number) {
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
-    this.raycaster.setFromCamera(ndc, this.camera);
-    const hits = this.raycaster.intersectObjects(this.scene.children, true).filter((h) => !h.object.userData.noPick && isVisibleChain(h.object));
-    // labels (sprites) are drawn on top of everything, so they also win the tap
-    hits.sort((a, b) => Number((b.object as THREE.Sprite).isSprite === true) - Number((a.object as THREE.Sprite).isSprite === true) || a.distance - b.distance);
-    this.onTap(hits);
   }
 }
 

@@ -5,6 +5,8 @@ import { createMap } from './locations/map';
 import { createEmporio } from './locations/emporio';
 import { createMacelleria } from './locations/macelleria';
 import { createBarbiere } from './locations/barbiere';
+import { createBarbiereRetro } from './locations/barbiere_retro';
+import { createBarbiereCantina } from './locations/barbiere_cantina';
 
 const root = document.getElementById('app')!;
 const game = new Game(root);
@@ -12,6 +14,8 @@ game.register('map', createMap);
 game.register('emporio', createEmporio);
 game.register('macelleria', createMacelleria);
 game.register('barbiere', createBarbiere);
+game.register('barbiere_retro', createBarbiereRetro);
+game.register('barbiere_cantina', createBarbiereCantina);
 
 // expose for automated tests
 (window as unknown as { __game: Game }).__game = game;

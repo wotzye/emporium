@@ -17,6 +17,11 @@ export interface Hotspot {
   tap: (item: string | null) => void | Promise<void>;
 }
 
+export type Interaction =
+  | { kind: 'drag'; obj: THREE.Object3D; when?: () => boolean; plane: THREE.Plane; onStart?: () => void; onMove?: (p: THREE.Vector3) => void; onEnd: (p: THREE.Vector3) => void | Promise<void> }
+  | { kind: 'rub'; obj: THREE.Object3D; when?: () => boolean; onRub: (uv: THREE.Vector2, p: THREE.Vector3) => void; onEnd?: () => void | Promise<void> }
+  | { kind: 'dial'; obj: THREE.Object3D; when?: () => boolean; center: THREE.Vector3; onTurn: (delta: number) => void; onEnd?: () => void | Promise<void> };
+
 export interface Location {
   id: string;
   nameKey: string;
@@ -38,6 +43,8 @@ export interface Location {
   dark?: () => boolean;
   /** handles for tests and screenshots */
   debug?: Record<string, unknown>;
+  /** direct manipulation: drag objects, rub surfaces, turn dials */
+  interactions?: Interaction[];
 }
 
 export type LocationFactory = (g: Game) => Location;
@@ -65,6 +72,7 @@ export class Game {
     this.engine = new Engine(root);
     this.ui = new UI(root);
     this.engine.onTap = (hits) => this.handleTap(hits);
+    this.engine.drag = this.dragHandler();
     this.ui.onBack = () => this.back();
     this.ui.onItemTap = (id) => this.itemTap(id);
     this.ui.onDiary = () => this.openDiary();
@@ -72,6 +80,7 @@ export class Game {
     this.ui.onLisa = () => this.askLisa();
     this.ui.onSettings = () => this.openSettings();
     this.ui.onTorch = () => this.toggleTorch();
+    this.ui.onHeldTap = () => this.setHeld(null);
     this.applySettings();
     this.ui.showHud(false);
   }
@@ -177,6 +186,7 @@ export class Game {
     this.loc?.leave?.();
     this.removeUpdater?.();
     this.selected = null;
+    this.setHeld(null);
     const L = this.location(id);
     this.loc = L;
     this.save.location = id;
@@ -331,6 +341,122 @@ export class Game {
     this.deselect();
     const keys = ['nope.1', 'nope.2', 'nope.3'];
     await this.say(keys[Math.floor(Math.random() * keys.length)]);
+  }
+
+  // ---------------- direct manipulation ----------------
+  /** something held in the hand (not in the apron), e.g. a cloth */
+  held: string | null = null;
+  setHeld(id: string | null) {
+    this.held = id;
+    this.ui.setHeld(id ? t(`held.${id}`) : null);
+  }
+
+  private dragHandler() {
+    let cur: Interaction | null = null;
+    let offset = new THREE.Vector3();
+    let lastAngle = 0;
+    const tmp = new THREE.Vector3();
+    const screenOf = (p: THREE.Vector3) => {
+      const v = p.clone().project(this.engine.camera);
+      return [(v.x + 1) / 2 * window.innerWidth, (1 - v.y) / 2 * window.innerHeight];
+    };
+    const find = (hits: THREE.Intersection[]) => {
+      const list = this.loc?.interactions ?? [];
+      for (const h of hits) {
+        let o: THREE.Object3D | null = h.object;
+        while (o) {
+          const it = list.find((x) => x.obj === o && (!x.when || x.when()));
+          if (it) return { it, hit: h };
+          o = o.parent;
+        }
+        if (!h.object.userData.hit) break;
+      }
+      return null;
+    };
+    return {
+      start: (hits: THREE.Intersection[], ray: THREE.Ray, x: number, y: number) => {
+        if (this.busy || !this.loc || this.ui.modal.classList.contains('on') || this.ui.dialog.classList.contains('on')) return false;
+        const f = find(hits);
+        if (!f) return false;
+        cur = f.it;
+        if (cur.kind === 'drag') {
+          const p = ray.intersectPlane(cur.plane, tmp);
+          const wp = cur.obj.getWorldPosition(new THREE.Vector3());
+          offset = p ? wp.sub(p) : new THREE.Vector3();
+          cur.onStart?.();
+        } else if (cur.kind === 'rub') {
+          if (f.hit.uv) cur.onRub(f.hit.uv, f.hit.point);
+        } else {
+          const [cx, cy] = screenOf(cur.center);
+          lastAngle = Math.atan2(y - cy, x - cx);
+        }
+        return true;
+      },
+      move: (ray: THREE.Ray, x: number, y: number, hits: () => THREE.Intersection[]) => {
+        if (!cur) return;
+        if (cur.kind === 'drag') {
+          const p = ray.intersectPlane(cur.plane, tmp);
+          if (!p) return;
+          const target = p.add(offset);
+          cur.obj.parent ? cur.obj.position.copy(cur.obj.parent.worldToLocal(target.clone())) : cur.obj.position.copy(target);
+          cur.onMove?.(target);
+        } else if (cur.kind === 'rub') {
+          for (const h of hits()) {
+            let o: THREE.Object3D | null = h.object;
+            let on = false;
+            while (o) {
+              if (o === cur.obj) on = true;
+              o = o.parent;
+            }
+            if (on && h.uv) {
+              cur.onRub(h.uv, h.point);
+              break;
+            }
+            if (!h.object.userData.hit) break;
+          }
+        } else {
+          const [cx, cy] = screenOf(cur.center);
+          const a = Math.atan2(y - cy, x - cx);
+          let d = a - lastAngle;
+          if (d > Math.PI) d -= Math.PI * 2;
+          if (d < -Math.PI) d += Math.PI * 2;
+          lastAngle = a;
+          cur.onTurn(d); // clockwise on screen = positive
+        }
+      },
+      end: (ray: THREE.Ray) => {
+        const it = cur;
+        cur = null;
+        if (!it) return;
+        const run = async () => {
+          this.busy = true;
+          try {
+            if (it.kind === 'drag') {
+              const p = it.obj.getWorldPosition(new THREE.Vector3());
+              await it.onEnd(p);
+            } else await it.onEnd?.();
+          } finally {
+            this.busy = false;
+          }
+        };
+        void ray;
+        run();
+      },
+    };
+  }
+
+  /** 0..1: how much the torch is pointing at this object (for writing that only shows in its light). */
+  torchOn(obj: THREE.Object3D, maxDist = 4.5) {
+    if (!this.engine.torchOn) return 0;
+    const cam = this.engine.camera;
+    const p = obj.getWorldPosition(new THREE.Vector3());
+    const c = cam.getWorldPosition(new THREE.Vector3());
+    const dir = p.clone().sub(c);
+    const dist = dir.length();
+    if (dist > maxDist) return 0;
+    const fwd = new THREE.Vector3(0, -0.03, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
+    const ang = fwd.angleTo(dir.normalize());
+    return THREE.MathUtils.clamp(1 - (ang - 0.12) / 0.22, 0, 1);
   }
 
   // ---------------- torch ----------------

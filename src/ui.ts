@@ -35,6 +35,8 @@ export class UI {
   title = el('div');
   card = el('div');
   rotate = el('div');
+  held = el('button');
+  onHeldTap: () => void = () => {};
 
   onBack: () => void = () => {};
   onItemTap: (id: string) => void = () => {};
@@ -61,7 +63,10 @@ export class UI {
     top.append(this.place, btns);
     this.back.id = 'back';
     this.inv.id = 'inv';
-    this.hud.append(top, this.back, this.inv, this.invLabel);
+    this.held.id = 'held';
+    this.held.hidden = true;
+    this.held.onclick = () => this.onHeldTap();
+    this.hud.append(top, this.back, this.inv, this.invLabel, this.held);
     this.dialog.id = 'dialog';
     this.toastEl.id = 'toast';
     this.modal.id = 'modal';
@@ -106,6 +111,11 @@ export class UI {
       this.back.hidden = false;
       this.back.textContent = label;
     }
+  }
+
+  setHeld(label: string | null) {
+    this.held.hidden = !label;
+    this.held.innerHTML = label ? `✋ ${label}<small>${t('ui.putDown')}</small>` : '';
   }
 
   setTorch(available: boolean, on: boolean) {
@@ -427,6 +437,80 @@ export class UI {
         finish(true);
       };
       setTimeout(() => finish(false), ms);
+    });
+  }
+
+  /** A memory: illustrated panels, each with a line of story, like an old film reel. */
+  memory(title: string, panels: { draw: (c: CanvasRenderingContext2D, w: number, h: number) => void; text: string }[]): Promise<void> {
+    return new Promise((res) => {
+      let i = 0;
+      const c = this.card;
+      c.innerHTML = `<div class="grain"></div><div class="memtitle"></div><div class="memframe"><canvas></canvas></div><div class="txt memtxt"></div><div class="tap"></div>`;
+      (c.querySelector('.memtitle') as HTMLElement).textContent = title;
+      const cv = c.querySelector('canvas') as HTMLCanvasElement;
+      const txt = c.querySelector('.txt') as HTMLElement;
+      (c.querySelector('.tap') as HTMLElement).textContent = t('ui.tapContinue');
+      c.classList.add('on', 'memory');
+      let typing = 0;
+      let full = '';
+      const show = () => {
+        cv.width = 960;
+        cv.height = 540;
+        const ctx = cv.getContext('2d')!;
+        ctx.fillStyle = '#0b0a09';
+        ctx.fillRect(0, 0, 960, 540);
+        // drawn soft, like a half-remembered photograph
+        ctx.filter = 'blur(2.2px) contrast(1.15)';
+        panels[i].draw(ctx, 960, 540);
+        ctx.filter = 'none';
+        // a slow light leak from one side
+        const lk = ctx.createLinearGradient(0, 0, 960, 0);
+        lk.addColorStop(0, 'rgba(255,240,210,0.10)');
+        lk.addColorStop(0.4, 'rgba(255,240,210,0)');
+        ctx.fillStyle = lk;
+        ctx.fillRect(0, 0, 960, 540);
+        // old film: grain, scratches, vignette
+        for (let k = 0; k < 9000; k++) {
+          const v = Math.random() < 0.5 ? 0 : 255;
+          ctx.fillStyle = `rgba(${v},${v},${v},${Math.random() * 0.12})`;
+          ctx.fillRect(Math.random() * 960, Math.random() * 540, 2, 2);
+        }
+        for (let k = 0; k < 4; k++) {
+          ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.1})`;
+          ctx.fillRect(Math.random() * 960, 0, 1, 540);
+        }
+        const v = ctx.createRadialGradient(480, 270, 180, 480, 270, 560);
+        v.addColorStop(0, 'rgba(0,0,0,0)');
+        v.addColorStop(1, 'rgba(0,0,0,0.85)');
+        ctx.fillStyle = v;
+        ctx.fillRect(0, 0, 960, 540);
+        cv.style.animation = 'none';
+        void cv.offsetWidth;
+        cv.style.animation = '';
+        full = panels[i].text;
+        txt.textContent = '';
+        let n = 0;
+        clearInterval(typing);
+        typing = window.setInterval(() => {
+          n += 1;
+          txt.textContent = full.slice(0, n);
+          if (n >= full.length) clearInterval(typing);
+        }, 30);
+      };
+      c.onpointerup = () => {
+        if (txt.textContent!.length < full.length) {
+          clearInterval(typing);
+          txt.textContent = full;
+          return;
+        }
+        i++;
+        if (i >= panels.length) {
+          c.onpointerup = null;
+          c.classList.remove('on', 'memory');
+          res();
+        } else show();
+      };
+      show();
     });
   }
 

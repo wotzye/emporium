@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, cursedMat, bulb, fx, rbox, lathe, dust, lightCone, canvasTex, noise, woodMaterial, plasterMaterial } from '../builders';
 import { createMerchant } from '../characters';
+import { barberMemory } from '../memories';
 import { t } from '../i18n';
 
 export function createEmporio(g: Game): Location {
@@ -391,8 +392,15 @@ export function createEmporio(g: Game): Location {
     await sleep(1400);
     candleBase = 3.2;
     g.setFlicker(false);
+    await g.say([{ who: 'narr', key: 'emp.sealed' }]);
+    // the object remembers: the story of the man it belonged to
+    g.audio.sfx('whisper');
+    await g.ui.fadeOut(800);
+    const m = barberMemory();
+    await g.ui.memory(m.title, m.panels);
+    g.diaryPage('memBarbiere');
+    await g.ui.fadeIn(800);
     await g.say([
-      { who: 'narr', key: 'emp.sealed' },
       { who: 'mercante', key: 'emp.placed1' },
       { who: 'mercante', key: 'emp.placed2' },
       { who: 'diego', key: 'emp.placed3' },

@@ -7,6 +7,10 @@ export type DroneKind = 'map' | 'emporio' | 'macelleria' | 'barbiere' | 'none';
 export class Audio {
   ctx: AudioContext | null = null;
   master!: GainNode;
+  /** effects bus: dry to master + a send to the room reverb */
+  bus!: GainNode;
+  private reverb!: ConvolverNode;
+  private wet!: GainNode;
   private noise!: AudioBuffer;
   private droneNodes: AudioNode[] = [];
   private droneGain: GainNode | null = null;
@@ -26,6 +30,26 @@ export class Audio {
     this.master = this.ctx.createGain();
     this.master.gain.value = this.volume;
     this.master.connect(this.ctx.destination);
+    // room reverb from a synthetic impulse: decaying, slightly coloured noise
+    this.reverb = this.ctx.createConvolver();
+    const irLen = Math.floor(this.ctx.sampleRate * 2.4);
+    const ir = this.ctx.createBuffer(2, irLen, this.ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < irLen; i++) {
+        const tt = i / irLen;
+        lp = lp * 0.6 + (Math.random() * 2 - 1) * 0.4; // darker tail
+        d[i] = lp * Math.pow(1 - tt, 3.2) * (i < 200 ? i / 200 : 1);
+      }
+    }
+    this.reverb.buffer = ir;
+    this.wet = this.ctx.createGain();
+    this.wet.gain.value = 0.38;
+    this.bus = this.ctx.createGain();
+    this.bus.connect(this.master);
+    this.bus.connect(this.reverb);
+    this.reverb.connect(this.wet).connect(this.master);
     const len = this.ctx.sampleRate * 2;
     this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
     const d = this.noise.getChannelData(0);
@@ -140,11 +164,11 @@ export class Audio {
   }
 
   // ---------------- Effects ----------------
-  sfx(name: 'click' | 'unlock' | 'wrong' | 'bell' | 'creak' | 'thud' | 'steam' | 'whisper' | 'pickup' | 'switch' | 'drawer' | 'heart' | 'paper' | 'seal' | 'glass' | 'tick') {
+  sfx(name: 'click' | 'unlock' | 'wrong' | 'bell' | 'creak' | 'thud' | 'steam' | 'whisper' | 'pickup' | 'switch' | 'drawer' | 'heart' | 'paper' | 'seal' | 'glass' | 'tick' | 'scrape' | 'rub' | 'valve' | 'hiss' | 'trapdoor' | 'sheet' | 'clunk' | 'water' | 'breath') {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t = this.now;
-    const out = this.master;
+    const out = this.bus;
     switch (name) {
       case 'click': {
         const o = ctx.createOscillator();
@@ -282,6 +306,139 @@ export class Audio {
         this.thump(t, 0.6, 80, 0.5);
         break;
       }
+      case 'scrape': {
+        // glass bottle sliding on wood
+        const n = this.noiseSrc();
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 1800 + Math.random() * 800;
+        f.Q.value = 3;
+        const g = ctx.createGain();
+        this.env(g, t, 0.02, 0.12, 0.18);
+        n.connect(f).connect(g).connect(out);
+        n.start(t);
+        n.stop(t + 0.25);
+        break;
+      }
+      case 'rub': {
+        const n = this.noiseSrc();
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 900 + Math.random() * 600;
+        f.Q.value = 1.2;
+        const g = ctx.createGain();
+        this.env(g, t, 0.01, 0.09, 0.12);
+        n.connect(f).connect(g).connect(out);
+        n.start(t);
+        n.stop(t + 0.15);
+        break;
+      }
+      case 'valve': {
+        // rusty metal squeak
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(600 + Math.random() * 300, t);
+        o.frequency.linearRampToValueAtTime(900 + Math.random() * 400, t + 0.15);
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 1600;
+        f.Q.value = 9;
+        const g = ctx.createGain();
+        this.env(g, t, 0.02, 0.06, 0.18);
+        o.connect(f).connect(g).connect(out);
+        o.start(t);
+        o.stop(t + 0.22);
+        this.thump(t, 0.05, 900, 0.02);
+        break;
+      }
+      case 'hiss': {
+        const n = this.noiseSrc();
+        const f = ctx.createBiquadFilter();
+        f.type = 'highpass';
+        f.frequency.value = 2200;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.25, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+        n.connect(f).connect(g).connect(out);
+        n.start(t);
+        n.stop(t + 2.3);
+        this.thump(t, 0.4, 60, 0.6);
+        break;
+      }
+      case 'trapdoor': {
+        this.sfx('creak');
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(55, t + 0.3);
+        o.frequency.linearRampToValueAtTime(95, t + 1.1);
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 420;
+        f.Q.value = 5;
+        const g = ctx.createGain();
+        this.env(g, t + 0.3, 0.1, 0.22, 0.9);
+        o.connect(f).connect(g).connect(out);
+        o.start(t + 0.3);
+        o.stop(t + 1.4);
+        this.thump(t + 1.3, 0.9, 80, 0.5);
+        break;
+      }
+      case 'sheet': {
+        const n = this.noiseSrc();
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.setValueAtTime(600, t);
+        f.frequency.linearRampToValueAtTime(2400, t + 0.5);
+        f.Q.value = 0.7;
+        const g = ctx.createGain();
+        this.env(g, t, 0.08, 0.25, 0.6);
+        n.connect(f).connect(g).connect(out);
+        n.start(t);
+        n.stop(t + 0.8);
+        break;
+      }
+      case 'clunk': {
+        this.thump(t, 0.5, 220, 0.12);
+        this.thump(t + 0.06, 0.3, 700, 0.05);
+        this.tone(t + 0.02, 1240, 0.03, 0.4, 'triangle');
+        break;
+      }
+      case 'water': {
+        for (let i = 0; i < 14; i++) {
+          const tt = t + i * 0.09 + Math.random() * 0.05;
+          const o = ctx.createOscillator();
+          o.type = 'sine';
+          const f0 = 600 + Math.random() * 900;
+          o.frequency.setValueAtTime(f0, tt);
+          o.frequency.exponentialRampToValueAtTime(f0 * 1.8, tt + 0.05);
+          const g = ctx.createGain();
+          this.env(g, tt, 0.002, 0.05, 0.06);
+          o.connect(g).connect(out);
+          o.start(tt);
+          o.stop(tt + 0.08);
+        }
+        break;
+      }
+      case 'breath': {
+        // a slow, wet breath right behind you
+        for (const [st, dur, f0] of [[0, 1.2, 500], [1.4, 1.6, 380]] as const) {
+          const n = this.noiseSrc();
+          const f = ctx.createBiquadFilter();
+          f.type = 'bandpass';
+          f.frequency.setValueAtTime(f0, t + st);
+          f.frequency.linearRampToValueAtTime(f0 * 1.6, t + st + dur);
+          f.Q.value = 2.5;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t + st);
+          g.gain.exponentialRampToValueAtTime(0.3, t + st + dur * 0.4);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + st + dur);
+          n.connect(f).connect(g).connect(this.master);
+          n.start(t + st);
+          n.stop(t + st + dur + 0.05);
+        }
+        break;
+      }
       case 'tick': {
         // grandfather clock: a dry wooden tock
         this.thump(t, 0.05, 1400, 0.025);
@@ -306,7 +463,7 @@ export class Audio {
     f.frequency.value = 800;
     const g = ctx.createGain();
     this.env(g, t, 0.005, 0.55 * level, 0.9);
-    n.connect(f).connect(g).connect(this.master);
+    n.connect(f).connect(g).connect(this.bus);
     n.start(t);
     n.stop(t + 1);
     for (const fr of [311, 329.6, 349.2, 466.2, 622]) {
@@ -316,7 +473,7 @@ export class Audio {
       o.frequency.exponentialRampToValueAtTime(fr * 0.55, t + 1.6);
       const og = ctx.createGain();
       this.env(og, t, 0.01, 0.09 * level, 1.6);
-      o.connect(og).connect(this.master);
+      o.connect(og).connect(this.bus);
       o.start(t);
       o.stop(t + 1.7);
     }
@@ -365,7 +522,7 @@ export class Audio {
     o.frequency.value = f;
     const g = ctx.createGain();
     this.env(g, t, 0.005, a, d);
-    o.connect(g).connect(this.master);
+    o.connect(g).connect(this.bus);
     o.start(t);
     o.stop(t + d + 0.05);
   }
@@ -378,7 +535,7 @@ export class Audio {
     o.frequency.exponentialRampToValueAtTime(f * 0.6, t + d);
     const g = ctx.createGain();
     this.env(g, t, 0.003, a, d);
-    o.connect(g).connect(this.master);
+    o.connect(g).connect(this.bus);
     o.start(t);
     o.stop(t + d + 0.05);
     const n = this.noiseSrc();
@@ -387,7 +544,7 @@ export class Audio {
     lp.frequency.value = f * 4;
     const ng = ctx.createGain();
     this.env(ng, t, 0.002, a * 0.5, d * 0.6);
-    n.connect(lp).connect(ng).connect(this.master);
+    n.connect(lp).connect(ng).connect(this.bus);
     n.start(t);
     n.stop(t + d + 0.05);
   }
