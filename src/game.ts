@@ -585,7 +585,10 @@ export class Game {
     scene.add(c.group, under, under.target, fill);
     try {
       const r = this.engine.renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown> };
-      if (r.compileAsync) await r.compileAsync(scene, this.engine.camera);
+      if (r.compileAsync) {
+        scene.userData.compiling = (scene.userData.compiling ?? 0) + 1;
+        await r.compileAsync(scene, this.engine.camera).finally(() => scene.userData.compiling--);
+      }
     } catch {
       /* compiles on first sight instead */
     }

@@ -196,6 +196,11 @@ export class Engine {
 
   /** Free the GPU memory of a scene we've left far behind (it is rebuilt from the save if we come back). */
   disposeScene(scene: THREE.Scene) {
+    // three keeps polling the shaders it is compiling: freeing their materials under it throws. Wait.
+    if (scene.userData.compiling) {
+      setTimeout(() => this.disposeScene(scene), 1500);
+      return;
+    }
     const done = new Set<unknown>();
     scene.traverse((o) => {
       const m = o as THREE.Mesh;
@@ -255,7 +260,12 @@ export class Engine {
     try {
       const r = this.renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown> };
       // compileAsync polls the GPU; without KHR_parallel_shader_compile (iOS) it can take ages: cap it
-      if (r.compileAsync) await Promise.race([r.compileAsync(scene, this.camera), new Promise((res) => setTimeout(res, 2500))]);
+      if (r.compileAsync) {
+        // it keeps polling after the cap: if the scene is thrown away meanwhile, its late failure is harmless
+        scene.userData.compiling = (scene.userData.compiling ?? 0) + 1;
+        const c = r.compileAsync(scene, this.camera).catch(() => {}).finally(() => scene.userData.compiling--);
+        await Promise.race([c, new Promise((res) => setTimeout(res, 2500))]);
+      }
       else r.compile(scene, this.camera);
     } catch {
       /* not fatal: it will compile on first sight instead */

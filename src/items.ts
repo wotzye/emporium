@@ -54,6 +54,26 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<circle cx="20" cy="23" r="11"/><path d="M20 23 V16 M20 23 L25 26"/><circle cx="20" cy="8" r="3"/>'),
   },
+  yardkey: {
+    id: 'yardkey',
+    svg: s('<circle cx="11" cy="20" r="6"/><circle cx="11" cy="20" r="2"/><path d="M17 20 H34 M30 20 v6 M26 20 v4"/>'),
+  },
+  padkey: {
+    id: 'padkey',
+    svg: s('<circle cx="12" cy="20" r="4"/><path d="M16 20 H30 M27 20 v4 M24 20 v3"/><rect x="28" y="8" width="8" height="8" rx="1"/><path d="M30 8 v-2 a2 2 0 0 1 4 0 v2"/>'),
+  },
+  shedkey: {
+    id: 'shedkey',
+    svg: s('<circle cx="12" cy="14" r="5"/><path d="M12 19 V34 M12 30 h4 M12 26 h3"/><rect x="20" y="8" width="12" height="7"/>'),
+  },
+  shears: {
+    id: 'shears',
+    svg: s('<path d="M20 22 L12 4 M20 22 L28 4"/><path d="M20 22 L14 36 M20 22 L26 36"/><circle cx="20" cy="22" r="2"/>'),
+  },
+  wardkey: {
+    id: 'wardkey',
+    svg: s('<path d="M8 20 q0 -6 6 -6 q6 0 6 6 q0 6 -6 6 q-6 0 -6 -6z"/><path d="M20 20 H34 M30 20 v5 M33 20 v3"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

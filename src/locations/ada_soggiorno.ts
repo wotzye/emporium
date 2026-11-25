@@ -555,7 +555,7 @@ export function createAdaSoggiorno(g: Game): Location {
     hint: () => {
       if (g.flag('glasses')) return 'hint.ada.leave';
       if (!g.flag('a.tv')) return g.flag('a.tvSeen') ? 'hint.ada.channel' : 'hint.ada.tv';
-      if (!g.has('crutch') && !hatchOpen()) return 'hint.ada.kitchen';
+      if (!g.has('crutch') && !hatchOpen()) return g.flag('a.shedKey') ? 'hint.ada.garden' : 'hint.ada.kitchen';
       if (!hatchOpen()) return 'hint.ada.hatch';
       return 'hint.ada.attic';
     },

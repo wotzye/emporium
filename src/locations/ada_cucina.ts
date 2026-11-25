@@ -199,7 +199,36 @@ export function createAdaCucina(g: Game): Location {
   const pantryOpen = () => tableDone();
   const setPantry = (k: number) => (pantryPivot.rotation.y = k * 1.7);
   setPantry(pantryOpen() ? 1 : 0);
-  crutchGroup.visible = pantryOpen() && !g.flag('a.crutch');
+  // the crutch is no longer here (it is in the wardrobe, in her bedroom): only an old save still finds it
+  crutchGroup.visible = false;
+  // on a nail inside the pantry: the key of the garden shed
+  const shedKey = new THREE.Group();
+  shedKey.add(cyl(0.005, 0.005, 0.08, chrome, 0, 0, 0, 6));
+  shedKey.add(mesh(new THREE.TorusGeometry(0.016, 0.004, 6, 12), chrome, 0, 0.05, 0));
+  shedKey.add(textPlane([t('ada.shedTag')], 0.06, 0.03, { bg: '#d8cfba', size: 16, px: 32 }).translateY(-0.06).translateZ(0.01));
+  shedKey.position.set(pantryX, 1.35, -D / 2 + 0.06);
+  shedKey.visible = pantryOpen() && !g.flag('a.crutch') && !g.flag('a.shedKey');
+  scene.add(shedKey);
+  // the back door to the garden (right wall, near the front): glass panes, the wisteria pressing against them
+  const gdZ = 1.05;
+  const gdTex = canvasTex(64, 128, (c, w, h) => {
+    c.fillStyle = '#1b2026';
+    c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 60; i++) {
+      c.fillStyle = `rgba(150,150,160,${Math.random() * 0.4})`;
+      c.beginPath();
+      c.arc(Math.random() * w, Math.random() * h * 0.6, 2 + Math.random() * 4, 0, Math.PI * 2);
+      c.fill();
+    }
+  });
+  scene.add(mesh(new THREE.PlaneGeometry(0.8, 2.0), new THREE.MeshBasicMaterial({ color: 0x050505 }), W / 2 - 0.012, 1.0, gdZ, false).rotateY(-Math.PI / 2));
+  const gdPivot = new THREE.Group();
+  gdPivot.position.set(W / 2 - 0.04, 0, gdZ - 0.4);
+  gdPivot.add(rbox(0.05, 2.0, 0.8, 0.01, woodMaterial({ base: '#6d6252' }), 0, 1.0, 0.4));
+  gdPivot.add(mesh(new THREE.PlaneGeometry(0.5, 0.9), new THREE.MeshBasicMaterial({ map: gdTex }), -0.03, 1.4, 0.4, false).rotateY(-Math.PI / 2));
+  gdPivot.add(cyl(0.015, 0.015, 0.05, chrome, -0.04, 1.0, 0.7, 8).rotateZ(Math.PI / 2));
+  scene.add(gdPivot);
+  if (g.flag('a.gardenDoor')) gdPivot.rotation.y = 1.2;
 
   // sink and drainboard on the back wall, calendar
   scene.add(rbox(1.0, 0.86, 0.55, 0.02, enamel, -0.8, 0.43, -D / 2 + 0.3));
@@ -220,6 +249,8 @@ export function createAdaCucina(g: Game): Location {
   const hCal = hitBox(0.35, 0.45, 0.1, 0.25, 1.55, -D / 2 + 0.05, 'calendar');
   const hSink = hitBox(1.0, 1.0, 0.6, -0.8, 0.5, -D / 2 + 0.3, 'sink');
   const hDoor = hitBox(1.0, 2.1, 0.2, -1.2, 1.05, D / 2 - 0.1, 'door');
+  const hGarden = hitBox(0.3, 2.0, 0.85, W / 2 - 0.15, 1.0, gdZ, 'garden');
+  scene.add(hGarden);
   scene.add(hTable, hKettle, hStove, hWindow, hPantry, hCal, hSink, hDoor);
 
   const say = (k: string) => g.say(k);
@@ -265,7 +296,7 @@ export function createAdaCucina(g: Game): Location {
       setPantry(i / 25);
       await sleep(30);
     }
-    crutchGroup.visible = true;
+    shedKey.visible = !g.flag('a.crutch');
     await g.say([{ who: 'diego', key: 'ada.pantryOpen' }]);
   };
 
@@ -297,11 +328,11 @@ export function createAdaCucina(g: Game): Location {
         g.audio.sfx('wrong');
         return say('ada.pantryShut');
       }
-      if (crutchGroup.visible) {
-        crutchGroup.visible = false;
-        g.set('a.crutch');
-        g.give('crutch');
-        return say('ada.crutch');
+      if (shedKey.visible) {
+        shedKey.visible = false;
+        g.set('a.shedKey');
+        g.give('shedkey');
+        return say('ada.shedKey');
       }
       return say('ada.pantryEmpty');
     } },
@@ -313,6 +344,21 @@ export function createAdaCucina(g: Game): Location {
     { id: 'sink', obj: hSink, tap: async (item) => {
       if (item) return g.nope();
       return say('ada.sink');
+    } },
+    { id: 'garden', obj: hGarden, view: 'garden', tap: async (item) => {
+      if (item) return g.nope();
+      if (!g.flag('a.gardenDoor')) {
+        g.set('a.gardenDoor');
+        g.audio.sfx('unlock');
+        g.audio.sfx('creak');
+        for (let i = 0; i <= 18; i++) {
+          gdPivot.rotation.y = (i / 18) * 1.2;
+          await sleep(25);
+        }
+        await say('ada.gardenOpen');
+      }
+      g.audio.steps(3, 0.45, false);
+      return g.go('ada_giardino');
     } },
     { id: 'door', obj: hDoor, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
@@ -368,11 +414,13 @@ export function createAdaCucina(g: Game): Location {
     drone: 'emporio',
     startView: 'main',
     exitTo: 'ada_soggiorno',
+    next: ['ada_giardino'],
     views: {
       main: { pos: [-0.9, 1.6, 1.45], look: [0.6, 0.95, -1.1], yaw: 60, pitch: 18 },
       table: { pos: [0, 1.6, TZ + 0.85], look: [0, top, TZ - 0.05], parent: 'main', yaw: 15, pitch: 10, fov: 58 },
       stove: { pos: [0.6, 1.5, winZ + 0.9], look: [W / 2 - 0.4, 1.0, winZ], parent: 'main', yaw: 20, pitch: 12 },
       window: { pos: [-0.6, 1.55, winZ + 0.3], look: [-W / 2, 1.5, winZ], parent: 'main', yaw: 15, pitch: 10, fov: 55 },
+      garden: { pos: [0.2, 1.6, 0.5], look: [W / 2, 1.1, gdZ], parent: 'main', yaw: 20, pitch: 12 },
       pantry: { pos: [0.8, 1.5, -0.2], look: [pantryX, 1.0, -D / 2], parent: 'main', yaw: 20, pitch: 12 },
     },
     hotspots,
@@ -396,7 +444,7 @@ export function createAdaCucina(g: Game): Location {
     },
     hint: () => {
       if (!tableDone()) return g.flag('a.photoSeen') || g.save.notebook.includes('note.seats') ? 'hint.ada.table' : 'hint.ada.photo';
-      if (!g.flag('a.crutch')) return 'hint.ada.crutch';
+      if (!g.flag('a.crutch')) return g.flag('a.shedKey') ? 'hint.ada.garden' : 'hint.ada.shedKey';
       return 'hint.ada.hatch';
     },
     debug: { pieces, MATS, top, getPlaced: () => [...placed] },

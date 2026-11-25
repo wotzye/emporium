@@ -82,6 +82,17 @@ export function createBarbiereRetro(g: Game): Location {
   crankMesh.position.set(-1.5, benchY - 0.12, -0.2);
   crankMesh.visible = false;
   scene.add(crankMesh);
+  // the drawer now holds the key of the back door; the crank is hidden elsewhere (the well, in the courtyard)
+  const legacyCrank = () => g.has('crank') || !!g.flag('r.crankIn') || !!g.flag('y.crank');
+  const yardKey = new THREE.Group();
+  yardKey.add(cyl(0.005, 0.005, 0.09, iron, 0, 0, 0, 6).rotateZ(Math.PI / 2));
+  yardKey.add(mesh(new THREE.TorusGeometry(0.018, 0.004, 6, 14), iron, -0.055, 0, 0).rotateX(Math.PI / 2));
+  yardKey.add(rbox(0.012, 0.004, 0.02, 0.001, iron, 0.04, 0, 0.01));
+  yardKey.add(textPlane(['CORTILE'], 0.05, 0.02, { bg: '#d8cfba', size: 18, px: 24 }).rotateX(-Math.PI / 2).translateX(-0.085));
+  yardKey.position.set(-1.5, benchY - 0.08, -0.2);
+  yardKey.rotation.y = 0.4;
+  yardKey.visible = false;
+  scene.add(yardKey);
 
   // bottles: each has its own footprint
   const glassCols = [0x2a2d30, 0x5c6064, 0x15171a, 0x7a7e80, 0x3d4144];
@@ -104,7 +115,8 @@ export function createBarbiereRetro(g: Game): Location {
   if (drawerOpen()) {
     drawer.position.x += 0.3;
     crankMesh.position.x += 0.3;
-    crankMesh.visible = !g.has('crank') && !g.flag('r.crankIn');
+    yardKey.position.x += 0.3;
+    yardKey.visible = !legacyCrank() && !g.flag('r.yardKey');
   }
 
   // ---------------- sink, small mirror, towel ----------------
@@ -314,7 +326,7 @@ export function createBarbiereRetro(g: Game): Location {
     ladder.rotation.set(0.25, 0.1, 0);
     scene.add(ladder);
   }
-  for (const [id, x, z, ry] of [['stool', -0.5, 1.35, 0.4], ['bucket', 1.6, -0.35, 1.2]] as const) {
+  for (const [id, x, z, ry] of [['stool', -0.5, 1.35, 0.4], ['bucket', 1.65, -0.55, 1.2]] as const) {
     const pr = prop(id);
     if (!pr) continue;
     pr.position.set(x, 0, z);
@@ -325,6 +337,17 @@ export function createBarbiereRetro(g: Game): Location {
 
   // door back to the shop
   scene.add(rbox(0.9, 2.05, 0.06, 0.02, woodDark, 1.2, 1.025, D / 2 - 0.04));
+  // the back door to the courtyard (right wall): bolted, a frosted pane with the rain behind it
+  const yardZ = 0.4;
+  scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.05), new THREE.MeshBasicMaterial({ color: 0x0b0d10 }), W / 2 - 0.012, 1.025, yardZ, false).rotateY(-Math.PI / 2));
+  const yardPivot = new THREE.Group();
+  yardPivot.position.set(W / 2 - 0.04, 0, yardZ - 0.42);
+  yardPivot.add(rbox(0.05, 2.04, 0.84, 0.01, woodMid, 0, 1.02, 0.42));
+  yardPivot.add(mesh(new THREE.PlaneGeometry(0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0x8a949c, roughness: 0.3, transparent: true, opacity: 0.55 }), -0.03, 1.55, 0.42, false).rotateY(-Math.PI / 2));
+  yardPivot.add(rbox(0.04, 0.06, 0.1, 0.01, brass, -0.04, 1.0, 0.74));
+  scene.add(yardPivot);
+  const yardOpen = () => !!g.flag('r.yardOpen');
+  if (yardOpen()) yardPivot.rotation.y = 1.3;
 
   // ---------------- hotspots ----------------
   const hTowel = hitBox(0.4, 0.6, 0.15, -0.4, 1.15, -1.7, 'towel');
@@ -334,7 +357,8 @@ export function createBarbiereRetro(g: Game): Location {
   const hBoiler = hitBox(0.8, 1.9, 0.9, 1.5, 0.95, -1.25, 'boiler');
   const hTrap = hitBox(1.2, 0.3, 1.1, 0.35, 0.1, 0.4, 'trap');
   const hHelmet = hitBox(0.6, 1.7, 0.6, 1.4, 0.85, 1.2, 'helmet');
-  scene.add(hTowel, hBench, hDrawer, hSink, hBoiler, hTrap, hHelmet);
+  const hYard = hitBox(0.3, 2.1, 0.9, W / 2 - 0.15, 1.05, yardZ, 'yard');
+  scene.add(hTowel, hBench, hDrawer, hSink, hBoiler, hTrap, hHelmet, hYard);
 
   const say = (k: string) => g.say(k);
 
@@ -361,6 +385,12 @@ export function createBarbiereRetro(g: Game): Location {
         crankMesh.visible = false;
         g.give('crank');
         return say('retro.crank');
+      }
+      if (yardKey.visible) {
+        yardKey.visible = false;
+        g.set('r.yardKey');
+        g.give('yardkey');
+        return say('retro.yardKey');
       }
       return say('retro.drawerEmpty');
     } },
@@ -394,6 +424,28 @@ export function createBarbiereRetro(g: Game): Location {
       }
       if (item) return g.nope();
       return say('retro.turnCrank');
+    } },
+    { id: 'yard', obj: hYard, view: 'yard', tap: async (item) => {
+      if (yardOpen()) {
+        if (item) return g.nope();
+        g.audio.steps(3, 0.45, false);
+        return g.go('barbiere_cortile');
+      }
+      if (item === 'yardkey') {
+        g.deselect();
+        g.take('yardkey');
+        g.set('r.yardOpen');
+        g.audio.sfx('unlock');
+        g.audio.sfx('creak');
+        for (let i = 0; i <= 20; i++) {
+          yardPivot.rotation.y = (i / 20) * 1.3;
+          await sleep(25);
+        }
+        return say('retro.yardOpen');
+      }
+      if (item) return g.nope();
+      g.audio.sfx('wrong');
+      return say('retro.yardLocked');
     } },
     { id: 'helmet', obj: hHelmet, tap: async (item) => {
       if (item) return g.nope();
@@ -436,7 +488,8 @@ export function createBarbiereRetro(g: Game): Location {
             g.audio.sfx('drawer');
             drawer.position.x += 0.3;
             crankMesh.position.x += 0.3;
-            crankMesh.visible = true;
+            yardKey.position.x += 0.3;
+            yardKey.visible = !legacyCrank();
             g.set('r.drawer');
             await say('retro.drawerOpen');
           }
@@ -542,7 +595,7 @@ export function createBarbiereRetro(g: Game): Location {
   return {
     id: 'barbiere_retro',
     nameKey: 'place.barbiereRetro',
-    next: ['barbiere_cantina'],
+    next: ['barbiere_cantina', 'barbiere_cortile'],
     scene,
     drone: 'barbiere',
     startView: 'main',
@@ -552,6 +605,7 @@ export function createBarbiereRetro(g: Game): Location {
       bench: { pos: [-0.75, 1.85, -0.2], look: [-1.75, 0.85, -0.2], parent: 'main', yaw: 25, pitch: 10, fov: 70 },
       sink: { pos: [-0.8, 1.5, -0.1], look: [-0.9, 1.3, -1.8], parent: 'main', yaw: 25, pitch: 15 },
       boiler: { pos: [0.25, 1.35, -1.0], look: [1.4, 1.15, -1.25], parent: 'main', yaw: 25, pitch: 14 },
+      yard: { pos: [0.1, 1.6, 0.9], look: [W / 2, 1.1, yardZ - 0.1], parent: 'main', yaw: 20, pitch: 12 },
       trap: { pos: [0.45, 1.9, 1.5], look: [0.45, 0.0, 0.3], parent: 'main', yaw: 20, pitch: 10 },
     },
     hotspots,
@@ -569,7 +623,11 @@ export function createBarbiereRetro(g: Game): Location {
     hint: () => {
       if (!g.flag('r.cloth')) return 'hint.retro.cloth';
       if (!allPlaced()) return 'hint.retro.bottles';
-      if (!g.has('crank') && !g.flag('r.crankIn')) return 'hint.retro.drawer';
+      if (!g.has('crank') && !g.flag('r.crankIn')) {
+        if (!legacyCrank() && !g.flag('r.yardKey')) return 'hint.retro.drawer';
+        if (!yardOpen()) return 'hint.retro.yard';
+        return 'hint.retro.goYard';
+      }
       if (!g.flag('r.plate')) return 'hint.retro.plate';
       if (!g.flag('r.valves')) return 'hint.retro.valves';
       if (!g.flag('r.crankIn')) return 'hint.retro.crankIn';
