@@ -206,9 +206,10 @@ export class Game {
     const step = () => {
       const id = queue.shift();
       if (!id || this.loc !== L) return;
-      if (this.busy) {
+      // only hold back while the camera is moving: a dialog on screen is idle time for the GPU
+      if (this.engine.moving) {
         queue.unshift(id);
-        this.prewarmTimer = window.setTimeout(step, 1000);
+        this.prewarmTimer = window.setTimeout(step, 500);
         return;
       }
       try {
@@ -219,7 +220,7 @@ export class Game {
         this.prewarmTimer = window.setTimeout(step, 400);
       }
     };
-    this.prewarmTimer = window.setTimeout(step, 1500);
+    this.prewarmTimer = window.setTimeout(step, 700);
   }
 
   async go(id: string, fade = true) {
@@ -251,6 +252,8 @@ export class Game {
     this.currentView = L.startView;
     await this.engine.goTo(L.views[L.startView], true);
     this.removeUpdater = L.update ? this.engine.addUpdater(L.update) : null;
+    this.removeMarkers?.();
+    this.removeMarkers = this.engine.addUpdater(this.markers(L));
     this.ui.setPlace(t(L.nameKey));
     this.ui.showHud(true);
     this.ui.renderInventory(this.save.inventory, this.selected);
@@ -594,6 +597,59 @@ export class Game {
     }
     scene.remove(c.group, under, under.target, fill);
   }
+  private removeMarkers: (() => void) | null = null;
+  private static markerTex: THREE.Texture | null = null;
+  /**
+   * Black and white swallows small things. A soft pulsing ring marks everything you can tap
+   * (not the big furniture boxes), so nothing important gets lost in the dark. Can be turned off.
+   */
+  private markers(L: Location) {
+    if (!Game.markerTex) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 64;
+      const x = c.getContext('2d')!;
+      const gr = x.createRadialGradient(32, 32, 4, 32, 32, 30);
+      gr.addColorStop(0, 'rgba(255,255,255,0.9)');
+      gr.addColorStop(0.25, 'rgba(255,255,255,0.35)');
+      gr.addColorStop(0.55, 'rgba(255,255,255,0.0)');
+      gr.addColorStop(0.75, 'rgba(255,255,255,0.55)');
+      gr.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = gr;
+      x.fillRect(0, 0, 64, 64);
+      Game.markerTex = new THREE.CanvasTexture(c);
+    }
+    let list = L.scene.userData.markers as { h: Hotspot; s: THREE.Sprite; ph: number }[] | undefined;
+    if (!list) {
+      list = [];
+      for (const h of L.hotspots) {
+        if (h.lowPriority) continue;
+        const m = new THREE.SpriteMaterial({ map: Game.markerTex, transparent: true, depthTest: false, depthWrite: false, sizeAttenuation: false, opacity: 0 });
+        m.userData.shared = false;
+        const sp = new THREE.Sprite(m);
+        sp.layers.set(2);
+        sp.userData.noPick = true;
+        sp.renderOrder = 50;
+        sp.scale.setScalar(0.05);
+        L.scene.add(sp);
+        list.push({ h, s: sp, ph: Math.random() * 6 });
+      }
+      L.scene.userData.markers = list;
+    }
+    const v = new THREE.Vector3();
+    const items = list;
+    return (_dt: number, time: number) => {
+      const on = (this.settings.markers ?? true) && !this.busy;
+      for (const m of items) {
+        const show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true);
+        m.s.visible = show;
+        if (!show) continue;
+        m.h.obj.getWorldPosition(v);
+        m.s.position.copy(v);
+        (m.s.material as THREE.SpriteMaterial).opacity = 0.5 + 0.25 * Math.sin(time * 2.2 + m.ph);
+      }
+    };
+  }
+
   private async scare3d(kind: 'barber' | 'bruno' | 'ada' | 'clara', ms: number) {
     const c = this.scareChar(kind);
     const cam = this.engine.camera;
@@ -748,6 +804,15 @@ export class Game {
           label: v === 0 ? t('ui.off') : v === 0.4 ? '50%' : '100%',
           on: s.volume === v,
           set: () => { s.volume = v; this.applySettings(); this.persist(); this.openSettings(); },
+        })),
+      },
+      {
+        label: t('ui.markers'),
+        value: '',
+        options: [true, false].map((v) => ({
+          label: t(v ? 'ui.on' : 'ui.off'),
+          on: (s.markers ?? true) === v,
+          set: () => { s.markers = v; this.persist(); this.openSettings(); },
         })),
       },
       {

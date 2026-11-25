@@ -169,6 +169,15 @@ export function createOraTorre(g: Game): Location {
   const hSocket = hitBox(0.3, 0.3, 0.3, -0.45, 0.85, -0.35, 'socket');
   const hWedge = hitBox(0.35, 0.25, 0.3, 0.42, 0.72, 0.1, 'wedge');
   const hWatch = hitBox(0.25, 0.25, 0.25, 0.05, 1.3, -0.45, 'watch');
+  // once it has fallen, the hotspot lies on the floor with it (bigger: it's a small thing in the dark)
+  const dropHit = () => {
+    const ws = hotspotsRef.find((h) => h.id === 'watch');
+    if (ws) ws.view = 'floor';
+    hWatch.position.set(0.1, 0.1, 0.4);
+    hWatch.scale.setScalar(1.6);
+    watchGlow.position.set(0.1, 0.25, 0.55);
+  };
+  const hotspotsRef: Hotspot[] = [];
   const hDial = hitBox(2.0, 2.0, 0.2, 0, 2.4, -D / 2 + 0.1, 'dial');
   const hDown = hitBox(0.8, 1.6, 0.8, -1.3, 0.8, 1.3, 'down');
   scene.add(hMove, hSocket, hWedge, hWatch, hDial, hDown);
@@ -191,11 +200,14 @@ export function createOraTorre(g: Game): Location {
       await sleep(25);
     }
     g.audio.sfx('glass');
+    dropHit();
     await say('ora.restarted1');
+    await g.view('floor');
     await say('ora.restarted2');
   };
 
-  const hotspots: Hotspot[] = [
+  const hotspots: Hotspot[] = hotspotsRef;
+  hotspots.push(
     { id: 'watch', obj: hWatch, tap: async (item) => {
       if (item) return g.nope();
       if (!watch.visible) return;
@@ -245,7 +257,8 @@ export function createOraTorre(g: Game): Location {
       if (item) return g.nope();
       return g.back();
     } },
-  ];
+  );
+  if (restarted()) dropHit();
 
   // ---------------- direct manipulation ----------------
   scene.updateMatrixWorld(true);
@@ -304,6 +317,7 @@ export function createOraTorre(g: Game): Location {
       drum: { pos: [-0.25, 1.1, 0.35], look: [-0.45, 0.85, -0.45], parent: 'main', yaw: 15, pitch: 10, fov: 55 },
       pendulum: { pos: [0.6, 1.0, 1.05], look: [0.32, 0.72, 0.06], parent: 'main', yaw: 15, pitch: 10, fov: 55 },
       watch: { pos: [0.15, 1.4, 0.4], look: [0.05, 1.3, -0.5], parent: 'main', yaw: 10, pitch: 8, fov: 50 },
+      floor: { pos: [0.35, 1.25, 1.35], look: [0.1, 0.25, 0.4], parent: 'main', yaw: 15, pitch: 10, fov: 50 },
     },
     hotspots,
     interactions,

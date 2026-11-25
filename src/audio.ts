@@ -1,3 +1,4 @@
+import { useAudioContext } from './sensors';
 /**
  * All sound is synthesized with WebAudio: no audio files to load, nothing to license.
  * iOS only starts audio after a user gesture, so init() is called from the title screen tap.
@@ -27,6 +28,7 @@ export class Audio {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AC) return;
     this.ctx = new AC();
+    useAudioContext(this.ctx);
     this.master = this.ctx.createGain();
     this.master.gain.value = this.volume;
     this.master.connect(this.ctx.destination);
@@ -599,6 +601,51 @@ export class Audio {
   /** named recordings for specific moments (no-op if not loaded) */
   rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
     return this.sample(name, o);
+  }
+
+  /**
+   * A wind-up music box playing Brahms' lullaby (public domain): bell-like tines, a little detuned,
+   * slowing down and fading as the spring runs out. Returns the length in seconds.
+   */
+  musicBox(o: { gain?: number; runDown?: boolean; bars?: number } = {}) {
+    if (!this.ctx) return 0;
+    const ctx = this.ctx;
+    const gain = o.gain ?? 0.5;
+    // [midi note, beats]
+    const tune: [number, number][] = [
+      [64, 0.5], [64, 0.5], [67, 2], [64, 0.5], [64, 0.5], [67, 2],
+      [64, 0.5], [67, 0.5], [72, 1], [71, 1.5], [69, 0.5], [69, 1], [67, 1],
+      [62, 0.5], [64, 0.5], [65, 1], [62, 1], [62, 0.5], [64, 0.5], [65, 2],
+      [62, 0.5], [65, 0.5], [71, 0.5], [69, 0.5], [67, 1], [71, 1], [72, 2.5],
+    ];
+    const notes = tune.slice(0, o.bars ?? tune.length);
+    let t = this.now + 0.05;
+    let beat = 0.42;
+    const out = ctx.createGain();
+    out.gain.value = gain;
+    out.connect(this.bus);
+    out.connect(this.reverb);
+    notes.forEach(([m, b], i) => {
+      const f = 440 * Math.pow(2, (m + 12 - 69) / 12) * (1 + (Math.random() - 0.5) * 0.004);
+      const k = i / notes.length;
+      const vel = o.runDown ? 1 - k * 0.55 : 1;
+      // a tine: fundamental plus the inharmonic partials of a struck steel comb
+      for (const [mult, amp, dec] of [[1, 1, 1.6], [2.76, 0.35, 0.5], [5.4, 0.18, 0.18], [8.9, 0.08, 0.08]] as const) {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = f * mult;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.22 * amp * vel, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dec * (1.2 + b * 0.3));
+        osc.connect(g).connect(out);
+        osc.start(t);
+        osc.stop(t + dec * (1.2 + b * 0.3) + 0.05);
+      }
+      t += b * beat;
+      if (o.runDown && k > 0.6) beat *= 1.06; // the spring is running out
+    });
+    return t - this.now;
   }
 
   steps(count: number, interval = 0.55, heavy = true) {

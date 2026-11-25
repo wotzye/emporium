@@ -102,6 +102,8 @@ export function instance(id: ModelId): THREE.Object3D | null {
         mm.side = THREE.DoubleSide;
       }
       m.material = Array.isArray(m.material) ? m.material.map((x) => x.clone()) : m.material.clone();
+      // the textures still belong to the loaded model, shared by every copy in every room
+      for (const x of Array.isArray(m.material) ? m.material : [m.material]) x.userData.modelTex = true;
     }
   });
   return o;

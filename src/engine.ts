@@ -115,6 +115,9 @@ export class Engine {
   private pitch = 0;
   private yawLimit = 0.5;
   private pitchLimit = 0.3;
+  get moving() {
+    return !!this.tween;
+  }
   private tween: { from: THREE.Vector3; fromQ: THREE.Quaternion; to: THREE.Vector3; toQ: THREE.Quaternion; fromFov: number; toFov: number; t: number; dur: number; done: () => void } | null = null;
   private shakeAmt = 0;
   private shakeT = 0;
@@ -213,7 +216,7 @@ export class Engine {
         // materials shared between rooms stay alive
         if (done.has(mt) || mt.userData.shared) continue;
         done.add(mt);
-        for (const v of Object.values(mt as unknown as Record<string, unknown>)) {
+        for (const v of mt.userData.modelTex ? [] : Object.values(mt as unknown as Record<string, unknown>)) {
           if (v instanceof THREE.Texture && v !== this.envTex && !done.has(v)) {
             done.add(v);
             v.dispose();

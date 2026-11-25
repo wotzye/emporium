@@ -306,9 +306,9 @@ export function createAdaCamera(g: Game): Location {
       onEnd: async () => {
         if (wound < 1 || playing || boxPlayed()) return;
         playing = true;
-        g.audio.rec('musicbox', { gain: 0.75, dur: 6 });
+        const len = g.audio.musicBox({ gain: 0.6, runDown: true, bars: 13 });
         await say('ac.playing');
-        await sleep(3500);
+        await sleep(Math.max(1500, len * 1000 - 2500));
         // the tune slows, and stops; the little drawer clicks open; and in the mirror...
         g.set('ac.music');
         g.audio.sfx('drawer');

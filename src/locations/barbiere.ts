@@ -418,6 +418,7 @@ export function createBarbiere(g: Game): Location {
     chairs.push(c);
   });
   if (g.flag('b.chairs')) footrests[1].rotation.x = -0.6;
+  if (g.flag('b.chairs') && g.has('photo')) g.take('photo');
 
   // ---------------- left wall: fuse box, cabinet, diplomas, coat rack ----------------
   const metal = new THREE.MeshStandardMaterial({ color: 0x3c3c3c, roughness: 0.45, metalness: 0.6 });
@@ -675,6 +676,8 @@ export function createBarbiere(g: Game): Location {
       g.set('b.chairs');
       await g.say([{ who: 'narr', key: 'bar.chairsOpen' }]);
       g.give('key');
+      // the photo of the chairs has done its job
+      if (g.has('photo')) g.take('photo');
     }
   };
 

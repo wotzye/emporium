@@ -137,9 +137,30 @@ export class UI {
     b.classList.add('flash');
   }
 
+  /** the inventory can be folded away (it sits in front of things at the bottom of the screen) */
+  private invOpen = true;
+  private lastInv: [string[], string | null] = [[], null];
   renderInventory(items: string[], selected: string | null, fresh?: string) {
+    this.lastInv = [items, selected];
+    // something new always unfolds it, so you see what you got
+    if (fresh) this.invOpen = true;
     this.inv.innerHTML = '';
-    const slots = Math.max(6, items.length);
+    this.inv.classList.toggle('closed', !this.invOpen);
+    const tog = el('div', 'tog');
+    tog.innerHTML = this.invOpen
+      ? '<svg viewBox="0 0 24 24"><path d="M6 9 l6 6 l6 -6"/></svg>'
+      : `<svg viewBox="0 0 24 24"><path d="M5 9 h14 l-1.5 11 h-11z M9 9 v-2 a3 3 0 0 1 6 0 v2"/></svg>${items.length ? `<b>${items.length}</b>` : ''}`;
+    tog.onclick = (e) => {
+      e.stopPropagation();
+      this.invOpen = !this.invOpen;
+      this.renderInventory(...this.lastInv);
+    };
+    if (!this.invOpen) {
+      this.inv.append(tog);
+      this.invLabel.textContent = selected ? t(`item.${selected}`) + ' — ' + t('ui.useHint') : '';
+      return;
+    }
+    const slots = Math.max(3, items.length);
     for (let i = 0; i < slots; i++) {
       const id = items[i];
       const s = el('div', 'slot');
@@ -156,6 +177,7 @@ export class UI {
       }
       this.inv.append(s);
     }
+    this.inv.append(tog);
     this.invLabel.textContent = selected ? t(`item.${selected}`) + ' — ' + t('ui.useHint') : '';
   }
 

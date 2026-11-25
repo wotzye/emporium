@@ -3,6 +3,7 @@ import { prop } from '../models';
 import { Game, Location, Hotspot } from '../game';
 import { room, mat, mesh, rbox, cyl, lathe, sphere, textPlane, hitBox, canvasTex, noise, woodMaterial, dust, framed } from '../builders';
 import { t } from '../i18n';
+import { oldPhoto } from '../photos';
 import { wallpaper } from './ada_common';
 
 /**
@@ -88,7 +89,7 @@ export function createBarbiereAlloggio(g: Game): Location {
   const portraits: THREE.Object3D[] = [];
   YEARS.forEach((year, i) => {
     const k = i / (YEARS.length - 1); // he looks oldest in 1951 and youngest in 1972: each beard he gave took a year off
-    const p = framed(0.26, 0.34, (c, w, h) => {
+    const drawn = (c: CanvasRenderingContext2D, w: number, h: number) => {
       c.fillStyle = '#bdb6a6';
       c.fillRect(0, 0, w, h);
       noise(c, w, h, 1800, 0.12);
@@ -130,7 +131,16 @@ export function createBarbiereAlloggio(g: Game): Location {
       c.font = 'bold 22px Georgia, serif';
       c.textAlign = 'center';
       c.fillText(String(year), w / 2, h - 10);
-    }, frameM);
+    };
+    const p = framed(0.26, 0.34, oldPhoto('aldo_' + year, 260, 340, drawn, {
+      age: 0.4 + (1 - k) * 0.4,
+      after: (c, x0, y0, w, h) => {
+        c.fillStyle = 'rgba(30,24,18,0.85)';
+        c.font = 'italic 18px Georgia, serif';
+        c.textAlign = 'center';
+        c.fillText(String(year), x0 + w / 2, y0 + h - 8);
+      },
+    }), frameM);
     p.position.set(W / 2 - 0.02, 1.85, -1.45 + i * 0.36);
     p.rotation.y = -Math.PI / 2;
     if (i % 2) p.rotation.z = 0.04;
@@ -167,6 +177,12 @@ export function createBarbiereAlloggio(g: Game): Location {
   const padKey = new THREE.Group();
   padKey.add(cyl(0.004, 0.004, 0.05, mat(0x6b5c3a, { metalness: 0.8, roughness: 0.4 }), 0, 0, 0, 6).rotateZ(Math.PI / 2));
   padKey.add(mesh(new THREE.TorusGeometry(0.01, 0.003, 6, 10), mat(0x6b5c3a, { metalness: 0.8, roughness: 0.4 }), -0.03, 0, 0).rotateX(Math.PI / 2));
+  // a paper tag tied to it, so it shows on the dark wood
+  const tag = textPlane([''], 0.035, 0.022, { bg: '#e6dfcf', size: 14, px: 32 });
+  tag.rotation.x = -Math.PI / 2;
+  tag.position.set(0.045, 0.002, 0.01);
+  padKey.add(tag);
+  padKey.scale.setScalar(1.8);
   padKey.position.set(tX - 0.12, tY + 0.025, tZ - 0.12);
   padKey.visible = pigBroken() && !g.has('padkey') && !g.flag('y.padlock');
   scene.add(padKey);

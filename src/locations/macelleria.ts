@@ -4,6 +4,9 @@ import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, canvasTex, noise,
 import { createBruno, createLisa } from '../characters';
 import { prop } from '../models';
 import { t } from '../i18n';
+import { oldPhoto } from '../photos';
+/** where Bruno's face is in the real family photo (fractions of the picture), to scratch it out */
+const BRUNO_FACE = [0.27, 0.3];
 
 export function createMacelleria(g: Game): Location {
   const scene = new THREE.Scene();
@@ -358,7 +361,7 @@ export function createMacelleria(g: Game): Location {
   scene.add(bruno);
 
   // family photo on the left wall, framed
-  const photoG = framed(0.6, 0.46, (c, w, h) => {
+  const familyTex = oldPhoto('macelleria_famiglia', 640, 490, (c, w, h) => {
     c.fillStyle = '#8a857c';
     c.fillRect(0, 0, w, h);
     const gr = c.createLinearGradient(0, 0, 0, h);
@@ -390,7 +393,24 @@ export function createMacelleria(g: Game): Location {
       c.stroke();
     }
     noise(c, w, h, 2500, 0.2);
-  }, woodMaterial({ base: '#2a1f16' }));
+  }, {
+    tone: 'grey',
+    age: 0.6,
+    // whoever it is on the left (the father): his face scratched away with a nail
+    after: (c, x0, y0, w, h) => {
+      c.strokeStyle = 'rgba(236,230,218,0.9)';
+      c.lineCap = 'round';
+      const fx0 = x0 + w * BRUNO_FACE[0], fy0 = y0 + h * BRUNO_FACE[1];
+      for (let i = 0; i < 30; i++) {
+        c.lineWidth = 1 + Math.random() * 3;
+        c.beginPath();
+        c.moveTo(fx0 - w * 0.04 + Math.random() * w * 0.03, fy0 - h * 0.05 + Math.random() * h * 0.03);
+        c.lineTo(fx0 + w * 0.01 + Math.random() * w * 0.03, fy0 + h * 0.01 + Math.random() * h * 0.05);
+        c.stroke();
+      }
+    },
+  });
+  const photoG = framed(0.6, 0.46, familyTex, woodMaterial({ base: '#2a1f16' }));
   photoG.position.set(-3.47, 1.65, 0.6);
   photoG.rotation.y = Math.PI / 2;
   scene.add(photoG);

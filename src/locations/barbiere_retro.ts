@@ -604,7 +604,7 @@ export function createBarbiereRetro(g: Game): Location {
       main: { pos: [1.1, 1.65, 1.35], look: [-0.6, 1.0, -1.1], yaw: 55, pitch: 18 },
       bench: { pos: [-0.75, 1.85, -0.2], look: [-1.75, 0.85, -0.2], parent: 'main', yaw: 25, pitch: 10, fov: 70 },
       sink: { pos: [-0.8, 1.5, -0.1], look: [-0.9, 1.3, -1.8], parent: 'main', yaw: 25, pitch: 15 },
-      boiler: { pos: [0.25, 1.35, -1.0], look: [1.4, 1.15, -1.25], parent: 'main', yaw: 25, pitch: 14 },
+      boiler: { pos: [0.3, 1.3, -1.0], look: [1.4, 1.02, -1.25], parent: 'main', yaw: 25, pitch: 14 },
       yard: { pos: [0.1, 1.6, 0.9], look: [W / 2, 1.1, yardZ - 0.1], parent: 'main', yaw: 20, pitch: 12 },
       trap: { pos: [0.45, 1.9, 1.5], look: [0.45, 0.0, 0.3], parent: 'main', yaw: 20, pitch: 10 },
     },

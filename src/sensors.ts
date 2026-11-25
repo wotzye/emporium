@@ -8,6 +8,11 @@ export type SensorKind = 'blow' | 'shout' | 'shake';
 let micStream: MediaStream | null = null;
 let micCtx: AudioContext | null = null;
 let motionGranted: boolean | null = null;
+let sharedCtx: AudioContext | null = null;
+/** the game's own audio context: already unlocked by a tap, so iOS lets the mic analyser run */
+export function useAudioContext(ctx: AudioContext | null) {
+  sharedCtx = ctx;
+}
 
 export async function micAvailable() {
   return !!navigator.mediaDevices?.getUserMedia;
@@ -16,7 +21,7 @@ export async function micAvailable() {
 async function openMic(): Promise<AnalyserNode | null> {
   try {
     if (!micStream) micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    micCtx = micCtx ?? new AudioContext();
+    micCtx = sharedCtx ?? micCtx ?? new AudioContext();
     if (micCtx.state === 'suspended') await micCtx.resume();
     const src = micCtx.createMediaStreamSource(micStream);
     const an = micCtx.createAnalyser();
@@ -86,22 +91,31 @@ export function listen(kind: SensorKind, onLevel: (k: number) => void, cancel: {
     const an = await openMic();
     if (!an) return finish(false);
     const buf = new Float32Array(an.fftSize);
-    const freq = new Uint8Array(an.frequencyBinCount);
+    // phones squash the mic level (automatic gain), so judge against the room's own noise:
+    // listen to the silence for a moment, then anything well above it counts
+    let floor = 0.01, n = 0;
+    let lastT = performance.now();
+    const t0 = lastT;
     const tick = () => {
       if (cancel.cancelled) return finish(false);
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastT) / 1000);
+      lastT = now;
       an.getFloatTimeDomainData(buf);
       let rms = 0;
       for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
       rms = Math.sqrt(rms / buf.length);
-      let loud = 0;
-      if (kind === 'blow') {
-        // blowing: loud and noisy, energy spread down low
-        an.getByteFrequencyData(freq);
-        let low = 0;
-        for (let i = 1; i < 24; i++) low += freq[i];
-        loud = rms > 0.08 && low / 23 > 120 ? 1 : 0;
-      } else loud = rms > 0.18 ? 1 : 0;
-      progress = Math.max(0, Math.min(1, progress + (loud ? 0.022 : -0.01)));
+      if (now - t0 < 400) {
+        floor = (floor * n + rms) / (n + 1);
+        n++;
+        onLevel(0);
+        requestAnimationFrame(tick);
+        return;
+      }
+      const need = kind === 'blow' ? Math.max(0.02, floor * 3) : Math.max(0.06, floor * 6);
+      const loud = rms > need;
+      // about a second and a half of blowing (or a good shout) fills the bar
+      progress = Math.max(0, Math.min(1, progress + (loud ? dt / (kind === 'blow' ? 1.4 : 1.0) : -dt * 0.35)));
       onLevel(progress);
       if (progress >= 1) return finish(true);
       requestAnimationFrame(tick);

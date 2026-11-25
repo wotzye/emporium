@@ -3,6 +3,7 @@ import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, lightCone, canvasTex, noise, woodMaterial, plasterMaterial, mat, cyl, lathe, liveCanvas } from '../builders';
 import { prop } from '../models';
 import { t } from '../i18n';
+import { oldPhoto } from '../photos';
 import { gear, brassMat, steelMat, wallClock } from './ora_common';
 
 /**
@@ -49,7 +50,29 @@ export function createOraLaboratorio(g: Game): Location {
   const drawerOpen = () => !!g.flag('o.gears');
   if (drawerOpen()) drawer.position.z = benchZ + 0.4;
   // the photo of Clara and the winding key lie inside
-  const photo = mesh(new THREE.PlaneGeometry(0.12, 0.16), new THREE.MeshStandardMaterial({ color: 0xcfc8b8, roughness: 0.9 }), -0.1, 0.075, 0, false);
+  const claraTex = oldPhoto('clara', 240, 320, (c, w, h) => {
+    c.fillStyle = '#cfc8b8';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = '#6e675c';
+    c.fillRect(14, 14, w - 28, h - 28);
+    // a man and a little girl, under the clocks
+    c.fillStyle = '#2b2824';
+    c.beginPath();
+    c.arc(w * 0.38, h * 0.36, 20, 0, Math.PI * 2);
+    c.fill();
+    c.fillRect(w * 0.38 - 30, h * 0.44, 60, h * 0.5);
+    c.fillStyle = '#e8e2d6';
+    c.beginPath();
+    c.arc(w * 0.64, h * 0.56, 14, 0, Math.PI * 2);
+    c.fill();
+    c.fillRect(w * 0.64 - 20, h * 0.62, 40, h * 0.3);
+    for (let i = 0; i < 5; i++) {
+      c.beginPath();
+      c.arc(30 + i * 45, 40, 12, 0, Math.PI * 2);
+      c.fill();
+    }
+  }, { age: 0.5 });
+  const photo = mesh(new THREE.PlaneGeometry(0.12, 0.16), new THREE.MeshStandardMaterial({ map: claraTex, roughness: 0.9 }), -0.1, 0.075, 0, false);
   photo.rotation.x = -Math.PI / 2;
   drawer.add(photo);
   const wkey = new THREE.Group();

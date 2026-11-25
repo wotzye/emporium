@@ -52,16 +52,38 @@ export function createAdaCucina(g: Game): Location {
       c.stroke();
     }
     if (fog > 0) {
-      c.fillStyle = `rgba(215,215,210,${0.75 * fog})`;
+      c.fillStyle = `rgba(225,225,220,${0.88 * fog})`;
       c.fillRect(0, 0, 256, 320);
       if (writing > 0) {
         c.save();
         c.globalCompositeOperation = 'destination-out';
         c.globalAlpha = writing;
-        c.font = "bold 34px 'Bradley Hand', 'Segoe Print', cursive";
+        // written with a fingertip: thick, wobbly strokes, one word per pane so the glazing bars don't cut them
+        c.font = "bold 46px 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', cursive";
         c.textAlign = 'center';
-        c.fillText(t('ada.fog1'), 128, 130);
-        c.fillText(t('ada.fog2'), 128, 180);
+        c.textBaseline = 'middle';
+        c.lineWidth = 4;
+        c.lineJoin = 'round';
+        c.strokeStyle = '#000';
+        for (const [txt, y] of [[t('ada.fog1'), 92], [t('ada.fog2'), 238]] as const) {
+          c.save();
+          c.translate(128, y);
+          c.rotate(y < 160 ? -0.06 : 0.04);
+          const sc = Math.min(1, 220 / c.measureText(txt).width);
+          c.scale(sc, 1);
+          c.strokeText(txt, 0, 0);
+          c.fillText(txt, 0, 0);
+          c.restore();
+        }
+        // drips running down from the letters
+        c.lineWidth = 3;
+        for (let i = 0; i < 9; i++) {
+          const x = 40 + ((i * 53) % 180), y0 = i % 2 ? 110 : 256;
+          c.beginPath();
+          c.moveTo(x, y0);
+          c.lineTo(x + 2, y0 + 25 + ((i * 17) % 30));
+          c.stroke();
+        }
         c.restore();
       }
     }
@@ -69,7 +91,7 @@ export function createAdaCucina(g: Game): Location {
   };
   const kettleDone = () => !!g.flag('a.kettle');
   drawWindow(kettleDone() ? 1 : 0, kettleDone() ? 1 : 0);
-  const winMesh = mesh(new THREE.PlaneGeometry(0.9, 1.1), new THREE.MeshStandardMaterial({ map: winCv.tex, roughness: 0.2, emissive: 0xffffff, emissiveMap: winCv.tex, emissiveIntensity: 0.12 }), -W / 2 + 0.02, 1.5, winZ, false);
+  const winMesh = mesh(new THREE.PlaneGeometry(0.9, 1.1), new THREE.MeshStandardMaterial({ map: winCv.tex, roughness: 0.2, emissive: 0xffffff, emissiveMap: winCv.tex, emissiveIntensity: 0.35 }), -W / 2 + 0.02, 1.5, winZ, false);
   winMesh.rotation.y = Math.PI / 2;
   scene.add(winMesh);
   for (const [dy, dz, w, h] of [[0, -0.47, 0.06, 1.2], [0, 0.47, 0.06, 1.2], [0.57, 0, 1.0, 0.06], [-0.57, 0, 1.0, 0.06], [0, 0, 0.03, 1.1], [0, 0, 0.9, 0.03]] as const)
@@ -144,7 +166,8 @@ export function createAdaCucina(g: Game): Location {
     scene.add(grp);
     chairs.push(grp);
   }
-  const MATS = { E: new THREE.Vector3(-0.27, top, TZ), A: new THREE.Vector3(0.27, top, TZ), T: new THREE.Vector3(0, top, TZ - 0.02) };
+  type Slot = 'E' | 'A' | 'T' | 'S';
+  const MATS: Record<Slot, THREE.Vector3> = { E: new THREE.Vector3(-0.27, top, TZ), A: new THREE.Vector3(0.27, top, TZ), T: new THREE.Vector3(0, top, TZ - 0.02), S: new THREE.Vector3(-0.26, top, TZ + 0.21) };
   const dTex = doilyTex();
   for (const p of [MATS.E, MATS.A]) {
     const d = mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshStandardMaterial({ map: dTex, transparent: true, roughness: 0.9 }), p.x, top + 0.002, p.z, false);
@@ -155,30 +178,89 @@ export function createAdaCucina(g: Game): Location {
   big.rotation.x = -Math.PI / 2;
   scene.add(big);
 
-  // the tea things, each with a little paper tag in her handwriting
-  type Piece = { id: 'E' | 'A' | 'T'; g: THREE.Group; start: THREE.Vector3 };
-  const mkPiece = (id: Piece['id'], only: RegExp, h: number, tag: string | null, start: THREE.Vector3): Piece => {
+  // the tea things: four cups (only two are theirs), the teapot, the sugar bowl. No labels: you have to know them.
+  //   E = his cup, chipped (the calendar: «don't throw it away»); A = hers, with wisteria; X/Y = two other cups
+  type Piece = { id: 'E' | 'A' | 'T' | 'S' | 'X' | 'Y'; g: THREE.Group; start: THREE.Vector3 };
+  const bandTex = (kind: 'flower' | 'stripe') => canvasTex(256, 64, (c, w, h) => {
+    if (kind === 'stripe') {
+      // bold black and white bands: readable even from across the table
+      c.fillStyle = '#f0ece4';
+      c.fillRect(0, 0, w, h);
+      c.fillStyle = '#141210';
+      for (const y of [4, 24, 44]) c.fillRect(0, y, w, 12);
+    } else {
+      // big clusters of wisteria, dark on a grey ground
+      c.fillStyle = '#8f8a92';
+      c.fillRect(0, 0, w, h);
+      for (let x = 16; x < w; x += 43) {
+        c.fillStyle = '#26232a';
+        for (let k = 0; k < 6; k++) {
+          c.beginPath();
+          c.arc(x + (k % 2 ? 5 : -5), 10 + k * 8, 7 - k * 0.8, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.fillStyle = '#e8e4ea';
+        c.beginPath();
+        c.arc(x - 3, 12, 2.5, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+  });
+  const mkPiece = (id: Piece['id'], only: RegExp, h: number, deco: 'flower' | 'stripe' | 'chip' | null, start: THREE.Vector3): Piece => {
     const grp = new THREE.Group();
     const p = prop('teaSet', { height: h, only });
     if (p) grp.add(p);
     else grp.add(id === 'T' ? lathe([[0, 0], [0.07, 0], [0.08, 0.06], [0.05, 0.11], [0, 0.12]], enamel) : lathe([[0, 0], [0.03, 0], [0.04, 0.05], [0, 0.05]], enamel));
-    if (tag) {
-      const tp = textPlane([tag], 0.05, 0.03, { bg: '#e2dccb', size: 20, px: 48, font: "'Bradley Hand', 'Segoe Print', cursive" });
-      tp.position.set(0, h * 0.5, 0.045);
-      grp.add(tp);
+    if (deco) {
+      const bb = new THREE.Box3().setFromObject(grp);
+      const sz = bb.getSize(new THREE.Vector3());
+      // the bowl's centre and radius, from the rim alone (the handle would skew a bounding box)
+      const rim = new THREE.Box3();
+      const v = new THREE.Vector3();
+      grp.updateMatrixWorld(true);
+      grp.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh || !m.geometry) return;
+        const pos = m.geometry.attributes.position as THREE.BufferAttribute;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+          if (v.y - bb.min.y > sz.y * 0.9) rim.expandByPoint(v);
+        }
+      });
+      const rs = rim.isEmpty() ? sz : rim.getSize(new THREE.Vector3());
+      const rc = rim.isEmpty() ? bb.getCenter(new THREE.Vector3()) : rim.getCenter(new THREE.Vector3());
+      const r = Math.min(rs.x, rs.z) / 2;
+      const bowlX = rc.x - grp.position.x, bowlZ = rc.z - grp.position.z;
+      if (deco === 'chip') {
+        // a dark notch out of the rim and a hairline crack under it
+        grp.add(rbox(0.022, 0.016, 0.012, 0.002, mat(0x0c0b0a, { roughness: 0.9 }), bowlX, h - 0.006, bowlZ + r * 0.97));
+        const crack = rbox(0.003, h * 0.6, 0.003, 0.0005, mat(0x0c0b0a), bowlX + 0.004, h * 0.62, bowlZ + r * 0.99);
+        crack.rotation.z = 0.25;
+        grp.add(crack);
+      } else {
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.02, r * 0.9, h * 0.5, 28, 1, true), new THREE.MeshStandardMaterial({ map: bandTex(deco), roughness: 0.3 }));
+        band.position.set(bowlX, h * 0.6, bowlZ);
+        grp.add(band);
+      }
     }
-    grp.add(hitBox(0.13, h + 0.04, 0.13, 0, h / 2, 0, 'piece' + id));
+    const hb = hitBox(0.13, h + 0.04, 0.13, 0, h / 2, 0, 'piece' + id);
+    grp.add(hb);
+    grp.userData.hb = hb;
     scene.add(grp);
     return { id, g: grp, start };
   };
   const pieces: Piece[] = [
-    mkPiece('E', /cup_small_01/, 0.065, 'E.', new THREE.Vector3(0.05, top, TZ + 0.3)),
-    mkPiece('A', /cup_small_02/, 0.065, 'A.', new THREE.Vector3(-0.12, top, TZ - 0.32)),
-    mkPiece('T', /teapot_01/, 0.16, null, new THREE.Vector3(0.18, top, TZ + 0.22)),
+    mkPiece('E', /cup_small_01/, 0.065, 'chip', new THREE.Vector3(0.12, top, TZ - 0.32)),
+    mkPiece('A', /cup_small_02/, 0.065, 'flower', new THREE.Vector3(-0.12, top, TZ - 0.33)),
+    mkPiece('X', /cup_small_01/, 0.065, 'stripe', new THREE.Vector3(0.34, top, TZ - 0.14)),
+    mkPiece('Y', /cup_small_02/, 0.065, null, new THREE.Vector3(-0.37, top, TZ - 0.12)),
+    mkPiece('T', /teapot_01/, 0.16, null, new THREE.Vector3(0.28, top, TZ + 0.17)),
+    mkPiece('S', /sugar_cup_01/, 0.08, null, new THREE.Vector3(0.04, top, TZ + 0.24)),
   ];
+  const isSlot = (id: string): id is Slot => id === 'E' || id === 'A' || id === 'T' || id === 'S';
   const placed = new Set<string>(((g.flag('a.pieces') as string | undefined) ?? '').split('').filter(Boolean));
   const tableDone = () => !!g.flag('a.table');
-  for (const p of pieces) p.g.position.copy(placed.has(p.id) || tableDone() ? MATS[p.id] : p.start);
+  for (const p of pieces) p.g.position.copy(isSlot(p.id) && (placed.has(p.id) || tableDone()) ? MATS[p.id] : p.start);
   if (tableDone()) chairs[0].position.x = -0.95;
 
   // ---------------- the pantry: tall narrow door, holds the crutches ----------------
@@ -300,7 +382,19 @@ export function createAdaCucina(g: Game): Location {
     await g.say([{ who: 'diego', key: 'ada.pantryOpen' }]);
   };
 
+  // tap a piece (without dragging it) to look at it closely
+  const pieceSpots: Hotspot[] = pieces.map((p) => ({
+    id: 'look' + p.id,
+    obj: p.g.userData.hb as THREE.Object3D,
+    view: 'table',
+    when: () => !tableDone(),
+    tap: async (item: string | null) => {
+      if (item) return g.nope();
+      return say('ada.piece' + p.id);
+    },
+  }));
   const hotspots: Hotspot[] = [
+    ...pieceSpots,
     { id: 'table', obj: hTable, view: 'table', tap: async (item) => {
       if (item) return g.nope();
       if (tableDone()) return say('ada.tableAfter');
@@ -339,7 +433,8 @@ export function createAdaCucina(g: Game): Location {
     { id: 'calendar', obj: hCal, tap: async (item) => {
       if (item) return g.nope();
       g.audio.sfx('paper');
-      return g.ui.doc(t('ada.calTitle'), t('ada.calText'), true);
+      await g.ui.doc(t('ada.calTitle'), t('ada.calText'), true);
+      g.note('note.cups');
     } },
     { id: 'sink', obj: hSink, tap: async (item) => {
       if (item) return g.nope();
@@ -372,7 +467,7 @@ export function createAdaCucina(g: Game): Location {
     kind: 'drag' as const,
     obj: p.g,
     plane,
-    when: () => g.viewName === 'table' && !tableDone() && !placed.has(p.id),
+    when: () => g.viewName === 'table' && !tableDone() && !(isSlot(p.id) && placed.has(p.id)),
     onStart: () => g.audio.sfx('glass'),
     onMove: () => {
       // stay on the table top
@@ -386,8 +481,9 @@ export function createAdaCucina(g: Game): Location {
     },
     onEnd: async () => {
       p.g.position.y = top;
-      let best: 'E' | 'A' | 'T' | null = null, bd = 1;
-      for (const k of ['E', 'A', 'T'] as const) {
+      let best: Slot | null = null, bd = 1;
+      for (const k of ['E', 'A', 'T', 'S'] as const) {
+        if (placed.has(k)) continue;
         const d = Math.hypot(p.g.position.x - MATS[k].x, p.g.position.z - MATS[k].z);
         if (d < bd) { bd = d; best = k; }
       }
@@ -397,12 +493,17 @@ export function createAdaCucina(g: Game): Location {
         placed.add(p.id);
         g.set('a.pieces', [...placed].join(''));
         g.audio.sfx('glass');
-        if (placed.size === 3 && !tableDone()) await tableComplete();
+        if (['E', 'A', 'T', 'S'].every((k) => placed.has(k)) && !tableDone()) await tableComplete();
       } else {
-        // not their places: it slides back to where it was
+        // not their places / not their cups: it slides back to where it was
         g.audio.sfx('wrong');
         p.g.position.copy(p.start);
-        await say(p.id === 'T' ? 'ada.wrongPot' : 'ada.wrongSeat');
+        const why = p.id === 'X' || p.id === 'Y' ? 'ada.wrongCup'
+          : p.id === 'T' ? 'ada.wrongPot'
+          : p.id === 'S' ? 'ada.wrongSugar'
+          : best === 'T' || best === 'S' ? 'ada.wrongThing'
+          : 'ada.wrongSeat';
+        await say(why);
       }
     },
   }));
@@ -417,7 +518,7 @@ export function createAdaCucina(g: Game): Location {
     next: ['ada_giardino'],
     views: {
       main: { pos: [-0.9, 1.6, 1.45], look: [0.6, 0.95, -1.1], yaw: 60, pitch: 18 },
-      table: { pos: [0, 1.6, TZ + 0.85], look: [0, top, TZ - 0.05], parent: 'main', yaw: 15, pitch: 10, fov: 58 },
+      table: { pos: [0, 1.32, TZ + 0.62], look: [0, top, TZ - 0.03], parent: 'main', yaw: 15, pitch: 10, fov: 56 },
       stove: { pos: [0.6, 1.5, winZ + 0.9], look: [W / 2 - 0.4, 1.0, winZ], parent: 'main', yaw: 20, pitch: 12 },
       window: { pos: [-0.6, 1.55, winZ + 0.3], look: [-W / 2, 1.5, winZ], parent: 'main', yaw: 15, pitch: 10, fov: 55 },
       garden: { pos: [0.2, 1.6, 0.5], look: [W / 2, 1.1, gdZ], parent: 'main', yaw: 20, pitch: 12 },

@@ -37,6 +37,7 @@ export function sphere(r: number, m: THREE.Material, x = 0, y = 0, z = 0, seg = 
 
 /** Invisible, pickable box used as a tap target. */
 const hitMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 });
+hitMat.userData.shared = true; // one material for every hitbox in every room: never freed
 export function hitBox(w: number, h: number, d: number, x: number, y: number, z: number, name = 'hit') {
   const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hitMat);
   o.position.set(x, y, z);
@@ -740,10 +741,10 @@ export function lightCone(x: number, top: number, z: number, height: number, rad
 }
 
 /** Framed picture or certificate on a wall (front faces +z). */
-export function framed(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: number, h: number) => void, frame: THREE.Material) {
+export function framed(w: number, h: number, draw: ((c: CanvasRenderingContext2D, w: number, h: number) => void) | THREE.Texture, frame: THREE.Material, px = 256) {
   const g = new THREE.Group();
   g.add(rbox(w + 0.06, h + 0.06, 0.03, 0.008, frame));
-  const pic = mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: canvasTex(256, Math.round((256 * h) / w), draw), roughness: 0.85 }), 0, 0, 0.017);
+  const pic = mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: draw instanceof THREE.Texture ? draw : canvasTex(px, Math.round((px * h) / w), draw), roughness: 0.85 }), 0, 0, 0.017);
   pic.castShadow = false;
   g.add(pic);
   const glass = fx(new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, roughness: 0.6, metalness: 0 })));

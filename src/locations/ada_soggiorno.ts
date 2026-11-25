@@ -5,6 +5,7 @@ import { room, cyl, mat, mesh, rbox, lathe, dust, textPlane, hitBox, bulb, light
 import { createAdaGhost } from '../characters';
 import { realEttore, realCharacters } from '../characters_real';
 import { t } from '../i18n';
+import { oldPhoto } from '../photos';
 import { wallpaper, sleep } from './ada_common';
 
 /**
@@ -82,11 +83,23 @@ export function createAdaSoggiorno(g: Game): Location {
     studio.add(key, key.target, new THREE.AmbientLight(0xffffff, 0.15));
   }
   const rt = new THREE.WebGLRenderTarget(256, 192);
+  // the channel number, burnt into the top right corner of the picture like the old sets did
+  const osd = liveCanvas(128, 96);
+  const drawOsd = (n: number) => {
+    const c = osd.ctx;
+    c.fillStyle = '#000';
+    c.fillRect(0, 0, 128, 96);
+    c.fillStyle = '#fff';
+    c.font = 'bold 26px monospace';
+    c.textAlign = 'right';
+    c.fillText(String(n), 118, 28);
+    osd.update();
+  };
   const screenMat = new THREE.ShaderMaterial({
-    uniforms: { tFace: { value: rt.texture }, tIdle: { value: screen.tex }, time: { value: 0 }, face: { value: 0 }, on: { value: 0 }, chan: { value: 1 } },
+    uniforms: { tFace: { value: rt.texture }, tIdle: { value: screen.tex }, tOsd: { value: osd.tex }, time: { value: 0 }, face: { value: 0 }, on: { value: 0 }, chan: { value: 1 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: `
-      uniform sampler2D tFace, tIdle; uniform float time, face, on, chan; varying vec2 vUv;
+      uniform sampler2D tFace, tIdle, tOsd; uniform float time, face, on, chan; varying vec2 vUv;
       float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
       void main(){
         if (on < 0.5) { gl_FragColor = texture2D(tIdle, vUv); return; }
@@ -103,6 +116,7 @@ export function createAdaSoggiorno(g: Game): Location {
         float roll = smoothstep(0.0, 0.05, abs(fract(uv.y - time * 0.25) - 0.5) - 0.42);
         c *= 0.75 + 0.25 * roll;
         c *= 0.85 + 0.15 * sin(uv.y * 600.0);
+        c = mix(c, vec3(1.0), texture2D(tOsd, vUv).r * 0.9);
         if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) c = vec3(0.0);
         gl_FragColor = vec4(c, 1.0);
       }`,
@@ -122,6 +136,24 @@ export function createAdaSoggiorno(g: Game): Location {
 
   let channel = Number(g.flag('a.channel') ?? 1);
   let knobAngle = ((channel - 1) / 12) * Math.PI * 2;
+  drawOsd(channel);
+  // numbers 1-12 printed round the knob
+  const ring = canvasTex(128, 128, (c, w, h) => {
+    c.fillStyle = '#2a2622';
+    c.beginPath();
+    c.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = '#e6dfcf';
+    c.font = 'bold 15px sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    for (let n = 1; n <= 12; n++) {
+      const a = ((n - 1) / 12) * Math.PI * 2;
+      c.fillText(String(n), w / 2 + Math.sin(a) * 52, h / 2 - Math.cos(a) * 52);
+    }
+  });
+  const ringM = mesh(new THREE.CircleGeometry(0.075, 32), new THREE.MeshStandardMaterial({ map: ring, roughness: 0.6 }), knob.position.x, knob.position.y, knob.position.z - 0.012, false);
+  tvGroup.add(ringM);
   knob.rotation.z = -knobAngle;
   let tvOn = false;
   let face = g.flag('a.tv') ? 1 : 0;
@@ -245,7 +277,9 @@ export function createAdaSoggiorno(g: Game): Location {
   scene.add(ada.group);
 
   // ---------------- the wedding photo ----------------
-  const photoTex = canvasTex(256, 320, (c, w, h) => {
+  const photoTex = oldPhoto('ada_ettore', 512, 640, (c0, w0, h0) => {
+    c0.scale(w0 / 256, h0 / 320);
+    const c = c0, w = 256, h = 320;
     c.fillStyle = '#d9d2c2';
     c.fillRect(0, 0, w, h);
     c.fillStyle = '#8f887b';
@@ -282,7 +316,8 @@ export function createAdaSoggiorno(g: Game): Location {
     c.font = 'italic 17px Georgia, serif';
     c.textAlign = 'center';
     c.fillText(t('ada.photoCaption'), w / 2, h - 30);
-  });
+    c0.setTransform(1, 0, 0, 1, 0, 0);
+  }, { age: 0.75 });
   const frame = prop('frame2', { height: 0.55 });
   const photoGroup = new THREE.Group();
   if (frame) {
@@ -364,7 +399,7 @@ export function createAdaSoggiorno(g: Game): Location {
   const hRocker = hitBox(0.8, 1.1, 0.9, -1.85, 0.55, -0.55, 'rocker');
   const hWheel = hitBox(0.8, 1.0, 0.8, 1.85, 0.5, -1.55, 'wheelchair');
   const hPhoto = hitBox(0.5, 0.65, 0.15, 1.0, 1.6, -D / 2 + 0.08, 'photo');
-  const hHatch = hitBox(1.0, 1.5, 1.0, hatchX, H - 0.8, hatchZ, 'hatch');
+  const hHatch = hitBox(1.0, 0.9, 1.0, hatchX, H - 0.5, hatchZ, 'hatch');
   const hKitchen = hitBox(0.2, 2.1, 1.0, -W / 2 + 0.1, 1.05, doorZ, 'kitchen');
   const hRack = hitBox(0.5, 1.8, 0.5, 1.95, 0.9, 1.95, 'rack');
   const hFront = hitBox(1.0, 2.1, 0.2, -0.9, 1.05, D / 2 - 0.1, 'frontdoor');
@@ -427,7 +462,7 @@ export function createAdaSoggiorno(g: Game): Location {
       await g.ui.doc(t('ada.photoBackTitle'), t('ada.photoBack'), true);
       g.note('note.seats');
     } },
-    { id: 'hatch', obj: hHatch, view: 'hatch', tap: async (item) => {
+    { id: 'hatch', obj: hHatch, view: 'hatch', lowPriority: true, tap: async (item) => {
       if (hatchOpen()) {
         if (item) return g.nope();
         g.audio.steps(5, 0.4, false);
@@ -456,7 +491,7 @@ export function createAdaSoggiorno(g: Game): Location {
       g.audio.steps(3, 0.45, false);
       return g.go('ada_cucina');
     } },
-    { id: 'rack', obj: hRack, tap: async (item) => {
+    { id: 'rack', obj: hRack, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
       return say('ada.rack');
     } },
@@ -479,8 +514,8 @@ export function createAdaSoggiorno(g: Game): Location {
         knob.rotation.z = -knobAngle;
         knobAcc += d;
         const step = (Math.PI * 2) / 12;
-        while (knobAcc > step) { knobAcc -= step; channel = (channel % 12) + 1; g.audio.sfx('click'); }
-        while (knobAcc < -step) { knobAcc += step; channel = ((channel + 10) % 12) + 1; g.audio.sfx('click'); }
+        while (knobAcc > step) { knobAcc -= step; channel = (channel % 12) + 1; g.audio.sfx('click'); drawOsd(channel); }
+        while (knobAcc < -step) { knobAcc += step; channel = ((channel + 10) % 12) + 1; g.audio.sfx('click'); drawOsd(channel); }
       },
       onEnd: async () => {
         g.set('a.channel', channel);
