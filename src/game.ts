@@ -436,6 +436,8 @@ export class Game {
     return {
       start: (hits: THREE.Intersection[], ray: THREE.Ray, x: number, y: number) => {
         if (this.busy || !this.loc || this.ui.modal.classList.contains('on') || this.ui.dialog.classList.contains('on')) return false;
+        // with an item in hand, a touch means "use it here", never "pick this up and move it"
+        if (this.selected) return false;
         const f = find(hits);
         if (!f) return false;
         cur = f.it;

@@ -74,6 +74,14 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'wardkey',
     svg: s('<path d="M8 20 q0 -6 6 -6 q6 0 6 6 q0 6 -6 6 q-6 0 -6 -6z"/><path d="M20 20 H34 M30 20 v5 M33 20 v3"/>'),
   },
+  minutehand: {
+    id: 'minutehand',
+    svg: s('<path d="M20 34 L20 8 L17 14 M20 8 L23 14"/><circle cx="20" cy="32" r="3"/>'),
+  },
+  gear: {
+    id: 'gear',
+    svg: s('<circle cx="20" cy="20" r="9"/><circle cx="20" cy="20" r="3"/><path d="M20 6 v5 M20 29 v5 M6 20 h5 M29 20 h5 M10 10 l3.5 3.5 M26.5 26.5 l3.5 3.5 M10 30 l3.5 -3.5 M26.5 13.5 l3.5 -3.5"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

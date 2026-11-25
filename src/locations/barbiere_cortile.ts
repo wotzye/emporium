@@ -91,6 +91,19 @@ export function createBarbiereCortile(g: Game): Location {
   plate.rotation.y = Math.PI / 2;
   scene.add(plate);
 
+  // pruning shears hung on a nail by the back door, with a tag: Ettore's, never given back
+  const shears = new THREE.Group();
+  for (const sd of [-1, 1]) {
+    shears.add(rbox(0.03, 0.3, 0.01, 0.004, mat(0x9a9a98, { metalness: 0.9, roughness: 0.3 }), sd * 0.018, 0.15, 0).rotateZ(sd * 0.12));
+    shears.add(rbox(0.04, 0.28, 0.03, 0.008, woodDark, sd * 0.045, -0.14, 0).rotateZ(-sd * 0.15));
+  }
+  const shTag = textPlane([t('yard.shearsTag')], 0.12, 0.05, { bg: '#e2dccb', size: 18, px: 64 });
+  shTag.position.set(0.1, -0.02, 0.01);
+  shears.add(shTag);
+  shears.position.set(doorX + 0.78, 1.45, -D / 2 + 0.04);
+  shears.visible = !g.flag('y.shears') && !g.flag('a.shears');
+  scene.add(shears);
+
   // ---------------- the gate to the alley (right wall), chained ----------------
   const gate = prop('ironGate', { height: 2.3 });
   if (gate) {
@@ -215,6 +228,8 @@ export function createBarbiereCortile(g: Game): Location {
   const hAldo = hitBox(0.5, 2.0, 1.0, -W / 2 + 0.3, landY + 1.0, landZ, 'aldo');
   const hStairs = hitBox(0.9, 1.4, 2.8, -W / 2 + 0.45, 0.8, 0.2, 'stairs');
   const hGate = hitBox(0.3, 2.3, 1.8, W / 2 - 0.15, 1.15, 0.6, 'gate');
+  const hShears = hitBox(0.3, 0.6, 0.2, doorX + 0.78, 1.4, -D / 2 + 0.1, 'shears');
+  scene.add(hShears);
   const hSheets = hitBox(3.2, 1.4, 0.3, -1.3, lineY - 0.66, -1.9, 'sheets');
   scene.add(hWell, hLock, hBucket, hHandle, hBack, hAldo, hStairs, hGate, hSheets);
   const say = (k: string) => g.say(k);
@@ -276,6 +291,13 @@ export function createBarbiereCortile(g: Game): Location {
     { id: 'stairs', obj: hStairs, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
       return goAldo();
+    } },
+    { id: 'shears', obj: hShears, when: () => shears.visible, tap: async (item) => {
+      if (item) return g.nope();
+      shears.visible = false;
+      g.set('y.shears');
+      g.give('shears');
+      return g.say([{ who: 'diego', key: 'yard.shears1' }, { who: 'diego', key: 'yard.shears2' }]);
     } },
     { id: 'gate', obj: hGate, tap: async (item) => {
       if (item) return g.nope();

@@ -466,7 +466,8 @@ export class Engine {
       if (objectDrag) {
         objectDrag = false;
         this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY);
-        return;
+        // a touch that never moved was a tap after all (look at the thing you could also move)
+        if (moved > 10 || !this.inputEnabled || this.tween) return;
       }
       if (moved <= 10 && Math.hypot(e.clientX - sx, e.clientY - sy) < 12 && this.inputEnabled && !this.tween) {
         this.onTap(this.hitsAt(e.clientX, e.clientY));

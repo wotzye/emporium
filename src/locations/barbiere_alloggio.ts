@@ -12,7 +12,18 @@ import { wallpaper } from './ada_common';
  * His letter says where he hid the crank. The padlock key is in the piggy bank: shake it out.
  */
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const YEARS = [1951, 1958, 1964, 1969, 1972, 1974];
+/**
+ * The portraits: he ages like anyone from 1951 to 1973. Then the razor (October 1974) and,
+ * month after month, he gets younger, until the chair is empty. key = file name, age 0 young .. 1 old.
+ */
+const PORTRAITS: { key: string; label: string; age: number }[] = [
+  { key: 'aldo_1951', label: '1951', age: 0.1 },
+  { key: 'aldo_1962', label: '1962', age: 0.45 },
+  { key: 'aldo_1973', label: '1973', age: 0.95 },
+  { key: 'aldo_1974_10', label: 'X · 1974', age: 0.55 },
+  { key: 'aldo_1974_11', label: 'XI · 1974', age: 0.05 },
+  { key: 'aldo_1974_12', label: 'XII · 1974', age: -1 },
+];
 
 export function createBarbiereAlloggio(g: Game): Location {
   const scene = new THREE.Scene();
@@ -87,13 +98,15 @@ export function createBarbiereAlloggio(g: Game): Location {
   // ---------------- the portraits: Aldo, one a year, getting younger ----------------
   const frameM = woodMaterial({ base: '#1e1712' });
   const portraits: THREE.Object3D[] = [];
-  YEARS.forEach((year, i) => {
-    const k = i / (YEARS.length - 1); // he looks oldest in 1951 and youngest in 1972: each beard he gave took a year off
+  PORTRAITS.forEach(({ key, label, age: pAge }, i) => {
+    const k = 1 - Math.max(0, pAge);
+    const year = label;
+    const empty = pAge < 0;
     const drawn = (c: CanvasRenderingContext2D, w: number, h: number) => {
       c.fillStyle = '#bdb6a6';
       c.fillRect(0, 0, w, h);
       noise(c, w, h, 1800, 0.12);
-      if (year === 1974) {
+      if (empty) {
         // the last one: the chair is empty
         c.fillStyle = '#3a352e';
         c.fillRect(w * 0.3, h * 0.55, w * 0.4, h * 0.08);
@@ -132,7 +145,7 @@ export function createBarbiereAlloggio(g: Game): Location {
       c.textAlign = 'center';
       c.fillText(String(year), w / 2, h - 10);
     };
-    const p = framed(0.26, 0.34, oldPhoto('aldo_' + year, 260, 340, drawn, {
+    const p = framed(0.26, 0.34, oldPhoto(key, 260, 340, drawn, {
       age: 0.4 + (1 - k) * 0.4,
       after: (c, x0, y0, w, h) => {
         c.fillStyle = 'rgba(30,24,18,0.85)';
@@ -142,6 +155,7 @@ export function createBarbiereAlloggio(g: Game): Location {
       },
     }), frameM);
     p.position.set(W / 2 - 0.02, 1.85, -1.45 + i * 0.36);
+    void year;
     p.rotation.y = -Math.PI / 2;
     if (i % 2) p.rotation.z = 0.04;
     scene.add(p);

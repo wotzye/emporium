@@ -168,6 +168,15 @@ export function createOraLaboratorio(g: Game): Location {
     l.o.position.copy(arbors[i]);
   });
   const save = () => g.set('o.gearPos', JSON.stringify(Object.fromEntries(loose.map((l) => [l.id, l.on]))));
+  // the big wheel is not in the tray: Ottavio lent it to Ettore, at the Villino (it's in the shed there)
+  const haveBig = () => !!g.flag('o.gearIn') || drawerOpen() || (saved.G ?? -1) >= 0;
+  const bigG = loose.find((l) => l.id === 'G')!;
+  bigG.o.visible = haveBig();
+  const lentTag = textPlane([t('ora.lentTag')], 0.09, 0.04, { bg: '#e2dccb', size: 18, px: 64 });
+  lentTag.rotation.x = -Math.PI / 2;
+  lentTag.position.set(trayX + startPos.G[0], benchTop + 0.022, trayZ + startPos.G[1]);
+  lentTag.visible = !haveBig();
+  scene.add(lentTag);
   let spinning = drawerOpen();
 
   // shelves of parts, a cabinet of drawers, clocks in pieces
@@ -198,6 +207,8 @@ export function createOraLaboratorio(g: Game): Location {
   const hShelves = hitBox(1.5, 1.2, 0.4, W / 2 - 0.85, 1.7, -D / 2 + 0.2, 'shelves');
   const hApron = hitBox(0.5, 0.8, 0.2, -W / 2 + 0.1, 1.4, -0.9, 'apron');
   const hDoor = hitBox(1.0, 2.1, 0.2, 0.9, 1.05, D / 2 - 0.1, 'door');
+  const hTray = hitBox(0.38, 0.06, 0.26, trayX, benchTop + 0.03, trayZ, 'tray');
+  scene.add(hTray);
   scene.add(hBench, hPlate, hDrawer, hShelves, hApron, hDoor);
   const say = (key: string) => g.say(key);
 
@@ -217,7 +228,29 @@ export function createOraLaboratorio(g: Game): Location {
   };
 
   const hotspots: Hotspot[] = [
+    { id: 'tray', obj: hTray, view: 'bench', when: () => !haveBig(), tap: async (item) => {
+      if (item === 'gear') {
+        g.deselect();
+        g.take('gear');
+        g.set('o.gearIn');
+        lentTag.visible = false;
+        bigG.o.visible = true;
+        g.audio.sfx('clunk');
+        return say('ora.gearBack');
+      }
+      if (item) return g.nope();
+      return say('ora.trayMissing');
+    } },
     { id: 'movement', obj: hBench, view: 'bench', lowPriority: true, tap: async (item) => {
+      if (item === 'gear') {
+        g.deselect();
+        g.take('gear');
+        g.set('o.gearIn');
+        lentTag.visible = false;
+        bigG.o.visible = true;
+        g.audio.sfx('clunk');
+        return say('ora.gearBack');
+      }
       if (item) return g.nope();
       if (drawerOpen()) return say('ora.movementAfter');
       return say(g.flag('o.blown') ? 'ora.movement2' : 'ora.movement');
@@ -278,7 +311,7 @@ export function createOraLaboratorio(g: Game): Location {
     kind: 'drag' as const,
     obj: l.o,
     plane,
-    when: () => g.viewName === 'bench' && !drawerOpen(),
+    when: () => g.viewName === 'bench' && !drawerOpen() && (l.id !== 'G' || haveBig()),
     onStart: () => {
       g.audio.sfx('click');
       l.on = -1;
@@ -354,6 +387,7 @@ export function createOraLaboratorio(g: Game): Location {
     },
     hint: () => {
       if (!g.flag('o.blown')) return 'hint.ora.blow';
+      if (!drawerOpen() && !haveBig()) return g.has('gear') ? 'hint.ora.gearBack' : 'hint.ora.needGear';
       if (!drawerOpen()) return 'hint.ora.gears';
       if (!g.flag('o.photo') || !g.flag('o.windKey')) return 'hint.ora.drawer';
       return 'hint.ora.code';

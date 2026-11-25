@@ -8,7 +8,8 @@ import { sleep } from './ada_common';
 /**
  * Behind the Villino: the wisteria that gave the house its name has grown over everything,
  * the French window of Ada's bedroom included. A swing that moves on its own, a stone birdbath,
- * the garden shed. The shed key was in the pantry; the shears are in the shed; cut the wisteria.
+ * the garden shed. The shed key was in the pantry. The shears aren't in the shed: Ettore lent them to Aldo,
+ * the barber (they hang in his courtyard). In the shed there's a tin with the clockmaker's big wheel.
  */
 export function createAdaGiardino(g: Game): Location {
   const scene = new THREE.Scene();
@@ -188,7 +189,20 @@ export function createAdaGiardino(g: Game): Location {
     sDoor.rotation.y = -2.6;
     shedLock.visible = false;
   }
-  shears.visible = !g.flag('a.shears');
+  // the shears are gone: an empty nail, and a pencil note on the plank. (An old save that saw them here keeps them.)
+  shears.visible = false;
+  const note = textPlane([t('garden.nailNote')], 0.22, 0.07, { bg: '#4a3a2a', fg: '#d8d0bd', size: 18, px: 96, font: "'Bradley Hand', 'Segoe Print', cursive" });
+  note.position.set(0.05, 1.12, -SD / 2 + 0.07);
+  shed.add(note);
+  shed.add(cyl(0.004, 0.004, 0.04, iron, 0.05, 1.45, -SD / 2 + 0.08, 5).rotateX(Math.PI / 2));
+  // Ettore's tin of odds and ends: screws, springs... and a big brass wheel
+  const tin = new THREE.Group();
+  tin.add(cyl(0.09, 0.09, 0.1, mat(0x5a5650, { metalness: 0.6, roughness: 0.5 }), 0, 0.05, 0, 18));
+  tin.add(cyl(0.092, 0.092, 0.015, mat(0x6e6a62, { metalness: 0.6, roughness: 0.4 }), 0, 0.105, 0, 18));
+  tin.position.set(-0.3, 0.75, -SD / 2 + 0.2);
+  shed.add(rbox(0.7, 0.04, 0.3, 0.005, woodDark, -0.2, 0.73, -SD / 2 + 0.17));
+  shed.add(tin);
+  const gearTaken = () => !!g.flag('a.gear');
   const planter = prop('roundTable', { height: 0.6 });
   if (planter) {
     planter.position.set(0.3, 0, 1.3);
@@ -233,6 +247,9 @@ export function createAdaGiardino(g: Game): Location {
   shed.updateMatrixWorld(true);
   const shP = shears.getWorldPosition(new THREE.Vector3());
   const hShears = hitBox(0.3, 0.4, 0.3, shP.x, shP.y, shP.z + 0.1, 'shears');
+  const tP = tin.getWorldPosition(new THREE.Vector3());
+  const hTin = hitBox(0.3, 0.3, 0.3, tP.x, tP.y + 0.06, tP.z, 'tin');
+  scene.add(hTin);
   const hKitchen = hitBox(0.9, 2.0, 0.4, kitchenX, 1.0, -D / 2 + 0.2, 'kitchen');
   const hSwing = hitBox(1.0, 2.2, 0.6, swX, 1.1, swZ, 'swing');
   const hBath = hitBox(0.7, 0.9, 0.7, -1.1, 0.45, 0.4, 'birdbath');
@@ -294,7 +311,19 @@ export function createAdaGiardino(g: Game): Location {
         return say('garden.shedLocked');
       }
       if (item) return g.nope();
-      return say(shears.visible ? 'garden.shedInside' : 'garden.shedEmpty');
+      return say('garden.shedInside');
+    } },
+    { id: 'tin', obj: hTin, view: 'shed', when: () => shedOpen(), tap: async (item) => {
+      if (item) return g.nope();
+      if (gearTaken()) return say('garden.tinEmpty');
+      g.set('a.gear');
+      g.give('gear');
+      g.audio.sfx('clunk');
+      return g.say([{ who: 'diego', key: 'garden.tin1' }, { who: 'diego', key: 'garden.tin2' }]);
+    } },
+    { id: 'nail', obj: hShears, view: 'shed', when: () => shedOpen() && !shears.visible, tap: async (item) => {
+      if (item) return g.nope();
+      return say('garden.nail');
     } },
     { id: 'shears', obj: hShears, view: 'shed', when: () => shedOpen() && shears.visible, tap: async (item) => {
       if (item) return g.nope();
@@ -371,7 +400,8 @@ export function createAdaGiardino(g: Game): Location {
       if (vinesCut()) return 'hint.garden.bedroom';
       if (g.has('shears')) return 'hint.garden.cut';
       if (!shedOpen()) return g.has('shedkey') ? 'hint.garden.shed' : 'hint.ada.shedKey';
-      return 'hint.garden.shears';
+      if (!gearTaken()) return 'hint.garden.tin';
+      return g.flag('a.shears') ? 'hint.garden.cut' : 'hint.garden.shearsAway';
     },
     debug: { clumps },
   };

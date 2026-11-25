@@ -133,6 +133,11 @@ export function createBarbiereCantina(g: Game): Location {
     hourHand.rotation.z = -(((minutes / 60) % 12) / 12) * Math.PI * 2;
   };
   setHands();
+  // the minute hand is missing: Aldo took it to the clockmaker's to be straightened (it's at L'Ora Ferma).
+  // An old save that already turned it keeps it.
+  const haveHand = () => !!g.flag('c.hand') || !!g.flag('c.clock') || g.flag('c.minutes') !== undefined;
+  const handBar = minuteHand.children[0];
+  handBar.visible = haveHand();
   if (g.flag('c.clock')) doorPivot.rotation.y = -1.8;
   caseInClock.visible = !!g.flag('c.clock') && !g.has('case') && !g.flag('razor');
 
@@ -215,8 +220,17 @@ export function createBarbiereCantina(g: Game): Location {
 
   const hotspots: Hotspot[] = [
     { id: 'clock', obj: hClock, view: 'clock', tap: async (item) => {
+      if (item === 'minutehand' && sheetPulled('clock') && !haveHand()) {
+        g.deselect();
+        g.take('minutehand');
+        g.set('c.hand');
+        handBar.visible = true;
+        g.audio.sfx('click');
+        return g.say('cantina.handOn');
+      }
       if (item) return g.nope();
       if (!sheetPulled('clock')) return g.say('cantina.sheet');
+      if (!haveHand()) return g.say('cantina.noHand');
       if (g.flag('c.clock')) {
         if (caseInClock.visible) {
           caseInClock.visible = false;
@@ -291,7 +305,7 @@ export function createBarbiereCantina(g: Game): Location {
     kind: 'dial',
     obj: minuteHand,
     center: minuteHand.getWorldPosition(new THREE.Vector3()),
-    when: () => sheetPulled('clock') && !g.flag('c.clock') && g.viewName === 'clock',
+    when: () => sheetPulled('clock') && haveHand() && !g.flag('c.clock') && g.viewName === 'clock',
     onTurn: (d) => {
       minutes = (minutes + (d / (Math.PI * 2)) * 60 + 720) % 720;
       setHands();
@@ -357,6 +371,7 @@ export function createBarbiereCantina(g: Game): Location {
     },
     hint: () => {
       if (!sheetPulled('clock')) return 'hint.cantina.sheets';
+      if (!haveHand()) return g.has('minutehand') ? 'hint.cantina.handOn' : 'hint.cantina.noHand';
       if (!g.flag('c.clock')) return 'hint.cantina.clock';
       if (caseInClock.visible) return 'hint.cantina.take';
       return 'hint.cantina.up';
