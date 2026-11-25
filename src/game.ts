@@ -584,7 +584,7 @@ export class Game {
   }
   /** Build the jumpscare figure for this place and compile it with the room's lights, so it can strike without a stall. */
   private async prepScare(id: string) {
-    const kind = id.startsWith('barbiere') ? 'barber' : id === 'macelleria' ? 'bruno' : id.startsWith('ada') ? 'ada' : id.startsWith('ora') ? 'clara' : null;
+    const kind = id.startsWith('barbiere') || id === 'radio_terrazzo' ? 'barber' : id === 'macelleria' ? 'bruno' : id.startsWith('ada') ? 'ada' : id.startsWith('ora') ? 'clara' : null;
     if (!kind || !realCharacters() || this.settings.reducedScares) return;
     const c = this.scareChar(kind);
     const scene = this.engine.scene;

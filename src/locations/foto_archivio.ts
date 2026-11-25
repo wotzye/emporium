@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { room, rbox, mesh, dust, textPlane, hitBox, bulb, lightCone, woodMaterial, mat } from '../builders';
+import { room, rbox, mesh, dust, textPlane, hitBox, bulb, lightCone, woodMaterial, mat, cyl } from '../builders';
 import { t } from '../i18n';
 import { fotoWall, sleep } from './foto_common';
 
@@ -74,6 +74,16 @@ export function createFotoArchivio(g: Game): Location {
   flatKey.position.set(0, 0.03, 0.06);
   d31.g.add(flatKey);
   flatKey.visible = opened.has(THE_ONE) && !keyTaken();
+  // drawer 17: a radio valve, with a tag in another hand: «Sartori — ECC83 — da restituire»
+  const VALVE_DRAWER = 17;
+  const valveTaken = () => !!g.flag('rl.valveTaken');
+  const valveObj = new THREE.Group();
+  valveObj.add(cyl(0.012, 0.012, 0.05, new THREE.MeshStandardMaterial({ color: 0xbfc8cc, transparent: true, opacity: 0.65, roughness: 0.05 }), 0, 0, 0, 10).rotateZ(Math.PI / 2));
+  valveObj.add(cyl(0.013, 0.013, 0.012, mat(0x1a1a1a), 0.028, 0, 0, 10).rotateZ(Math.PI / 2));
+  const dV = drawers.find((d) => d.n === VALVE_DRAWER)!;
+  valveObj.position.set(0, 0.025, 0.06);
+  dV.g.add(valveObj);
+  valveObj.visible = opened.has(VALVE_DRAWER) && !valveTaken();
 
   // a light box on a table, for looking at negatives
   scene.add(rbox(0.9, 0.04, 0.55, 0.01, woodMid, 1.0, 0.78, 0.6));
@@ -123,12 +133,23 @@ export function createFotoArchivio(g: Game): Location {
             g.audio.sfx('whisper');
             return g.say([{ who: 'diego', key: 'foto.d31a' }, { who: 'diego', key: 'foto.d31b' }]);
           }
+          if (d.n === VALVE_DRAWER && !valveTaken()) {
+            valveObj.visible = true;
+            return say(g.flag('rl.ticket') ? 'foto.valveSeenTicket' : 'foto.valveSeen');
+          }
           if (d.n === 13) {
             // the one nobody should open
             g.audio.sfx('whisper');
             return say('foto.drawer13');
           }
           return say(contents[d.n % contents.length]);
+        }
+        if (d.n === VALVE_DRAWER && valveObj.visible) {
+          valveObj.visible = false;
+          g.set('rl.valveTaken');
+          g.give('valve');
+          g.audio.sfx('pickup');
+          return say('foto.valveTaken');
         }
         if (d.n === THE_ONE && flatKey.visible) {
           flatKey.visible = false;
@@ -179,6 +200,7 @@ export function createFotoArchivio(g: Game): Location {
       }
     },
     hint: () => {
+      if (g.flag('placedCamera') && g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) return 'hint.foto.valve';
       if (keyTaken()) return 'hint.foto.stairs';
       if (!g.flag('f.print')) return 'hint.foto.archiveWhich';
       return 'hint.foto.drawer';

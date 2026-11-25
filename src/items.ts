@@ -99,6 +99,19 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<rect x="20" y="12" width="14" height="16"/><path d="M20 14 L9 17 V23 L20 26"/><circle cx="7" cy="20" r="3"/>'),
   },
+  valve: {
+    id: 'valve',
+    svg: s('<path d="M15 30 V14 a5 5 0 0 1 10 0 V30 z"/><path d="M15 30 h10 M17 33 v3 M20 33 v3 M23 33 v3 M18 22 h4 M20 16 v10"/>'),
+  },
+  radio: {
+    id: 'radio',
+    cursed: true,
+    svg: s('<rect x="8" y="15" width="24" height="16" rx="2"/><circle cx="15" cy="23" r="4"/><path d="M24 20 h5 M24 24 h5 M24 28 h5 M30 15 L34 4"/>'),
+  },
+  towerkey: {
+    id: 'towerkey',
+    svg: s('<circle cx="10" cy="20" r="6"/><circle cx="10" cy="20" r="2"/><path d="M16 20 H35 M31 20 v6 M27 20 v4 M33 20 v4"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

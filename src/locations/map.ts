@@ -191,7 +191,8 @@ export function createMap(g: Game): Location {
     barbiere: !!g.flag('fledButcher') && !g.flag('placedRazor'),
     ada: !!g.flag('fledButcher') && !g.flag('placedGlasses'),
     orologeria: !!g.flag('fledButcher') && !g.flag('placedWatch'),
-    fotografo: !!g.flag('fledButcher') && !g.flag('placedCamera'),
+    fotografo: !!g.flag('fledButcher') && (!g.flag('placedCamera') || (!!g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn'))),
+    radio: !!g.flag('fledButcher') && !g.flag('placedRadio'),
   };
 
   for (const b of buildings) {
@@ -309,8 +310,14 @@ export function createMap(g: Game): Location {
           }
           if (b.id === 'fotografo') {
             if (!g.flag('fledButcher')) return g.say('map.fotoLocked');
-            if (g.flag('placedCamera')) return g.say('map.fotoDone');
+            // the radio man's valve is still in Ferri's archive: you may go back in for it
+            if (g.flag('placedCamera') && !(g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn'))) return g.say('map.fotoDone');
             return g.go('foto_negozio');
+          }
+          if (b.id === 'radio') {
+            if (!g.flag('fledButcher')) return g.say('map.radioLocked');
+            if (g.flag('placedRadio')) return g.say('map.radioDone');
+            return g.go('radio_negozio');
           }
           if (b.id === 'ada') {
             if (!g.flag('fledButcher')) return g.say('map.adaLocked');
@@ -415,7 +422,7 @@ export function createMap(g: Game): Location {
     startView: 'top',
     exposure: 0.8,
     // the places you can walk into right now are prepared while you look at the square
-    next: ['emporio', ...(isOpen.macelleria ? ['macelleria'] : []), ...(isOpen.barbiere ? ['barbiere'] : []), ...(isOpen.ada ? ['ada_soggiorno'] : []), ...(isOpen.orologeria ? ['ora_bottega'] : []), ...(isOpen.fotografo ? ['foto_negozio'] : [])],
+    next: ['emporio', ...(isOpen.macelleria ? ['macelleria'] : []), ...(isOpen.barbiere ? ['barbiere'] : []), ...(isOpen.ada ? ['ada_soggiorno'] : []), ...(isOpen.orologeria ? ['ora_bottega'] : []), ...(isOpen.fotografo ? ['foto_negozio'] : []), ...(isOpen.radio ? ['radio_negozio'] : [])],
     views: {
       top: { pos: [0, 25, 19], look: [0, 0, -0.5], yaw: 14, pitch: 8, fov: 48 },
     },
@@ -435,12 +442,12 @@ export function createMap(g: Game): Location {
           { who: 'diego', key: 'map.intro2' },
         ]);
       }
-      const nPlaced = ['placedRazor', 'placedGlasses', 'placedWatch', 'placedCamera'].filter((f) => g.flag(f)).length;
+      const nPlaced = ['placedRazor', 'placedGlasses', 'placedWatch', 'placedCamera', 'placedRadio'].filter((f) => g.flag(f)).length;
       if (nPlaced > 0 && !g.flag('chapter2')) {
         g.set('chapter2');
         await g.ui.cards(['mid.1', 'mid.2']);
       }
-      if (nPlaced >= 4 && !g.flag('demoEnd')) {
+      if (nPlaced >= 5 && !g.flag('demoEnd')) {
         g.set('demoEnd');
         await g.ui.cards(['end.1', 'end.2', 'end.3']);
       }
@@ -452,11 +459,14 @@ export function createMap(g: Game): Location {
       if (g.has('glasses')) return 'hint.map.returnGlasses';
       if (g.has('watch')) return 'hint.map.returnWatch';
       if (g.has('camera')) return 'hint.map.returnCamera';
-      if (!g.flag('placedRazor') && !g.flag('placedGlasses') && !g.flag('placedWatch') && !g.flag('placedCamera')) return 'hint.map.choose';
+      if (g.has('radio')) return 'hint.map.returnRadio';
+      if (!g.flag('placedRazor') && !g.flag('placedGlasses') && !g.flag('placedWatch') && !g.flag('placedCamera') && !g.flag('placedRadio')) return 'hint.map.choose';
       if (!g.flag('placedRazor')) return 'hint.map.barbiere';
       if (!g.flag('placedGlasses')) return 'hint.map.ada';
       if (!g.flag('placedWatch')) return 'hint.map.ora';
       if (!g.flag('placedCamera')) return 'hint.map.foto';
+      if (g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) return 'hint.map.valve';
+      if (!g.flag('placedRadio')) return 'hint.map.radio';
       return 'hint.map.done';
     },
   };

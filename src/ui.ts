@@ -3,7 +3,7 @@ import { t } from './i18n';
 import { listen, SensorKind, motionNeedsTap, askMotion } from './sensors';
 
 export interface Line {
-  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio';
+  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio' | 'nello' | 'paolo';
   key: string;
   vars?: Record<string, string | number>;
 }
@@ -418,6 +418,73 @@ export class UI {
       render();
       b.append(disp, pad);
       const close = this.openModal(title, b, () => {
+        if (!solved) res(false);
+      });
+    });
+  }
+
+  /**
+   * Telegraph key: press short for a dot, long for a dash. Resolves true when `target` (dots and
+   * dashes) has been keyed in one go, false if closed. onKey(true/false) follows the key (for the tone).
+   */
+  telegraph(title: string, target: string, onKey?: (down: boolean) => void): Promise<boolean> {
+    return new Promise((res) => {
+      let seq = '';
+      let solved = false;
+      let downAt = 0;
+      let idle: ReturnType<typeof setTimeout> | null = null;
+      const b = el('div');
+      const disp = el('div', 'display');
+      disp.textContent = '·';
+      const key = el('button', 'tkey', '');
+      const row = el('div', 'trow');
+      const dot = el('button', '', '·');
+      const dash = el('button', '', '—');
+      row.append(dot, dash);
+      const render = () => (disp.textContent = seq ? seq.replace(/\./g, '·').replace(/-/g, '—') : '·');
+      const push = (s: string) => {
+        seq += s;
+        render();
+        if (idle) clearTimeout(idle);
+        if (seq === target) {
+          solved = true;
+          setTimeout(() => {
+            close();
+            res(true);
+          }, 500);
+          return;
+        }
+        if (!target.startsWith(seq)) {
+          disp.classList.remove('err');
+          void disp.offsetWidth;
+          disp.classList.add('err');
+          setTimeout(() => { seq = ''; render(); }, 600);
+          return;
+        }
+        // a long pause ends the sign: start again
+        idle = setTimeout(() => { seq = ''; render(); }, 2200);
+      };
+      key.onpointerdown = (e) => {
+        e.preventDefault();
+        downAt = performance.now();
+        key.classList.add('down');
+        onKey?.(true);
+      };
+      const up = () => {
+        if (!downAt) return;
+        const d = performance.now() - downAt;
+        downAt = 0;
+        key.classList.remove('down');
+        onKey?.(false);
+        push(d < 260 ? '.' : '-');
+      };
+      key.onpointerup = up;
+      key.onpointerleave = up;
+      dot.onclick = () => { onKey?.(true); setTimeout(() => onKey?.(false), 90); push('.'); };
+      dash.onclick = () => { onKey?.(true); setTimeout(() => onKey?.(false), 270); push('-'); };
+      b.append(disp, key, row);
+      const close = this.openModal(title, b, () => {
+        if (idle) clearTimeout(idle);
         if (!solved) res(false);
       });
     });

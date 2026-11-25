@@ -205,6 +205,7 @@ export function createFotoNegozio(g: Game): Location {
       }
     },
     hint: () => {
+      if (g.flag('placedCamera') && g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) return 'hint.foto.valve';
       if (g.has('camera')) return 'hint.foto.leave';
       if (!g.save.notebook.includes('note.lastra')) return 'hint.foto.register';
       if (!g.flag('f.dark')) return 'hint.foto.studio';

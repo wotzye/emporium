@@ -549,3 +549,136 @@ export function photoMemory(): { title: string; panels: { draw: Draw; text: stri
   ];
   return { title: t('mem.foto.title'), panels };
 }
+
+/** The radio man: Nello Sartori, and Paolo. */
+export function radioMemory(): { title: string; panels: { draw: Draw; text: string }[] } {
+  const antenna = (c: CanvasRenderingContext2D, x: number, y: number, s: number) => {
+    c.strokeStyle = '#1a1816';
+    c.lineWidth = 4 * s;
+    c.beginPath();
+    c.moveTo(x, y);
+    c.lineTo(x, y - 300 * s);
+    c.stroke();
+    c.lineWidth = 3 * s;
+    for (let i = 0; i < 6; i++) {
+      const l = (70 - i * 8) * s;
+      c.beginPath();
+      c.moveTo(x - l, y - 280 * s + i * 4 * s);
+      c.lineTo(x + l, y - 280 * s + i * 4 * s);
+      c.stroke();
+    }
+  };
+  const radio = (c: CanvasRenderingContext2D, x: number, y: number, s: number, red: boolean) => {
+    c.fillStyle = red ? '#8e0710' : '#4a3424';
+    c.fillRect(x - 45 * s, y - 30 * s, 90 * s, 60 * s);
+    c.fillStyle = red ? '#2a0606' : '#6e675c';
+    c.beginPath();
+    c.arc(x - 18 * s, y, 18 * s, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = red ? '#ff5050' : '#9a9a98';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(x + 35 * s, y - 30 * s);
+    c.lineTo(x + 70 * s, y - 140 * s);
+    c.stroke();
+  };
+  const waves = (c: CanvasRenderingContext2D, x: number, y: number, n: number, col: string) => {
+    c.strokeStyle = col;
+    c.lineWidth = 3;
+    for (let i = 1; i <= n; i++) {
+      c.beginPath();
+      c.arc(x, y, i * 26, -0.7, 0.7);
+      c.stroke();
+    }
+  };
+  const panels: { draw: Draw; text: string }[] = [
+    {
+      text: t('mem.radio.1'),
+      draw: (c, w, h) => {
+        // father and son on the roof, putting up the antenna
+        c.fillStyle = '#8a8478';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#4a4640';
+        c.fillRect(0, 520, w, 200);
+        antenna(c, 480, 540, 1.3);
+        figure(c, 360, 560, 1.1, '#2a2621');
+        figure(c, 620, 560, 1.15, '#3a352f');
+      },
+    },
+    {
+      text: t('mem.radio.2'),
+      draw: (c, w, h) => {
+        // the telegram on the table; the father alone, his head in his hands
+        c.fillStyle = '#3a3631';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#5a4430';
+        c.fillRect(150, 470, 700, 30);
+        c.fillStyle = paper;
+        c.fillRect(560, 440, 160, 30);
+        figure(c, 380, 560, 1.2, '#1e1b18');
+        chair(c, 380, 640, 1.1);
+      },
+    },
+    {
+      text: t('mem.radio.3'),
+      draw: (c, w, h) => {
+        // the man in black puts a red transistor radio on the counter
+        c.fillStyle = '#34312d';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#4a3424';
+        c.fillRect(0, 470, w, 40);
+        figure(c, 700, 560, 1.6, ink, true, true);
+        c.fillStyle = '#d6cfc2';
+        c.beginPath();
+        c.ellipse(700, 320, 30, 40, 0, 0, Math.PI * 2);
+        c.fill();
+        c.shadowColor = '#ff2020';
+        c.shadowBlur = 24;
+        radio(c, 420, 440, 1.1, true);
+        c.shadowBlur = 0;
+        figure(c, 220, 560, 1.3, '#2a2621');
+      },
+    },
+    {
+      text: t('mem.radio.4'),
+      draw: (c, w, h) => {
+        // every night on the roof: thinner, paler, the red radio at his ear
+        c.fillStyle = '#0d1014';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#dcd8cc';
+        c.beginPath();
+        c.arc(820, 120, 40, 0, Math.PI * 2);
+        c.fill();
+        antenna(c, 200, 600, 1.2);
+        figure(c, 520, 600, 1.1, '#4a4640');
+        c.shadowColor = '#ff2020';
+        c.shadowBlur = 20;
+        radio(c, 580, 400, 0.6, true);
+        c.shadowBlur = 0;
+        waves(c, 640, 390, 4, '#8e0710');
+      },
+    },
+    {
+      text: t('mem.radio.5'),
+      draw: (c, w, h) => {
+        // the bell tower in the dawn; the key's last «·· · — · —»; the roof empty
+        c.fillStyle = '#b8b2a6';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#5a5650';
+        c.fillRect(640, 140, 120, 420);
+        c.beginPath();
+        c.moveTo(620, 140);
+        c.lineTo(700, 40);
+        c.lineTo(780, 140);
+        c.fill();
+        c.fillStyle = '#2a2622';
+        c.fillRect(670, 200, 60, 70);
+        antenna(c, 260, 600, 1.2);
+        c.fillStyle = ink;
+        c.font = "bold 44px 'Courier New', monospace";
+        c.fillText('· · · — · —', 140, 120);
+      },
+    },
+  ];
+  return { title: t('mem.radio.title'), panels };
+}
