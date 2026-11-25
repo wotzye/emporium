@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, box, cyl, sphere, mat, mesh, textPlane, hitBox, cursedMat, bulb, fx, rbox, lathe, dust, lightCone, canvasTex, noise, woodMaterial, plasterMaterial } from '../builders';
 import { createMerchant } from '../characters';
-import { barberMemory, adaMemory, clockMemory } from '../memories';
+import { barberMemory, adaMemory, clockMemory, photoMemory } from '../memories';
 import { wallClock } from './ora_common';
 import { prop, cursify } from '../models';
 import { t } from '../i18n';
@@ -375,6 +375,19 @@ export function createEmporio(g: Game): Location {
   watchOnShelf.rotation.y = -Math.PI / 2;
   watchOnShelf.visible = !!g.flag('placedWatch');
   scene.add(watchOnShelf);
+  // Giulio Ferri's bellows camera on its pedestal (hidden until placed)
+  const cameraOnShelf = new THREE.Group();
+  {
+    const cb = new THREE.Group();
+    cb.add(box(0.12, 0.12, 0.08, cm, 0, 0.06, 0));
+    cb.add(box(0.1, 0.1, 0.1, cm, 0, 0.06, -0.08));
+    cb.add(cyl(0.03, 0.03, 0.05, cm, 0, 0.06, -0.15, 12).rotateX(Math.PI / 2));
+    cameraOnShelf.add(cb);
+  }
+  cameraOnShelf.position.set(caseX, lowY + 0.02, lowZ[2]);
+  cameraOnShelf.rotation.y = Math.PI / 2;
+  cameraOnShelf.visible = !!g.flag('placedCamera');
+  scene.add(cameraOnShelf);
   // Ada's glasses on their pedestal (hidden until placed)
   const specsOnShelf = new THREE.Group();
   const specModel = prop('spectacles', { width: 0.16 });
@@ -396,6 +409,8 @@ export function createEmporio(g: Game): Location {
   const hSlot = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[0], 'slot');
   const hSlotAda = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[4], 'slotAda');
   const hSlotOra = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[1], 'slotOra');
+  const hSlotFoto = hitBox(0.6, 0.5, 0.6, caseX - 0.1, lowY + 0.2, lowZ[2], 'slotFoto');
+  scene.add(hSlotFoto);
   // the five things already on the top shelf: each has its story, if you ask
   const TOP_STORIES = ['shoe', 'statue', 'doll', 'macelleria', 'valigia'] as const;
   const topHits = TOP_STORIES.map((k, i) => {
@@ -424,6 +439,8 @@ export function createEmporio(g: Game): Location {
         await g.say([{ who: 'mercante', key: 'emp.haveRazor' }]);
       } else if (g.has('glasses')) {
         await g.say([{ who: 'mercante', key: 'emp.haveGlasses' }]);
+      } else if (g.has('camera')) {
+        await g.say([{ who: 'mercante', key: 'emp.haveCamera' }]);
       } else if (g.has('watch')) {
         await g.say([{ who: 'mercante', key: 'emp.haveWatch' }]);
       } else if (g.flag('placedGlasses')) {
@@ -444,15 +461,15 @@ export function createEmporio(g: Game): Location {
     }
   };
 
-  const PLACED = { razor: 'placedRazor', glasses: 'placedGlasses', watch: 'placedWatch' } as const;
+  const PLACED = { razor: 'placedRazor', glasses: 'placedGlasses', watch: 'placedWatch', camera: 'placedCamera' } as const;
   const placedCount = () => Object.values(PLACED).filter((f) => g.flag(f)).length;
-  const placeObject = async (item: 'razor' | 'glasses' | 'watch') => {
+  const placeObject = async (item: 'razor' | 'glasses' | 'watch' | 'camera') => {
     const isRazor = item === 'razor';
     g.deselect();
     g.take(item);
     g.set(PLACED[item]);
     g.rebuild('map');
-    ({ razor, glasses: specsOnShelf, watch: watchOnShelf })[item].visible = true;
+    ({ razor, glasses: specsOnShelf, watch: watchOnShelf, camera: cameraOnShelf })[item].visible = true;
     g.audio.sfx('glass');
     g.setFlicker(true, 0.8);
     candleBase = 0.4;
@@ -468,13 +485,13 @@ export function createEmporio(g: Game): Location {
     g.audio.rec('windup', { gain: 0.8 });
     setTimeout(() => g.audio.musicBox({ gain: 0.45, runDown: true, bars: 13 }), 1400);
     await g.ui.fadeOut(800);
-    const m = isRazor ? barberMemory() : item === 'glasses' ? adaMemory() : clockMemory();
+    const m = isRazor ? barberMemory() : item === 'glasses' ? adaMemory() : item === 'watch' ? clockMemory() : photoMemory();
     await g.ui.memory(m.title, m.panels);
-    g.diaryPage(isRazor ? 'memBarbiere' : item === 'glasses' ? 'memAda' : 'memOra');
+    g.diaryPage(isRazor ? 'memBarbiere' : item === 'glasses' ? 'memAda' : item === 'watch' ? 'memOra' : 'memFoto');
     await g.ui.fadeIn(800);
     // what he says depends on the object, and on how many are back
     const count = placedCount();
-    await g.say([{ who: 'mercante', key: isRazor ? 'emp.placedBar' : item === 'glasses' ? 'emp.placedAda1' : 'emp.placedOra' }]);
+    await g.say([{ who: 'mercante', key: isRazor ? 'emp.placedBar' : item === 'glasses' ? 'emp.placedAda1' : item === 'watch' ? 'emp.placedOra' : 'emp.placedFoto' }]);
     if (count === 1)
       await g.say([
         { who: 'mercante', key: 'emp.placed1' },
@@ -482,7 +499,8 @@ export function createEmporio(g: Game): Location {
         { who: 'diego', key: 'emp.placed3' },
       ]);
     else if (count === 2) await g.say([{ who: 'mercante', key: 'emp.placedAda2' }, { who: 'diego', key: 'emp.placedAda3' }]);
-    else await g.say([{ who: 'mercante', key: 'emp.placed3a' }, { who: 'mercante', key: 'emp.placed3b' }, { who: 'diego', key: 'emp.placed3c' }]);
+    else if (count === 3) await g.say([{ who: 'mercante', key: 'emp.placed3a' }, { who: 'mercante', key: 'emp.placed3b' }, { who: 'diego', key: 'emp.placed3c' }]);
+    else await g.say([{ who: 'mercante', key: 'emp.placed4a' }, { who: 'mercante', key: 'emp.placed4b' }, { who: 'diego', key: 'emp.placed4c' }]);
     await g.view('main');
   };
   const placeRazor = () => placeObject('razor');
@@ -501,7 +519,7 @@ export function createEmporio(g: Game): Location {
       },
     })),
     { id: 'merchant', obj: hMerchant, view: 'counter', tap: async (item) => {
-      if (item === 'razor' || item === 'glasses' || item === 'watch') {
+      if (item === 'razor' || item === 'glasses' || item === 'watch' || item === 'camera') {
         await g.say([{ who: 'mercante', key: 'emp.notToMe' }]);
         g.deselect();
         return;
@@ -514,6 +532,12 @@ export function createEmporio(g: Game): Location {
       if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
       if (g.flag('placedRazor')) return telling('razor');
+      return g.say('emp.slotEmpty');
+    } },
+    { id: 'slotFoto', obj: hSlotFoto, when: () => g.viewName === 'case', tap: async (item) => {
+      if (item === 'camera') return placeObject('camera');
+      if (item) return g.nope();
+      if (g.flag('placedCamera')) return telling('camera');
       return g.say('emp.slotEmpty');
     } },
     { id: 'slotOra', obj: hSlotOra, when: () => g.viewName === 'case', tap: async (item) => {
@@ -532,6 +556,7 @@ export function createEmporio(g: Game): Location {
       if (item === 'razor') return placeRazor();
       if (item === 'glasses') return placeObject('glasses');
       if (item === 'watch') return placeObject('watch');
+      if (item === 'camera') return placeObject('camera');
       if (item) return g.nope();
       await g.say([{ who: 'diego', key: 'emp.case1' }, { who: 'diego', key: 'emp.case2' }]);
     } },
@@ -622,8 +647,8 @@ export function createEmporio(g: Game): Location {
     },
     debug: { rim },
     hint: () => {
-      if (g.has('razor') || g.has('glasses') || g.has('watch')) return 'hint.emporio.place';
-      if (placedCount() >= 3) return 'hint.emporio.done';
+      if (g.has('razor') || g.has('glasses') || g.has('watch') || g.has('camera')) return 'hint.emporio.place';
+      if (placedCount() >= 4) return 'hint.emporio.done';
       if (placedCount() > 0) return 'hint.emporio.next';
       return 'hint.emporio.go';
     },

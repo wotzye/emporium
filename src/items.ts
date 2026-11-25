@@ -82,6 +82,23 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'gear',
     svg: s('<circle cx="20" cy="20" r="9"/><circle cx="20" cy="20" r="3"/><path d="M20 6 v5 M20 29 v5 M6 20 h5 M29 20 h5 M10 10 l3.5 3.5 M26.5 26.5 l3.5 3.5 M10 30 l3.5 -3.5 M26.5 13.5 l3.5 -3.5"/>'),
   },
+  redbulb: {
+    id: 'redbulb',
+    svg: s('<path d="M14 18 a6 6 0 1 1 12 0 c0 4 -3 5 -3 9 h-6 c0 -4 -3 -5 -3 -9z"/><path d="M17 30 h6 M17 33 h6"/>'),
+  },
+  flatkey: {
+    id: 'flatkey',
+    svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v5 M27 20 v3"/>'),
+  },
+  flashbulb: {
+    id: 'flashbulb',
+    svg: s('<circle cx="20" cy="15" r="8"/><path d="M16 23 h8 v6 h-8z M13 9 l-3 -3 M27 9 l3 -3 M20 5 v-3"/>'),
+  },
+  camera: {
+    id: 'camera',
+    cursed: true,
+    svg: s('<rect x="20" y="12" width="14" height="16"/><path d="M20 14 L9 17 V23 L20 26"/><circle cx="7" cy="20" r="3"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

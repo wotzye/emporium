@@ -145,7 +145,8 @@ export function createBarbiereAlloggio(g: Game): Location {
       c.textAlign = 'center';
       c.fillText(String(year), w / 2, h - 10);
     };
-    const p = framed(0.26, 0.34, oldPhoto(key, 260, 340, drawn, {
+    const p = framed(0.34, 0.26, oldPhoto(key, 340, 260, drawn, {
+      border: false,
       age: 0.4 + (1 - k) * 0.4,
       after: (c, x0, y0, w, h) => {
         c.fillStyle = 'rgba(30,24,18,0.85)';
@@ -154,7 +155,7 @@ export function createBarbiereAlloggio(g: Game): Location {
         c.fillText(String(year), x0 + w / 2, y0 + h - 8);
       },
     }), frameM);
-    p.position.set(W / 2 - 0.02, 1.85, -1.45 + i * 0.36);
+    p.position.set(W / 2 - 0.02, 1.85, -1.5 + i * 0.4);
     void year;
     p.rotation.y = -Math.PI / 2;
     if (i % 2) p.rotation.z = 0.04;

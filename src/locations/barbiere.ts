@@ -444,7 +444,7 @@ export function createBarbiere(g: Game): Location {
   retroSign.rotation.y = Math.PI / 2;
   cabDoorPivot.add(retroSign);
   scene.add(cabDoorPivot);
-  if (g.flag('b.cabinet')) cabDoorPivot.rotation.y = 1.3;
+  if (g.flag('b.cabinet')) cabDoorPivot.rotation.y = -1.3; // opened away from you, into the dark: pulled from the other side
   // diplomas
   const diploma = (lines: string[]) => (c: CanvasRenderingContext2D, w: number, h: number) => {
     c.fillStyle = '#e8e1cf';
@@ -763,7 +763,7 @@ export function createBarbiere(g: Game): Location {
         await new Promise<void>((res) => {
           const step = () => {
             const k = Math.min((performance.now() - t0) / 900, 1);
-            cabDoorPivot.rotation.y = 1.3 * k;
+            cabDoorPivot.rotation.y = -1.3 * k;
             if (k < 1) requestAnimationFrame(step);
             else res();
           };

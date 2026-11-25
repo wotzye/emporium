@@ -14,6 +14,12 @@ import { createBarbiereCortile } from './locations/barbiere_cortile';
 import { createBarbiereAlloggio } from './locations/barbiere_alloggio';
 import { createAdaGiardino } from './locations/ada_giardino';
 import { createAdaCamera } from './locations/ada_camera';
+import { askMotion, motionNeedsTap } from './sensors';
+import { createFotoNegozio } from './locations/foto_negozio';
+import { createFotoStudio } from './locations/foto_studio';
+import { createFotoOscura } from './locations/foto_oscura';
+import { createFotoArchivio } from './locations/foto_archivio';
+import { createFotoCasa } from './locations/foto_casa';
 import { createOraBottega } from './locations/ora_bottega';
 import { createOraLaboratorio } from './locations/ora_laboratorio';
 import { createOraCamera } from './locations/ora_camera';
@@ -36,6 +42,11 @@ game.register('barbiere_cortile', createBarbiereCortile);
 game.register('barbiere_alloggio', createBarbiereAlloggio);
 game.register('ada_giardino', createAdaGiardino);
 game.register('ada_camera', createAdaCamera);
+game.register('foto_negozio', createFotoNegozio);
+game.register('foto_studio', createFotoStudio);
+game.register('foto_oscura', createFotoOscura);
+game.register('foto_archivio', createFotoArchivio);
+game.register('foto_casa', createFotoCasa);
 game.register('ora_bottega', createOraBottega);
 game.register('ora_laboratorio', createOraLaboratorio);
 game.register('ora_camera', createOraCamera);
@@ -105,3 +116,18 @@ function title() {
 }
 
 title();
+
+// iPhone: ask for the motion sensors at the first tap (it can only be asked from a tap),
+// so that shaking the phone works when the game needs it
+// (touchend and click are the events iOS counts as a tap for this; try on each until it's answered)
+const primeMotion = () => {
+  if (!motionNeedsTap() || !(game.settings.sensors ?? true)) return;
+  askMotion().then((ok) => {
+    if (ok) {
+      window.removeEventListener('touchend', primeMotion);
+      window.removeEventListener('click', primeMotion);
+    }
+  });
+};
+window.addEventListener('touchend', primeMotion);
+window.addEventListener('click', primeMotion);

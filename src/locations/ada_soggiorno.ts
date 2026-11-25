@@ -317,7 +317,7 @@ export function createAdaSoggiorno(g: Game): Location {
     c.textAlign = 'center';
     c.fillText(t('ada.photoCaption'), w / 2, h - 30);
     c0.setTransform(1, 0, 0, 1, 0, 0);
-  }, { age: 0.75 });
+  }, { age: 0.4, border: false });
   const frame = prop('frame2', { height: 0.55 });
   const photoGroup = new THREE.Group();
   if (frame) {
@@ -462,7 +462,7 @@ export function createAdaSoggiorno(g: Game): Location {
       await g.ui.doc(t('ada.photoBackTitle'), t('ada.photoBack'), true);
       g.note('note.seats');
     } },
-    { id: 'hatch', obj: hHatch, view: 'hatch', lowPriority: true, tap: async (item) => {
+    { id: 'hatch', obj: hHatch, view: 'hatch', tap: async (item) => {
       if (hatchOpen()) {
         if (item) return g.nope();
         g.audio.steps(5, 0.4, false);

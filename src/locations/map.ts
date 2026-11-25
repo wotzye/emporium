@@ -67,7 +67,7 @@ export function createMap(g: Game): Location {
     return g;
   };
   const scene = new THREE.Scene();
-  const progress = (g.flag('placedRazor') ? 1 : 0) + (g.flag('placedGlasses') ? 1 : 0) + (g.flag('placedWatch') ? 1 : 0) + (g.flag('metMerchant') ? 0.3 : 0);
+  const progress = (g.flag('placedRazor') ? 1 : 0) + (g.flag('placedGlasses') ? 1 : 0) + (g.flag('placedWatch') ? 1 : 0) + (g.flag('placedCamera') ? 1 : 0) + (g.flag('metMerchant') ? 0.3 : 0);
   const skyShade = progress >= 1 ? 0x1a1c20 : 0x55585c;
   scene.background = new THREE.Color(skyShade);
   scene.fog = new THREE.Fog(skyShade, 16, 42);
@@ -191,6 +191,7 @@ export function createMap(g: Game): Location {
     barbiere: !!g.flag('fledButcher') && !g.flag('placedRazor'),
     ada: !!g.flag('fledButcher') && !g.flag('placedGlasses'),
     orologeria: !!g.flag('fledButcher') && !g.flag('placedWatch'),
+    fotografo: !!g.flag('fledButcher') && !g.flag('placedCamera'),
   };
 
   for (const b of buildings) {
@@ -306,6 +307,11 @@ export function createMap(g: Game): Location {
             if (g.flag('placedWatch')) return g.say('map.oraDone');
             return g.go('ora_bottega');
           }
+          if (b.id === 'fotografo') {
+            if (!g.flag('fledButcher')) return g.say('map.fotoLocked');
+            if (g.flag('placedCamera')) return g.say('map.fotoDone');
+            return g.go('foto_negozio');
+          }
           if (b.id === 'ada') {
             if (!g.flag('fledButcher')) return g.say('map.adaLocked');
             if (g.flag('placedGlasses')) return g.say('map.adaDone');
@@ -409,7 +415,7 @@ export function createMap(g: Game): Location {
     startView: 'top',
     exposure: 0.8,
     // the places you can walk into right now are prepared while you look at the square
-    next: ['emporio', ...(isOpen.macelleria ? ['macelleria'] : []), ...(isOpen.barbiere ? ['barbiere'] : []), ...(isOpen.ada ? ['ada_soggiorno'] : []), ...(isOpen.orologeria ? ['ora_bottega'] : [])],
+    next: ['emporio', ...(isOpen.macelleria ? ['macelleria'] : []), ...(isOpen.barbiere ? ['barbiere'] : []), ...(isOpen.ada ? ['ada_soggiorno'] : []), ...(isOpen.orologeria ? ['ora_bottega'] : []), ...(isOpen.fotografo ? ['foto_negozio'] : [])],
     views: {
       top: { pos: [0, 25, 19], look: [0, 0, -0.5], yaw: 14, pitch: 8, fov: 48 },
     },
@@ -429,12 +435,12 @@ export function createMap(g: Game): Location {
           { who: 'diego', key: 'map.intro2' },
         ]);
       }
-      const nPlaced = ['placedRazor', 'placedGlasses', 'placedWatch'].filter((f) => g.flag(f)).length;
+      const nPlaced = ['placedRazor', 'placedGlasses', 'placedWatch', 'placedCamera'].filter((f) => g.flag(f)).length;
       if (nPlaced > 0 && !g.flag('chapter2')) {
         g.set('chapter2');
         await g.ui.cards(['mid.1', 'mid.2']);
       }
-      if (nPlaced >= 3 && !g.flag('demoEnd')) {
+      if (nPlaced >= 4 && !g.flag('demoEnd')) {
         g.set('demoEnd');
         await g.ui.cards(['end.1', 'end.2', 'end.3']);
       }
@@ -445,10 +451,12 @@ export function createMap(g: Game): Location {
       if (g.has('razor')) return 'hint.map.return';
       if (g.has('glasses')) return 'hint.map.returnGlasses';
       if (g.has('watch')) return 'hint.map.returnWatch';
-      if (!g.flag('placedRazor') && !g.flag('placedGlasses') && !g.flag('placedWatch')) return 'hint.map.choose';
+      if (g.has('camera')) return 'hint.map.returnCamera';
+      if (!g.flag('placedRazor') && !g.flag('placedGlasses') && !g.flag('placedWatch') && !g.flag('placedCamera')) return 'hint.map.choose';
       if (!g.flag('placedRazor')) return 'hint.map.barbiere';
       if (!g.flag('placedGlasses')) return 'hint.map.ada';
       if (!g.flag('placedWatch')) return 'hint.map.ora';
+      if (!g.flag('placedCamera')) return 'hint.map.foto';
       return 'hint.map.done';
     },
   };

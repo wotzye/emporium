@@ -38,16 +38,25 @@ export function closeMic() {
   micStream = null;
 }
 
-/** iOS asks for permission, and only from inside a tap. */
-async function askMotion(): Promise<boolean> {
+type MotionCtor = { requestPermission?: () => Promise<string> };
+const motionCtor = () => (window as unknown as { DeviceMotionEvent?: MotionCtor }).DeviceMotionEvent;
+/** true on iPhone until the player has said yes: the question can only be asked from inside a tap */
+export function motionNeedsTap() {
+  const D = motionCtor();
+  return !!D && typeof D.requestPermission === 'function' && motionGranted !== true;
+}
+/** Ask for the motion sensors. Call it from a tap handler (iOS refuses otherwise, and then we may ask again). */
+export async function askMotion(): Promise<boolean> {
   if (motionGranted !== null) return motionGranted;
-  const D = (window as unknown as { DeviceMotionEvent?: { requestPermission?: () => Promise<string> } }).DeviceMotionEvent;
+  const D = motionCtor();
   if (!D) return (motionGranted = false);
   if (typeof D.requestPermission === 'function') {
     try {
-      motionGranted = (await D.requestPermission()) === 'granted';
+      const r = await D.requestPermission();
+      // only a real answer is remembered; "not from a tap" errors leave the door open
+      motionGranted = r === 'granted';
     } catch {
-      motionGranted = false;
+      return false;
     }
   } else motionGranted = 'ontouchstart' in window;
   return motionGranted;
@@ -67,12 +76,17 @@ export function listen(kind: SensorKind, onLevel: (k: number) => void, cancel: {
     // ---- shake ----
     let last = 0;
     const onMotion = (e: DeviceMotionEvent) => {
-      const a = e.accelerationIncludingGravity ?? e.acceleration;
-      if (!a) return;
-      const m = Math.hypot(a.x ?? 0, a.y ?? 0, a.z ?? 0);
-      const jerk = Math.abs(m - last);
-      last = m;
-      if (jerk > 9) progress = Math.min(1, progress + jerk / 140);
+      // prefer the acceleration without gravity; else take gravity off the total
+      const a = e.acceleration, ag = e.accelerationIncludingGravity;
+      let m = 0;
+      if (a && a.x !== null) m = Math.hypot(a.x ?? 0, a.y ?? 0, a.z ?? 0);
+      else if (ag) {
+        const t = Math.hypot(ag.x ?? 0, ag.y ?? 0, ag.z ?? 0);
+        m = Math.abs(t - last) * 2;
+        last = t;
+      }
+      // a brisk shake is 8-20 m/s²; about a second of it fills the bar
+      if (m > 6) progress = Math.min(1, progress + Math.min(m, 25) / 600);
     };
     if (kind === 'shake') {
       if (!(await askMotion())) return finish(false);

@@ -536,7 +536,6 @@ export function createMacelleria(g: Game): Location {
     g.rebuild('map');
     await g.say([{ who: 'diego', key: 'mac.outside1' }, { who: 'diego', key: 'mac.outside2' }]);
     await g.go('map', false);
-    await g.ui.fadeIn(600);
   };
 
   const after = async () => {

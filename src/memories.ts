@@ -451,3 +451,101 @@ export function clockMemory(): { title: string; panels: { draw: Draw; text: stri
   ];
   return { title: t('mem.ora.title'), panels };
 }
+
+export function photoMemory(): { title: string; panels: { draw: Draw; text: string }[] } {
+  const frame = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, empty: boolean) => {
+    c.fillStyle = '#1c1510';
+    c.fillRect(x - 6, y - 6, w + 12, h + 12);
+    c.fillStyle = '#a49d90';
+    c.fillRect(x, y, w, h);
+    if (!empty) figure(c, x + w / 2, y + h, h / 260, '#2a2621');
+  };
+  const camera = (c: CanvasRenderingContext2D, x: number, y: number, s: number, red: boolean) => {
+    c.fillStyle = red ? '#8e0710' : '#2a1f16';
+    c.fillRect(x - 40 * s, y - 40 * s, 80 * s, 80 * s);
+    c.beginPath();
+    c.moveTo(x - 40 * s, y - 30 * s);
+    c.lineTo(x - 120 * s, y - 18 * s);
+    c.lineTo(x - 120 * s, y + 18 * s);
+    c.lineTo(x - 40 * s, y + 30 * s);
+    c.fill();
+    c.fillStyle = red ? '#ff5050' : '#9a8a62';
+    c.beginPath();
+    c.arc(x - 130 * s, y, 16 * s, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = '#5a4430';
+    for (const dx of [-30, 0, 30]) c.fillRect(x + dx * s - 3, y + 40 * s, 6, 200 * s);
+  };
+  const panels: { draw: Draw; text: string }[] = [
+    {
+      text: t('mem.foto.1'),
+      draw: (c, w, h) => {
+        // the studio: backdrop, chair, a family posing, the photographer under the black cloth
+        c.fillStyle = '#6e685e';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#a49d90';
+        c.fillRect(120, 60, 520, 420);
+        chair(c, 380, 540, 1.2);
+        figure(c, 300, 540, 1.1, '#2a2621');
+        figure(c, 470, 540, 1.0, '#3a352f');
+        camera(c, 830, 330, 1, false);
+        c.fillStyle = '#0c0b0b';
+        c.fillRect(840, 260, 90, 120);
+      },
+    },
+    {
+      text: t('mem.foto.2'),
+      draw: (c, w, h) => {
+        // his own photographs fading on the wall while the people outside look the same: he hates it
+        c.fillStyle = '#7a7468';
+        c.fillRect(0, 0, w, h);
+        for (let i = 0; i < 4; i++) {
+          c.globalAlpha = 1 - i * 0.22;
+          frame(c, 90 + i * 220, 120, 160, 210, false);
+        }
+        c.globalAlpha = 1;
+        figure(c, 480, 600, 1.3, '#2b2824');
+      },
+    },
+    {
+      text: t('mem.foto.3'),
+      draw: (c, w, h) => {
+        // the man in black puts a bellows camera on the counter: it glows red
+        c.fillStyle = '#34312d';
+        c.fillRect(0, 0, w, h);
+        figure(c, 700, 560, 1.6, '#050505', true, true);
+        c.fillStyle = '#d6cfc2';
+        c.beginPath();
+        c.ellipse(700, 320, 30, 40, 0, 0, Math.PI * 2);
+        c.fill();
+        figure(c, 220, 560, 1.2, '#d8d2c6');
+        c.fillStyle = '#3a3128';
+        c.fillRect(0, 470, w, 40);
+        c.shadowColor = '#ff2020';
+        c.shadowBlur = 24;
+        camera(c, 480, 420, 0.7, true);
+        c.shadowBlur = 0;
+      },
+    },
+    {
+      text: t('mem.foto.4'),
+      draw: (c, w, h) => {
+        // a wall of perfect portraits; an empty street outside the window
+        c.fillStyle = '#2a2825';
+        c.fillRect(0, 0, w, h);
+        for (let i = 0; i < 8; i++) frame(c, 70 + (i % 4) * 230, 70 + Math.floor(i / 4) * 250, 150, 190, false);
+      },
+    },
+    {
+      text: t('mem.foto.5'),
+      draw: (c, w, h) => {
+        // the flash: white, and the frames empty, and people in the street again
+        c.fillStyle = '#e8e4dc';
+        c.fillRect(0, 0, w, h);
+        for (let i = 0; i < 4; i++) frame(c, 70 + i * 230, 80, 150, 190, true);
+        for (let i = 0; i < 6; i++) figure(c, 110 + i * 150, 620, 0.9, '#3a352f');
+      },
+    },
+  ];
+  return { title: t('mem.foto.title'), panels };
+}

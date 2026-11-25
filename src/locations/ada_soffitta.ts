@@ -204,6 +204,12 @@ export function createAdaSoffitta(g: Game): Location {
     } },
     { id: 'suitcase', obj: hSuitcase, tap: async (item) => {
       if (item) return g.nope();
+      // in the case, with her letters, a box of spare bulbs: one red, for a darkroom. Ettore borrowed everything.
+      if (!g.flag('a.redbulb')) {
+        g.set('a.redbulb');
+        g.give('redbulb');
+        await g.say([{ who: 'diego', key: 'ada.redbulb1' }, { who: 'diego', key: 'ada.redbulb2' }]);
+      }
       g.audio.sfx('paper');
       return g.ui.doc(t('ada.letterTitle'), t('ada.letter'), true);
     } },

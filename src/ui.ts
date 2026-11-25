@@ -1,9 +1,9 @@
 import { ICONS, ITEMS } from './items';
 import { t } from './i18n';
-import { listen, SensorKind } from './sensors';
+import { listen, SensorKind, motionNeedsTap, askMotion } from './sensors';
 
 export interface Line {
-  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara';
+  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio';
   key: string;
   vars?: Record<string, string | number>;
 }
@@ -354,7 +354,7 @@ export class UI {
       const loop = () => {
         if (done) return;
         const now = performance.now();
-        const dt = Math.min(0.1, (now - last) / 1000);
+        const dt = Math.min(0.3, (now - last) / 1000);
         last = now;
         if (holding) {
           holdT += dt / 1.5;
@@ -369,7 +369,18 @@ export class UI {
       };
       hold.onpointerup = hold.onpointerleave = () => (holding = false);
       loop();
-      if (useSensors) listen(kind, set, cancel).then((ok) => ok && finish(true));
+      const start = () => listen(kind, set, cancel).then((ok) => ok && finish(true));
+      if (useSensors && kind === 'shake' && motionNeedsTap()) {
+        // iPhone: the motion sensors need a yes, given from a tap
+        const en = el('button', 'senable');
+        en.textContent = t('ui.sensorEnable');
+        en.onclick = async () => {
+          const ok = await askMotion();
+          en.remove();
+          if (ok) start();
+        };
+        b.insertBefore(en, hold);
+      } else if (useSensors) start();
     });
   }
 

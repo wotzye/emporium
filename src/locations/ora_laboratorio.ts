@@ -50,7 +50,7 @@ export function createOraLaboratorio(g: Game): Location {
   const drawerOpen = () => !!g.flag('o.gears');
   if (drawerOpen()) drawer.position.z = benchZ + 0.4;
   // the photo of Clara and the winding key lie inside
-  const claraTex = oldPhoto('clara', 240, 320, (c, w, h) => {
+  const claraTex = oldPhoto('clara', 320, 240, (c, w, h) => {
     c.fillStyle = '#cfc8b8';
     c.fillRect(0, 0, w, h);
     c.fillStyle = '#6e675c';
@@ -71,8 +71,8 @@ export function createOraLaboratorio(g: Game): Location {
       c.arc(30 + i * 45, 40, 12, 0, Math.PI * 2);
       c.fill();
     }
-  }, { age: 0.5 });
-  const photo = mesh(new THREE.PlaneGeometry(0.12, 0.16), new THREE.MeshStandardMaterial({ map: claraTex, roughness: 0.9 }), -0.1, 0.075, 0, false);
+  }, { age: 0.3, border: false });
+  const photo = mesh(new THREE.PlaneGeometry(0.16, 0.12), new THREE.MeshStandardMaterial({ map: claraTex, roughness: 0.9 }), -0.1, 0.075, 0, false);
   photo.rotation.x = -Math.PI / 2;
   drawer.add(photo);
   const wkey = new THREE.Group();

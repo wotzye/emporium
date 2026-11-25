@@ -112,7 +112,7 @@ export function createBarbiereCantina(g: Game): Location {
   clock.add(hourHand);
   const minuteHand = new THREE.Group();
   minuteHand.add(box(0.008, 0.17, 0.004, mat(0x111111), 0, 0.075, 0));
-  minuteHand.add(hitBox(0.3, 0.3, 0.03, 0, 0, 0.02, 'clockGrip'));
+  minuteHand.add(hitBox(0.42, 0.42, 0.06, 0, 0, 0.03, 'clockGrip'));
   minuteHand.position.set(0, 1.15, 0.116);
   clock.add(minuteHand);
   clock.add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), brass).translateY(1.15).translateZ(0.12));
@@ -317,7 +317,7 @@ export function createBarbiereCantina(g: Game): Location {
     },
     onEnd: async () => {
       g.set('c.minutes', Math.round(minutes));
-      if (Math.abs(minutes - 610) < 5 && !g.flag('c.clock')) {
+      if (Math.abs(minutes - 610) < 8 && !g.flag('c.clock')) {
         minutes = 610;
         setHands();
         g.set('c.clock');

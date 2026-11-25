@@ -267,7 +267,9 @@ export class Game {
       this.setTorch(true);
       this.ui.toast(t('ui.torchOn'));
     } else this.setTorch(!!this.flag('torchOn') && L.id !== 'map', true);
-    if (fade) await this.ui.fadeIn(350);
+    // never start a place behind a black screen, whoever faded it out (and never wait on it: a dialog
+    // in enter() must be visible)
+    if (fade || !this.ui.fade.classList.contains('off')) await this.ui.fadeIn(fade ? 350 : 600);
     this.schedulePrewarm(L);
     setTimeout(() => this.prepScare(L.id), 800);
     if (L.enter) {
@@ -450,7 +452,8 @@ export class Game {
           if (f.hit.uv) cur.onRub(f.hit.uv, f.hit.point);
         } else {
           const [cx, cy] = screenOf(cur.center);
-          lastAngle = Math.atan2(y - cy, x - cx);
+          // a touch right on the hub has no angle yet: take it from the first real move
+          lastAngle = Math.hypot(x - cx, y - cy) < 14 ? NaN : Math.atan2(y - cy, x - cx);
         }
         return true;
       },
@@ -479,6 +482,11 @@ export class Game {
         } else {
           const [cx, cy] = screenOf(cur.center);
           const a = Math.atan2(y - cy, x - cx);
+          // too close to the hub the angle is noise: just follow it, don't turn
+          if (Math.hypot(x - cx, y - cy) < 14 || Number.isNaN(lastAngle)) {
+            lastAngle = Math.hypot(x - cx, y - cy) < 14 ? NaN : a;
+            return;
+          }
           let d = a - lastAngle;
           if (d > Math.PI) d -= Math.PI * 2;
           if (d < -Math.PI) d += Math.PI * 2;
