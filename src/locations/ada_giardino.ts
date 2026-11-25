@@ -254,7 +254,9 @@ export function createAdaGiardino(g: Game): Location {
   const hSwing = hitBox(1.0, 2.2, 0.6, swX, 1.1, swZ, 'swing');
   const hBath = hitBox(0.7, 0.9, 0.7, -1.1, 0.45, 0.4, 'birdbath');
   const hWisteria = hitBox(3.2, 0.6, 1.2, -0.9, pergolaY - 0.1, -D / 2 + 0.6, 'wisteria');
-  scene.add(hWindow, hShed, hShears, hKitchen, hSwing, hBath, hWisteria);
+  // the shed door itself gets a marker (the shed box is low priority, so the shears inside win)
+  const hShedDoor = hitBox(SW * 0.7, SH * 0.8, 0.12, shedX, SH * 0.42, shedZ + SD / 2 + 0.03, 'shedDoor');
+  scene.add(hWindow, hShed, hShears, hKitchen, hSwing, hBath, hWisteria, hShedDoor);
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
@@ -350,6 +352,7 @@ export function createAdaGiardino(g: Game): Location {
       if (item) return g.nope();
       return say('garden.wisteria');
     } },
+    { id: 'shedDoor', obj: hShedDoor, view: 'shed', when: () => g.viewName !== 'shed', tap: async (item) => hotspots.find((h) => h.id === 'shed')!.tap(item) },
   ];
 
   let creakT = 3;

@@ -99,6 +99,10 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<rect x="20" y="12" width="14" height="16"/><path d="M20 14 L9 17 V23 L20 26"/><circle cx="7" cy="20" r="3"/>'),
   },
+  rfuse: {
+    id: 'rfuse',
+    svg: s('<rect x="12" y="8" width="16" height="24" rx="2"/><rect x="16" y="4" width="8" height="4"/><rect x="16" y="32" width="8" height="4"/><path d="M15 20 h10"/>'),
+  },
   valve: {
     id: 'valve',
     svg: s('<path d="M15 30 V14 a5 5 0 0 1 10 0 V30 z"/><path d="M15 30 h10 M17 33 v3 M20 33 v3 M23 33 v3 M18 22 h4 M20 16 v10"/>'),

@@ -124,3 +124,5 @@ export function photoOr(key: string, fallback: (c: CanvasRenderingContext2D, w: 
     else fallback(c, w, h);
   };
 }
+/** a real photo, if it has already arrived */
+export const photoImage = (key: string) => loaded.get(key);

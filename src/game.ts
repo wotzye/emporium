@@ -7,6 +7,7 @@ import { Save, newSave, loadSave, writeSave, clearSave, loadPrefs, Settings } fr
 import { drawScareFace } from './builders';
 import { createBarberGhost, createBruno, createAdaGhost, createClara, Character } from './characters';
 import { realCharacters } from './characters_real';
+import { photoImage, preloadPhotos } from './photos';
 
 export interface Hotspot {
   id: string;
@@ -56,6 +57,15 @@ export interface Location {
 export type LocationFactory = (g: Game) => Location;
 
 const HINTS_PER_LOCATION = 2;
+
+/** close-up photos for the jumpscares (photos/<key>.jpg) */
+const SCARE_PHOTO: Record<'barber' | 'bruno' | 'ada' | 'clara', string[]> = {
+  barber: ['scare_barbiere'],
+  bruno: ['scare_macellaio'],
+  ada: ['scare_donna'],
+  clara: ['scare_ragazza', 'scare_donna'],
+};
+preloadPhotos(Object.values(SCARE_PHOTO).flat());
 
 export class Game {
   engine: Engine;
@@ -415,6 +425,7 @@ export class Game {
 
   private dragHandler() {
     let cur: Interaction | null = null;
+    let startPos: THREE.Vector3 | null = null;
     let offset = new THREE.Vector3();
     let lastAngle = 0;
     const tmp = new THREE.Vector3();
@@ -444,6 +455,7 @@ export class Game {
         if (!f) return false;
         cur = f.it;
         if (cur.kind === 'drag') {
+          startPos = cur.obj.position.clone();
           const p = ray.intersectPlane(cur.plane, tmp);
           const wp = cur.obj.getWorldPosition(new THREE.Vector3());
           offset = p ? wp.sub(p) : new THREE.Vector3();
@@ -460,6 +472,7 @@ export class Game {
       move: (ray: THREE.Ray, x: number, y: number, hits: () => THREE.Intersection[]) => {
         if (!cur) return;
         if (cur.kind === 'drag') {
+          startPos = cur.obj.position.clone();
           const p = ray.intersectPlane(cur.plane, tmp);
           if (!p) return;
           const target = p.add(offset);
@@ -494,10 +507,15 @@ export class Game {
           cur.onTurn(d); // clockwise on screen = positive
         }
       },
-      end: (ray: THREE.Ray) => {
+      end: (ray: THREE.Ray, _x?: number, _y?: number, tap?: boolean) => {
         const it = cur;
         cur = null;
         if (!it) return;
+        // only a touch, not a move: put it back where it was and let the tap be a tap
+        if (tap && it.kind === 'drag') {
+          if (startPos) it.obj.position.copy(startPos);
+          return;
+        }
         const run = async () => {
           this.busy = true;
           try {
@@ -552,6 +570,20 @@ export class Game {
       await this.ui.fadeOut(200);
       await new Promise((r) => setTimeout(r, 400));
       await this.ui.fadeIn(400);
+      return;
+    }
+    // a real close-up photo, when one ships with the game, beats the puppets
+    const shot = SCARE_PHOTO[kind].map((k) => photoImage(k)).find(Boolean);
+    if (shot) {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 576;
+      const c = cv.getContext('2d')!;
+      const k = Math.max(cv.width / shot.width, cv.height / shot.height) * 1.08;
+      const w = shot.width * k, h = shot.height * k;
+      c.drawImage(shot, (cv.width - w) / 2, (cv.height - h) / 2 - h * 0.04, w, h);
+      this.audio.rec(Math.random() < 0.5 ? 'demonlaugh' : 'evillaugh', { gain: 0.7, dur: 1.6 });
+      await this.ui.showScare(cv, ms);
       return;
     }
     if (realCharacters()) return this.scare3d(kind, ms);

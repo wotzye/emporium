@@ -178,7 +178,8 @@ export class Audio {
       unlock: () => this.sample('latch', { gain: 1.2 }),
       clunk: () => this.sample('latch', { gain: 1.3, rate: 0.8 }),
       paper: () => this.sample('page', { gain: 1.2 }),
-      breath: () => this.sample('inhale', { gain: 0.9, rate: 0.85 }),
+      breath: () => this.sample('ghostbreath', { gain: 0.9, dur: 2.5 }) || this.sample('inhale', { gain: 0.9, rate: 0.85 }),
+      whisper: () => this.sample('ghostwhisper', { gain: 0.8, offset: Math.random() * 8, dur: 2.6 }),
     };
     if (rec[name]?.()) return;
     if (name === 'trapdoor') this.sample('chains', { gain: 0.8, dur: 3 });
@@ -501,7 +502,7 @@ export class Audio {
     if (!this.ctx || this.samplesLoading) return;
     this.samplesLoading = true;
     const ctx = this.ctx;
-    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell']) {
+    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh']) {
       fetch(`sounds/${n}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .then((b) => ctx.decodeAudioData(b))
@@ -599,7 +600,7 @@ export class Audio {
   }
 
   /** named recordings for specific moments (no-op if not loaded) */
-  rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
+  rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
     return this.sample(name, o);
   }
 

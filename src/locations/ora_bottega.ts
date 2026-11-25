@@ -138,13 +138,13 @@ export function createOraBottega(g: Game): Location {
   const hMantel = hitBox(0.45, 0.4, 0.3, 0.75, 1.15, -0.6, 'mantel');
   const hTickets = hitBox(0.25, 0.25, 0.25, 0.25, 1.08, -0.45, 'tickets');
   // an envelope waiting to be collected: «Morandi — pendola». Inside, the minute hand of the barber's cellar clock.
-  const env = textPlane([t('ora.envelope')], 0.16, 0.09, { bg: '#d9cfb6', size: 18, px: 96, font: "'Bradley Hand', 'Segoe Print', cursive" });
+  const env = textPlane([t('ora.envelope')], 0.2, 0.11, { bg: '#d9cfb6', size: 18, px: 96, font: "'Bradley Hand', 'Segoe Print', cursive" });
   env.rotation.x = -Math.PI / 2;
   env.rotation.z = 0.25;
-  env.position.set(-0.05, 0.965, -0.5);
+  env.position.set(-0.05, 0.993, -0.5);
   env.visible = !g.flag('o.hand');
   scene.add(env);
-  const hEnv = hitBox(0.2, 0.08, 0.14, -0.05, 0.98, -0.5, 'envelope');
+  const hEnv = hitBox(0.22, 0.08, 0.16, -0.05, 1.01, -0.5, 'envelope');
   scene.add(hEnv);
   const hCase = hitBox(1.1, 0.35, 0.6, -0.95, 1.1, -0.6, 'case');
   const hWall = hitBox(4.5, 1.8, 0.2, 0, 1.85, -D / 2 + 0.1, 'clocks');

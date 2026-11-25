@@ -168,9 +168,9 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
   const hat = new THREE.Group();
   hat.add(lathe([[0, 0], [0.2, 0], [0.215, 0.006], [0.205, 0.016], [0.14, 0.018], [0, 0.018]], silk, 0, 0, 0, 32)); // brim
   hat.add(lathe([[0.14, -0.02], [0.136, 0.08], [0.134, 0.2], [0.138, 0.26], [0, 0.262]], silk, 0, 0, 0, 32)); // crown, slightly flared
-  hat.position.set(0, hp.y + 0.125, hp.z - 0.01);
+  hat.position.set(0, hp.y + 0.095, hp.z - 0.005);
   hat.rotation.x = -0.08;
-  hat.scale.set(0.97, 1, 0.97);
+  hat.scale.set(1.0, 1, 1.18);
   g.add(hat);
   head.attach(hat);
   const eyes = eyesMaterial(body);

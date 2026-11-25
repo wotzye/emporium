@@ -52,6 +52,24 @@ export function createFotoOscura(g: Game): Location {
   scene.add(rbox(1.9, 0.05, 0.75, 0.01, woodDark, 0, benchY, benchZ));
   scene.add(rbox(1.85, benchY, 0.7, 0.01, woodDark, 0, benchY / 2, benchZ));
   const liquid = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.05, metalness: 0.3 });
+  // in the dark (no safelight yet) every label is just a pale smudge: nothing can be read
+  const readables: { m: THREE.MeshStandardMaterial; map: THREE.Texture | null }[] = [];
+  const smudge = canvasTex(64, 64, (c, w, h) => {
+    c.fillStyle = '#3a3733';
+    c.fillRect(0, 0, w, h);
+    noise(c, w, h, 600, 0.3);
+  });
+  const readable = (o: THREE.Mesh) => {
+    const m = o.material as THREE.MeshStandardMaterial;
+    readables.push({ m, map: m.map });
+    return o;
+  };
+  const setReadable = (on: boolean) => {
+    for (const r of readables) {
+      r.m.map = on ? r.map : smudge;
+      r.m.needsUpdate = true;
+    }
+  };
   TRAYS.forEach((tr) => {
     scene.add(rbox(0.42, 0.06, 0.32, 0.01, mat(0xd8d2c6, { roughness: 0.3 }), tr.x, benchY + 0.055, benchZ + 0.05));
     const l = mesh(new THREE.PlaneGeometry(0.38, 0.28), liquid, tr.x, benchY + 0.08, benchZ + 0.05, false);
@@ -59,7 +77,7 @@ export function createFotoOscura(g: Game): Location {
     scene.add(l);
     const s = textPlane([tr.sign], 0.08, 0.06, { bg: '#d8d2c6', fg: '#111', size: 40, px: 48 });
     s.position.set(tr.x, benchY + 0.055, benchZ + 0.215);
-    scene.add(s);
+    scene.add(readable(s));
   });
   // the enlarger, at the left end, with the sheet of paper waiting under it
   const enlX = -0.75;
@@ -118,13 +136,14 @@ export function createFotoOscura(g: Game): Location {
     scene.add(cyl(0.06, 0.07, 0.24, new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 0.15, transparent: true, opacity: 0.85 }), x, 1.585, -D / 2 + 0.13, 12));
     const lb = textPlane([name, sign], 0.12, 0.11, { bg: '#e2dccb', size: 20, px: 96 });
     lb.position.set(x, 1.58, -D / 2 + 0.2);
-    scene.add(lb);
+    scene.add(readable(lb));
   });
   // the chart on the wall: the order of the baths
   const chart = textPlane([t('foto.chart1'), t('foto.chart2'), t('foto.chart3'), t('foto.chart4')], 0.6, 0.5, { bg: '#d9d2c0', size: 20, px: 128 });
   chart.position.set(-W / 2 + 0.02, 1.6, -0.3);
   chart.rotation.y = Math.PI / 2;
-  scene.add(chart);
+  scene.add(readable(chart));
+  setReadable(bulbIn());
   // the line with pegs, for drying prints
   scene.add(cyl(0.004, 0.004, 1.4, mat(0x777777), 0.3, 1.38, -D / 2 + 0.05, 4).rotateZ(Math.PI / 2));
   // the light-tight door
@@ -156,6 +175,7 @@ export function createFotoOscura(g: Game): Location {
         sl.group.position.set(0, 2.0, -D / 2 + 0.08);
         scene.add(sl.group);
         lentNote.visible = false;
+        setReadable(true);
         for (let i = 0; i <= 20; i++) {
           red.intensity = (i / 20) * 6;
           await sleep(30);

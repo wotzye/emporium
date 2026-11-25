@@ -70,7 +70,7 @@ export function createOraCamera(g: Game): Location {
   const bed = new THREE.Group();
   bed.add(rbox(0.95, 0.35, 1.9, 0.03, woodDark, 0, 0.3, 0));
   bed.add(rbox(1.0, 0.9, 0.06, 0.02, woodDark, 0, 0.55, -0.95));
-  bed.add(rbox(1.0, 0.55, 0.06, 0.02, woodDark, 0, 0.4, 0.95));
+  bed.add(rbox(1.0, 0.82, 0.06, 0.02, woodDark, 0, 0.47, 0.95));
   // brass bed knobs
   for (const x of [-0.48, 0.48]) for (const z of [-0.95, 0.95]) bed.add(lathe([[0, 0], [0.03, 0.01], [0.035, 0.04], [0, 0.07]], brassMat(), x, z < 0 ? 1.0 : 0.68, z, 12));
   const sheetTex = canvasTex(256, 256, (c, w, h) => {
@@ -82,7 +82,7 @@ export function createOraCamera(g: Game): Location {
       c.fillRect(0, y, w, 3);
     }
   });
-  const blanketGeo = new THREE.BoxGeometry(0.92, 0.16, 1.4, 12, 1, 12);
+  const blanketGeo = new THREE.BoxGeometry(0.92, 0.16, 1.36, 12, 1, 12);
   const bp = blanketGeo.attributes.position as THREE.BufferAttribute;
   for (let i = 0; i < bp.count; i++) {
     const x = bp.getX(i), z = bp.getZ(i);
@@ -90,6 +90,8 @@ export function createOraCamera(g: Game): Location {
   }
   blanketGeo.computeVertexNormals();
   bed.add(mesh(blanketGeo, new THREE.MeshStandardMaterial({ map: sheetTex, roughness: 0.95 }), 0, 0.53, 0.2));
+  // the blanket hangs over the foot of the mattress (no bare white edge)
+  bed.add(rbox(0.92, 0.22, 0.02, 0.005, new THREE.MeshStandardMaterial({ color: 0x8a857a, roughness: 1 }), 0, 0.45, 0.9));
   bed.add(rbox(0.6, 0.1, 0.3, 0.05, new THREE.MeshStandardMaterial({ map: sheetTex, roughness: 0.95 }), 0, 0.52, -0.72));
   bed.position.set(bedX, 0, bedZ);
   scene.add(bed);
@@ -243,6 +245,12 @@ export function createOraCamera(g: Game): Location {
       if (clara.group.visible) clara.update(0, 0, g.engine.camera); // nothing moves, not even her
     },
     enter: async () => {
+      // once the clocks run again she is gone, even if this room was built before
+      if (restarted()) {
+        clara.setOpacity(0);
+        clara.group.visible = false;
+        dustBed.visible = true;
+      }
       if (!g.flag('o.camEntered')) {
         g.set('o.camEntered');
         await sleep(400);

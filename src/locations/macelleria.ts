@@ -651,6 +651,7 @@ export function createMacelleria(g: Game): Location {
         await sleep(500);
         await g.say([
           { who: 'diego', key: 'mac.enter1' },
+          { who: 'diego', key: 'mac.enterMemory' },
           { who: 'diego', key: 'mac.enter2' },
           { who: 'narr', key: 'mac.enter3' },
           { who: 'diego', key: 'mac.enterHint' },

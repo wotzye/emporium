@@ -2,7 +2,16 @@ import { t } from './i18n';
 import { photoOr } from './photos';
 
 /** each panel can be a real photo: photos/mem_<story>_<n>.jpg */
-const withPhotos = (story: string, panels: { draw: Draw; text: string }[]) => panels.map((p, i) => ({ text: p.text, draw: photoOr(`mem_${story}_${i + 1}`, p.draw) }));
+/** which photo file goes with which panel (the prints came in a different order) */
+const PHOTO_ORDER: Record<string, number[]> = {
+  bar: [1, 2, 3, 4, 5],
+  ada: [1, 2, 3, 5, 6],
+  ora: [1, 2, 3, 5, 6],
+  foto: [6, 5, 3, 2, 1],
+  radio: [6, 5, 3, 2, 1],
+};
+const withPhotos = (story: string, panels: { draw: Draw; text: string }[]) =>
+  panels.map((p, i) => ({ text: p.text, draw: photoOr(`mem_${story}_${PHOTO_ORDER[story]?.[i] ?? i + 1}`, p.draw) }));
 
 type Draw = (c: CanvasRenderingContext2D, w: number, h: number) => void;
 

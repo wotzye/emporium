@@ -370,7 +370,7 @@
   "ada.hatchHigh": "La botola della soffitta. Il cordino è troppo in alto, non ci arrivo.",
   "ada.hatchOpen": "Con la stampella aggancio il cordino. La botola si spalanca e la scala scende da sola.",
   "ada.rack": "Il cappello da pesca di Ettore. Ancora appeso, come se dovesse uscire domattina.",
-  "ada.kitchen1": "La cucina. Sul tavolo, una teiera e due tazze.",
+  "ada.kitchen1": "La cucina. Sul tavolo, una teiera, una zuccheriera e quattro tazze spaiate.",
   "ada.kitchen2": "Ogni sera apparecchiava per due. Anche dopo.",
   "ada.table": "Quattro tazze, una teiera, una zuccheriera. Solo due tazze erano le loro, e ognuno aveva il suo posto: la finestra da una parte, i fornelli dall'altra.",
   "ada.tableAfter": "La tavola è apparecchiata. La sedia alla finestra è scostata.",
@@ -928,7 +928,7 @@
   "radio.f5": "STAZIONE 16A",
   "radio.f6": "SCALE 6A",
   "radio.tin": "Una scatola di latta con dei fusibili sciolti. E la lampadina di prova di Nello.",
-  "radio.tester": "Una pila da 4,5 volt, due mollette, una lampadina. Ci metti un fusibile: se si accende, è buono.",
+  "radio.tester": "Una pila da 4,5 volt, due mollette, una lampadina. Tocca un fusibile nella scatola per provarlo; poi tocca la molletta per prenderlo.",
   "radio.testerHas": "C'è un fusibile nella molletta. Toccalo di nuovo per rimetterlo nella scatola.",
   "radio.testOk": "La lampadina si accende. Questo è buono.",
   "radio.testDead": "Niente. La lampadina resta spenta. Bruciato.",
@@ -1057,5 +1057,9 @@
   "hint.map.gear": "La ruota grande dell'orologiaio è nel capanno di Ada, in giardino. La casa di Ada è di nuovo aperta.",
   "hint.map.shears": "Le cesoie per il glicine di Ada sono nel cortile del barbiere. Il barbiere è di nuovo aperto.",
   "hint.map.hand": "La lancetta dei minuti della pendola del barbiere è all'Ora Ferma, in una busta sul bancone.",
-  "hint.map.redbulb": "La lampadina rossa per la camera oscura è nella soffitta di Ada, in una valigia. La casa di Ada è di nuovo aperta."
+  "hint.map.redbulb": "La lampadina rossa per la camera oscura è nella soffitta di Ada, in una valigia. La casa di Ada è di nuovo aperta.",
+  "item.rfuse": "Fusibile di ricambio",
+  "radio.fuseTakenOk": "Lo stacco dalla molletta e lo tengo. Questo funziona.",
+  "radio.fuseTakenDead": "Lo stacco dalla molletta. Questo però è bruciato.",
+  "mac.enterMemory": "Non me la ricordavo così... Eppure ci sono cresciuto, qui dentro. Perché ricordo così poco?"
 }

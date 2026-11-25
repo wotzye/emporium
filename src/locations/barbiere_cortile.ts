@@ -221,7 +221,7 @@ export function createBarbiereCortile(g: Game): Location {
 
   // ---------------- hotspots ----------------
   const hWell = hitBox(1.4, 1.0, 1.4, wellX, 0.5, wellZ, 'well');
-  const hLock = hitBox(0.25, 0.35, 0.25, wellX + wellR - 0.12, drumY - 0.1, wellZ + 0.08, 'padlock');
+  const hLock = hitBox(0.22, 0.3, 0.22, wellX + wellR - 0.14, drumY - 0.17, wellZ + 0.1, 'padlock');
   const hBucket = hitBox(0.45, 0.45, 0.45, wellX, bucketTopY + 0.15, wellZ, 'bucket');
   const hHandle = hitBox(0.25, 0.5, 0.3, wellX + wellR + 0.12, drumY - 0.12, wellZ, 'winch');
   const hBack = hitBox(1.0, 2.2, 0.4, doorX, 1.1, -D / 2 + 0.2, 'back');
@@ -259,6 +259,8 @@ export function createBarbiereCortile(g: Game): Location {
       return say('yard.padlock');
     } },
     { id: 'winch', obj: hHandle, view: 'winch', tap: async (item) => {
+      // the key, touched anywhere near the lock, goes into the lock
+      if (item === 'padkey' && !unlocked()) return hotspots.find((h) => h.id === 'padlock')!.tap(item);
       if (item) return g.nope();
       if (!unlocked()) return say('yard.winchLocked');
       if (wound >= 1) return say('yard.winchDone');

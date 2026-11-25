@@ -519,6 +519,20 @@ export function createEmporio(g: Game): Location {
   };
   const placeRazor = () => placeObject('razor');
 
+  // a cursed object already on its shelf: touch it again and it tells its story again
+  const MEM: Record<string, () => { title: string; panels: { draw: (c: CanvasRenderingContext2D, w: number, h: number) => void; text: string }[] }> = {
+    razor: barberMemory, glasses: adaMemory, watch: clockMemory, camera: photoMemory, radio: radioMemory,
+  };
+  const replay = async (key: string) => {
+    await telling(key);
+    const m = MEM[key]?.();
+    if (!m) return;
+    g.audio.rec('windup', { gain: 0.6 });
+    setTimeout(() => g.audio.musicBox({ gain: 0.35, runDown: true, bars: 13 }), 1200);
+    await g.ui.fadeOut(600);
+    await g.ui.memory(m.title, m.panels);
+    await g.ui.fadeIn(600);
+  };
   const telling = async (key: string) => {
     await g.say([{ who: 'mercante', key: `emp.story.${key}1` }, { who: 'mercante', key: `emp.story.${key}2` }, { who: 'diego', key: `emp.story.${key}3` }]);
   };
@@ -545,31 +559,31 @@ export function createEmporio(g: Game): Location {
       if (item === 'razor') return placeRazor();
       if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
-      if (g.flag('placedRazor')) return telling('razor');
+      if (g.flag('placedRazor')) return replay('razor');
       return g.say('emp.slotEmpty');
     } },
     { id: 'slotFoto', obj: hSlotFoto, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'camera') return placeObject('camera');
       if (item) return g.nope();
-      if (g.flag('placedCamera')) return telling('camera');
+      if (g.flag('placedCamera')) return replay('camera');
       return g.say('emp.slotEmpty');
     } },
     { id: 'slotRadio', obj: hSlotRadio, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'radio') return placeObject('radio');
       if (item) return g.nope();
-      if (g.flag('placedRadio')) return telling('radio');
+      if (g.flag('placedRadio')) return replay('radio');
       return g.say('emp.slotEmpty');
     } },
     { id: 'slotOra', obj: hSlotOra, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'watch') return placeObject('watch');
       if (item) return g.nope();
-      if (g.flag('placedWatch')) return telling('watch');
+      if (g.flag('placedWatch')) return replay('watch');
       return g.say('emp.slotEmpty');
     } },
     { id: 'slotAda', obj: hSlotAda, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
-      if (g.flag('placedGlasses')) return telling('glasses');
+      if (g.flag('placedGlasses')) return replay('glasses');
       return g.say('emp.slotEmpty');
     } },
     { id: 'case', obj: hCase, view: 'case', when: () => g.viewName !== 'case', tap: async (item) => {

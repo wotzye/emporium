@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, bulb, lightCone, woodMaterial, tileMaterial, plasterMaterial, mat, framed, cyl } from '../builders';
 import { t } from '../i18n';
+import { oldPhoto } from '../photos';
 import { fotoWall, villagerPortrait, sleep } from './foto_common';
 
 /**
@@ -10,7 +11,7 @@ import { fotoWall, villagerPortrait, sleep } from './foto_common';
  * autoritratto, lastra 31». A curtain to the studio, a door to the archive, the stairs to the flat
  * (locked: the key is in the archive, drawer 31).
  */
-export const SITTERS = ['Fam. Rinaldi', 'Don Pietro', 'Ada e Ettore', 'Aldo Morandi', 'Clara Sala', 'Il sindaco', 'Nonna Tilde', 'I gemelli Conti'];
+export const SITTERS = ['Il sindaco', 'Rina, la fornaia', 'La piccola Lucia', 'Bepi, il fabbro', 'Nonna Tilde', 'Tonino Conti', 'Maria Rinaldi', 'Il vecchio Gusto'];
 
 export function createFotoNegozio(g: Game): Location {
   const scene = new THREE.Scene();
@@ -40,7 +41,14 @@ export function createFotoNegozio(g: Game): Location {
   const frameM = woodMaterial({ base: '#1c1510' });
   SITTERS.forEach((name, i) => {
     const col = i % 4, row = Math.floor(i / 4);
-    const p = framed(0.42, 0.52, (c, w, h) => villagerPortrait(c, w, h, i + 1, name), frameM);
+    const p = framed(0.42, 0.52, oldPhoto(`foto_ritratto_${i + 1}`, 336, 416, (c, w, h) => villagerPortrait(c, w, h, i + 1, name), { age: 0.15, after: (c, x0, y0, w, h) => {
+      c.fillStyle = 'rgba(232,226,214,0.85)';
+      c.fillRect(x0, y0 + h - 34, w, 34);
+      c.fillStyle = '#2a2620';
+      c.font = "20px 'American Typewriter', 'Courier New', monospace";
+      c.textAlign = 'center';
+      c.fillText(name, x0 + w / 2, y0 + h - 11);
+    } }), frameM);
     p.position.set(-1.75 + col * 0.82, 1.95 - row * 0.68, -D / 2 + 0.03);
     p.rotation.z = (i % 3 - 1) * 0.015;
     scene.add(p);

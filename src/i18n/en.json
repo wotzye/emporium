@@ -370,7 +370,7 @@
   "ada.hatchHigh": "The attic hatch. The cord is too high, I can't reach it.",
   "ada.hatchOpen": "I hook the cord with the crutch. The hatch swings open and the ladder comes down on its own.",
   "ada.rack": "Ettore's fishing hat. Still hanging there, as if he were going out in the morning.",
-  "ada.kitchen1": "The kitchen. On the table, a teapot and two cups.",
+  "ada.kitchen1": "The kitchen. On the table, a teapot, a sugar bowl and four odd cups.",
   "ada.kitchen2": "Every evening she laid the table for two. Even after.",
   "ada.table": "Four cups, a teapot, a sugar bowl. Only two cups were theirs, and each had their place: the window on one side, the stove on the other.",
   "ada.tableAfter": "The table is laid. The chair by the window has been pulled out.",
@@ -928,7 +928,7 @@
   "radio.f5": "STATION 16A",
   "radio.f6": "STAIRS 6A",
   "radio.tin": "A tin of loose fuses. And Nello's test lamp.",
-  "radio.tester": "A 4.5 volt battery, two clips, a bulb. Put a fuse in: if it lights, the fuse is good.",
+  "radio.tester": "A 4.5 volt battery, two clips, a bulb. Touch a fuse in the tin to test it; then touch the clip to take it.",
   "radio.testerHas": "There's a fuse in the clip. Touch it again to put it back in the tin.",
   "radio.testOk": "The bulb lights. This one's good.",
   "radio.testDead": "Nothing. The bulb stays dark. Blown.",
@@ -1057,5 +1057,9 @@
   "hint.map.gear": "The clockmaker's big wheel is in Ada's garden shed. Ada's house is open again.",
   "hint.map.shears": "The shears for Ada's wisteria are in the barber's yard. The barber's is open again.",
   "hint.map.hand": "The minute hand for the barber's clock is at the Stopped Hour, in an envelope on the counter.",
-  "hint.map.redbulb": "The red bulb for the darkroom is in Ada's attic, in a suitcase. Ada's house is open again."
+  "hint.map.redbulb": "The red bulb for the darkroom is in Ada's attic, in a suitcase. Ada's house is open again.",
+  "item.rfuse": "Spare fuse",
+  "radio.fuseTakenOk": "I unclip it and keep it. This one works.",
+  "radio.fuseTakenDead": "I unclip it. This one's blown, though.",
+  "mac.enterMemory": "I don't remember it like this... I grew up in here. Why do I remember so little?"
 }

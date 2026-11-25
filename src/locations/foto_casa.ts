@@ -81,7 +81,7 @@ export function createFotoCasa(g: Game): Location {
   scene.add(rbox(0.9, 0.12, 1.8, 0.04, mat(0x4a4740, { roughness: 1 }), -W / 2 + 0.55, 0.5, 0.6));
   scene.add(rbox(0.5, 0.1, 0.3, 0.04, mat(0xd6d0c4, { roughness: 1 }), -W / 2 + 0.55, 0.6, -0.15));
   scene.add(rbox(0.9, 0.03, 0.25, 0.005, woodDark, 0.6, 1.5, -D / 2 + 0.14));
-  const bulbBox = rbox(0.18, 0.1, 0.14, 0.01, mat(0x8a2a20, { roughness: 0.7 }), 0.4, 1.565, -D / 2 + 0.14);
+  const bulbBox = rbox(0.18, 0.1, 0.14, 0.01, mat(0x6a5a44, { roughness: 0.8 }), 0.4, 1.565, -D / 2 + 0.14);
   scene.add(bulbBox);
   const flashBulb = new THREE.Group();
   flashBulb.add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 10), new THREE.MeshStandardMaterial({ color: 0xdfe6f0, roughness: 0.05, transparent: true, opacity: 0.8 })));

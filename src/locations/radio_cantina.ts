@@ -152,17 +152,41 @@ export function createRadioCantina(g: Game): Location {
     tLight.intensity = ok ? 1.2 : 0;
     return say(ok ? 'radio.testOk' : 'radio.testDead');
   };
-  const insert = async () => {
+  const insert = async (item: string | null = null) => {
     if (power()) return say('radio.fuseDone');
-    if (onTester < 0) return say('radio.slotEmpty');
-    const fz = FUSES[onTester];
-    if (fz.a !== 10) return say(fz.a > 10 ? 'radio.fuseTooBig' : 'radio.fuseTooSmall');
+    // a fuse in your hand (taken off the tester) or the one still in the clip
+    const idx = item === 'rfuse' ? Number(g.flag('rl.fuseIdx') ?? -1) : onTester;
+    if (idx < 0) return say('radio.slotEmpty');
+    if (item === 'rfuse') onTester = idx;
+    const fz = FUSES[idx];
+    if (fz.a !== 10) {
+      if (item === 'rfuse') {
+        // back in the tin, it isn't the right one
+        g.deselect();
+        g.take('rfuse');
+        loose[idx].visible = true;
+        putBack(idx);
+        onTester = -1;
+      }
+      return say(fz.a > 10 ? 'radio.fuseTooBig' : 'radio.fuseTooSmall');
+    }
     if (!fz.ok) {
       g.audio.sfx('click');
+      if (item === 'rfuse') {
+        g.deselect();
+        g.take('rfuse');
+        loose[idx].visible = true;
+        putBack(idx);
+        onTester = -1;
+      }
       await sleep(400);
       return say('radio.fuseNothing');
     }
     // the right one
+    if (item === 'rfuse') {
+      g.deselect();
+      g.take('rfuse');
+    }
     loose[onTester].visible = false;
     used.add(onTester);
     onTester = -1;
@@ -194,10 +218,12 @@ export function createRadioCantina(g: Game): Location {
 
   const hotspots: Hotspot[] = [
     { id: 'slot', obj: hSlot, when: () => g.viewName === 'panel', tap: async (item) => {
+      if (item === 'rfuse') return insert(item);
       if (item) return g.nope();
       return insert();
     } },
     { id: 'fusebox', obj: hBox, view: 'panel', tap: async (item) => {
+      if (item === 'rfuse') return insert(item);
       if (item) return g.nope();
       if (power()) return say('radio.fuseDone');
       if (!g.flag('rl.boxSeen')) {
@@ -214,7 +240,7 @@ export function createRadioCantina(g: Game): Location {
     ...FUSES.map((_, i): Hotspot => ({
       id: 'fuse' + i,
       obj: hFuses[i],
-      when: () => g.viewName === 'shelf' && !used.has(i),
+      when: () => g.viewName === 'shelf' && !used.has(i) && loose[i].visible,
       tap: async (item) => {
         if (item) return g.nope();
         if (onTester === i) {
@@ -229,7 +255,17 @@ export function createRadioCantina(g: Game): Location {
     })),
     { id: 'tester', obj: hTester, view: 'shelf', tap: async (item) => {
       if (item) return g.nope();
-      return say(onTester >= 0 ? 'radio.testerHas' : 'radio.tester');
+      if (onTester < 0) return say('radio.tester');
+      // take the fuse off the clip: it goes in your pocket
+      const i = onTester;
+      onTester = -1;
+      loose[i].visible = false;
+      tBulbM.color.set(0x3a3630);
+      tLight.intensity = 0;
+      g.set('rl.fuseIdx', i);
+      g.give('rfuse');
+      g.audio.sfx('pickup');
+      return say(FUSES[i].ok ? 'radio.fuseTakenOk' : 'radio.fuseTakenDead');
     } },
     { id: 'shelf', obj: hShelf, view: 'shelf', lowPriority: true, tap: async (item) => {
       if (item) return g.nope();

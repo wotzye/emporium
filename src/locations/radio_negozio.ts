@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { room, rbox, mesh, dust, textPlane, hitBox, bulb, woodMaterial, tileMaterial, plasterMaterial, mat, framed, cyl } from '../builders';
+import { room, rbox, mesh, dust, textPlane, hitBox, bulb, woodMaterial, tileMaterial, plasterMaterial, mat, framed, cyl, canvasTex } from '../builders';
 import { t } from '../i18n';
 import { oldPhoto } from '../photos';
 import { radioWall, valveRadio, oldTv, drawSnow, sleep } from './radio_common';
@@ -121,6 +121,16 @@ export function createRadioNegozio(g: Game): Location {
   scene.add(cellarSign);
   const stairZ = 0.7;
   const stairsOpen = () => !!g.flag('rl.stairs');
+  // the doorway behind it: dark, the first steps going up
+  const stairHole = canvasTex(128, 256, (c, w, h) => {
+    c.fillStyle = '#040404';
+    c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 7; i++) {
+      c.fillStyle = `rgba(120,110,95,${0.35 - i * 0.045})`;
+      c.fillRect(8, h - 18 - i * 30, w - 16, 5);
+    }
+  });
+  scene.add(mesh(new THREE.PlaneGeometry(0.84, 2.0), new THREE.MeshBasicMaterial({ map: stairHole }), W / 2 - 0.012, 1.0, stairZ, false).rotateY(-Math.PI / 2));
   const stairPivot = new THREE.Group();
   stairPivot.position.set(W / 2 - 0.05, 0, stairZ + 0.42);
   stairPivot.add(rbox(0.05, 2.0, 0.84, 0.01, woodDark, 0, 1.0, -0.42));

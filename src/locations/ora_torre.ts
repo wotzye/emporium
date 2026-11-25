@@ -185,6 +185,7 @@ export function createOraTorre(g: Game): Location {
 
   const restart = async () => {
     g.set('o.restarted');
+    g.rebuild('ora_camera');
     wedge.visible = false;
     g.audio.sfx('clunk');
     g.engine.shake(0.04, 0.8);

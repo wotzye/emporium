@@ -80,7 +80,7 @@ export type TapHandler = (hits: THREE.Intersection[]) => void;
 export interface DragHandler {
   start: (hits: THREE.Intersection[], ray: THREE.Ray, x: number, y: number) => boolean;
   move: (ray: THREE.Ray, x: number, y: number, hits: () => THREE.Intersection[]) => void;
-  end: (ray: THREE.Ray, x: number, y: number) => void;
+  end: (ray: THREE.Ray, x: number, y: number, tap?: boolean) => void;
 }
 
 export class Engine {
@@ -465,7 +465,7 @@ export class Engine {
       this.dragging = false;
       if (objectDrag) {
         objectDrag = false;
-        this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY);
+        this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY, moved <= 10);
         // a touch that never moved was a tap after all (look at the thing you could also move)
         if (moved > 10 || !this.inputEnabled || this.tween) return;
       }
@@ -480,7 +480,7 @@ export class Engine {
         this.dragging = false;
         if (objectDrag) {
           objectDrag = false;
-          this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY);
+          this.drag?.end(this.rayAt(e.clientX, e.clientY), e.clientX, e.clientY, moved <= 10);
         }
       }
     });
