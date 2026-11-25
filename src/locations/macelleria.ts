@@ -6,7 +6,7 @@ import { prop } from '../models';
 import { t } from '../i18n';
 import { oldPhoto } from '../photos';
 /** where Bruno's face is in the real family photo (fractions of the picture), to scratch it out */
-const BRUNO_FACE = [0.27, 0.3];
+const BRUNO_FACE = [0.59, 0.41]; // third from the left, the one with the moustache
 
 export function createMacelleria(g: Game): Location {
   const scene = new THREE.Scene();
@@ -361,7 +361,7 @@ export function createMacelleria(g: Game): Location {
   scene.add(bruno);
 
   // family photo on the left wall, framed
-  const familyTex = oldPhoto('macelleria_famiglia', 640, 490, (c, w, h) => {
+  const familyTex = oldPhoto('macelleria_famiglia', 512, 634, (c, w, h) => {
     c.fillStyle = '#8a857c';
     c.fillRect(0, 0, w, h);
     const gr = c.createLinearGradient(0, 0, 0, h);
@@ -396,7 +396,7 @@ export function createMacelleria(g: Game): Location {
   }, {
     tone: 'grey',
     age: 0.6,
-    // whoever it is on the left (the father): his face scratched away with a nail
+    // the father: his face scratched away with a nail
     after: (c, x0, y0, w, h) => {
       c.strokeStyle = 'rgba(236,230,218,0.9)';
       c.lineCap = 'round';
@@ -410,7 +410,7 @@ export function createMacelleria(g: Game): Location {
       }
     },
   });
-  const photoG = framed(0.6, 0.46, familyTex, woodMaterial({ base: '#2a1f16' }));
+  const photoG = framed(0.46, 0.57, familyTex, woodMaterial({ base: '#2a1f16' }));
   photoG.position.set(-3.47, 1.65, 0.6);
   photoG.rotation.y = Math.PI / 2;
   scene.add(photoG);
@@ -602,7 +602,7 @@ export function createMacelleria(g: Game): Location {
       main: { pos: [0, 1.6, 2.4], look: [-0.4, 1.2, -3], yaw: 40, pitch: 14 },
       counter: { pos: [-0.8, 1.75, 0.55], look: [-0.8, 0.85, -0.85], parent: 'main', yaw: 30, pitch: 10 },
       book: { pos: [-2.0, 1.5, 0.05], look: [-2.05, 0.9, -0.75], parent: 'main', yaw: 15, pitch: 8, fov: 55 },
-      photo: { pos: [-2.4, 1.62, 0.6], look: [-3.5, 1.62, 0.6], parent: 'main', yaw: 15, pitch: 8, fov: 50 },
+      photo: { pos: [-2.55, 1.66, 0.6], look: [-3.5, 1.66, 0.6], parent: 'main', yaw: 15, pitch: 8, fov: 50 },
       cella: { pos: [1.0, 1.6, 0.6], look: [1.9, 1.25, -3], parent: 'main', yaw: 15, pitch: 8 },
       lisa: { pos: [-1.0, 1.5, 0.6], look: [-2.75, 1.25, -1.75], parent: 'main', yaw: 10, pitch: 6 },
     },
