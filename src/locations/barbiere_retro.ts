@@ -8,8 +8,8 @@ import { t } from '../i18n';
 const RINGS_Z = [-1.2, -0.65, -0.1, 0.45, 0.95];
 const RADII = [0.03, 0.055, 0.04, 0.065, 0.047];
 const START_Z = [0.9, -1.1, 0.3, -0.5, -0.05];
-// index 0 is the rightmost wheel from where you stand: read left to right they must say 4-7-2, like the plate
-const VALVES = [2, 7, 4];
+// index 0 is the rightmost wheel from where you stand: read left to right they must say 2-7-4, like the plate
+const VALVES = [4, 7, 2];
 
 export function createBarbiereRetro(g: Game): Location {
   g.location('barbiere'); // the shop itself sets up the leather case and the finale
@@ -218,7 +218,7 @@ export function createBarbiereRetro(g: Game): Location {
     c.font = "16px 'American Typewriter', 'Courier New', monospace";
     c.fillText(t('retro.plate2'), 128, 78);
     c.font = "bold 40px 'American Typewriter', 'Courier New', monospace";
-    c.fillText(VALVES.join(' · '), 128, 132);
+    c.fillText([...VALVES].reverse().join(' · '), 128, 132); // the plate reads left to right, like the wheels
     c.drawImage(sootCv, 0, 0);
     plate.update();
   };
