@@ -85,15 +85,21 @@ export function listen(kind: SensorKind, onLevel: (k: number) => void, cancel: {
         m = Math.abs(t - last) * 2;
         last = t;
       }
-      // a brisk shake is 8-20 m/s²; about a second of it fills the bar
-      if (m > 6) progress = Math.min(1, progress + Math.min(m, 25) / 600);
+      // a brisk shake is 8-20 m/s², but phones report less at the turning points: count
+      // anything lively, and about a second and a half of shaking fills the bar
+      if (m > 3.5) {
+        progress = Math.min(1, progress + Math.min(m, 20) / 500);
+        lastShake = performance.now();
+      }
     };
+    let lastShake = 0;
     if (kind === 'shake') {
       if (!(await askMotion())) return finish(false);
       window.addEventListener('devicemotion', onMotion);
       const tick = () => {
         if (cancel.cancelled) return finish(false);
-        progress = Math.max(0, progress - 0.004);
+        // the bar only drains when you stop shaking for a moment
+        if (performance.now() - lastShake > 500) progress = Math.max(0, progress - 0.003);
         onLevel(progress);
         if (progress >= 1) return finish(true);
         requestAnimationFrame(tick);

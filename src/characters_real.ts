@@ -161,17 +161,16 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
   const coat = lathe([[shoulderW * 0.86, pel.y - 0.1], [0.27, 0.35], [0.3, 0.06], [0.3, 0.04]], suit, 0, 0, pel.z, 28);
   coat.scale.z = 0.7;
   g.add(coat);
-  // a tall black top hat, a little too tall, with a dull silk band
+  // a tall black top hat, a little too tall, all black
   const head = b.Head;
   const hp = wp(head);
-  const silk = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.35, metalness: 0.05 });
+  const silk = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.55, metalness: 0, envMapIntensity: 0.3, side: THREE.DoubleSide });
   const hat = new THREE.Group();
-  hat.add(lathe([[0, 0], [0.2, 0], [0.215, 0.006], [0.205, 0.016], [0.118, 0.018], [0, 0.018]], silk, 0, 0, 0, 32)); // brim
-  hat.add(lathe([[0.108, 0.012], [0.112, 0.08], [0.118, 0.2], [0.124, 0.26], [0, 0.262]], silk, 0, 0, 0, 32)); // crown, slightly flared
-  hat.add(mesh(new THREE.CylinderGeometry(0.113, 0.111, 0.04, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d1a18, roughness: 0.8, side: THREE.DoubleSide }), 0, 0.04, 0, false)); // band
-  hat.position.set(0, hp.y + 0.115, hp.z - 0.01);
+  hat.add(lathe([[0, 0], [0.2, 0], [0.215, 0.006], [0.205, 0.016], [0.14, 0.018], [0, 0.018]], silk, 0, 0, 0, 32)); // brim
+  hat.add(lathe([[0.14, -0.02], [0.136, 0.08], [0.134, 0.2], [0.138, 0.26], [0, 0.262]], silk, 0, 0, 0, 32)); // crown, slightly flared
+  hat.position.set(0, hp.y + 0.125, hp.z - 0.01);
   hat.rotation.x = -0.08;
-  hat.scale.set(0.93, 1, 0.93);
+  hat.scale.set(0.97, 1, 0.97);
   g.add(hat);
   head.attach(hat);
   const eyes = eyesMaterial(body);

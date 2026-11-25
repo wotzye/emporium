@@ -613,6 +613,12 @@ export function createBarbiereRetro(g: Game): Location {
     interactions,
     update: (dt, time) => {
       motes.update(dt, time);
+      // the first time you get close to the boiler, Diego notices the sooty plate
+      if (g.viewName === 'boiler' && !g.flag('r.plate') && !g.flag('r.boilerSeen') && !g.busy) {
+        g.set('r.boilerSeen');
+        g.busy = true;
+        g.say(g.held === 'cloth' ? 'retro.plateRub' : 'retro.plateDirty').finally(() => (g.busy = false));
+      }
     },
     enter: async () => {
       if (!g.flag('r.entered')) {

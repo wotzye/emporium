@@ -130,16 +130,32 @@ export function createOraLaboratorio(g: Game): Location {
     c.textAlign = 'center';
     c.fillText(t('ora.plate'), 128, 62);
     if (dustK > 0) {
-      c.fillStyle = `rgba(120,112,98,${0.97 * dustK})`;
+      // thick grey felt of dust: dark enough that the torch doesn't wash it out
+      c.fillStyle = `rgba(62,58,52,${0.97 * dustK})`;
       c.fillRect(0, 0, 256, 96);
-      noise(c, 256, 96, 2500, 0.35 * dustK);
+      noise(c, 256, 96, 4000, 0.45 * dustK);
+      c.strokeStyle = `rgba(150,140,120,${0.5 * dustK})`;
+      c.lineWidth = 2;
+      for (let i = 0; i < 40; i++) {
+        c.beginPath();
+        const x = Math.random() * 256, y = Math.random() * 96;
+        c.moveTo(x, y);
+        c.lineTo(x + Math.random() * 20 - 10, y + Math.random() * 8 - 4);
+        c.stroke();
+      }
     }
+    c.strokeStyle = '#2a2010';
+    c.lineWidth = 6;
+    c.strokeRect(3, 3, 250, 90);
     plateCv.update();
   };
   drawPlate();
-  const plate = mesh(new THREE.PlaneGeometry(0.2, 0.075), new THREE.MeshStandardMaterial({ map: plateCv.tex, roughness: 0.6, metalness: 0.3 }), plateX + 0.2, benchTop + 0.0135, plateZ + 0.105, false);
-  plate.rotation.x = -Math.PI / 2;
+  // the plate stands on a little brass foot behind the movement, tilted towards you
+  const plateY = benchTop + 0.07, plateZ2 = plateZ - 0.17;
+  const plate = mesh(new THREE.PlaneGeometry(0.3, 0.1125), new THREE.MeshStandardMaterial({ map: plateCv.tex, roughness: 0.95, metalness: 0 }), plateX + 0.2, plateY, plateZ2, false);
+  plate.rotation.x = -0.45;
   scene.add(plate);
+  scene.add(rbox(0.32, 0.012, 0.05, 0.004, brass, plateX + 0.2, benchTop + 0.006, plateZ2 - 0.02));
 
   // the loose gears, in a tray at the right
   const trayX = 0.75, trayZ = benchZ + 0.12;
@@ -202,7 +218,7 @@ export function createOraLaboratorio(g: Game): Location {
 
   // ---------------- hotspots ----------------
   const hBench = hitBox(0.9, 0.2, 0.45, plateX + 0.2, benchTop + 0.05, plateZ, 'movement');
-  const hPlate = hitBox(0.26, 0.1, 0.12, plateX + 0.2, benchTop + 0.02, plateZ + 0.105, 'plate');
+  const hPlate = hitBox(0.34, 0.16, 0.1, plateX + 0.2, plateY, plateZ2, 'plate');
   const hDrawer = hitBox(0.7, 0.22, 0.7, 0.5, benchTop - 0.14, benchZ + 0.35, 'drawer');
   const hShelves = hitBox(1.5, 1.2, 0.4, W / 2 - 0.85, 1.7, -D / 2 + 0.2, 'shelves');
   const hApron = hitBox(0.5, 0.8, 0.2, -W / 2 + 0.1, 1.4, -0.9, 'apron');

@@ -149,7 +149,7 @@ export class UI {
     const tog = el('div', 'tog');
     tog.innerHTML = this.invOpen
       ? '<svg viewBox="0 0 24 24"><path d="M6 9 l6 6 l6 -6"/></svg>'
-      : `<svg viewBox="0 0 24 24"><path d="M5 9 h14 l-1.5 11 h-11z M9 9 v-2 a3 3 0 0 1 6 0 v2"/></svg>${items.length ? `<b>${items.length}</b>` : ''}`;
+      : `<svg viewBox="0 0 24 24"><path d="M9 3 a3 1.6 0 0 0 6 0"/><path d="M9 3 V7 h6 V3"/><path d="M9 7 L4 9.5 M15 7 L20 9.5"/><path d="M9 7 L6 21 h12 L15 7"/><path d="M9 13.5 h6 v3.5 h-6z"/></svg>${items.length ? `<b>${items.length}</b>` : ''}`;
     tog.onclick = (e) => {
       e.stopPropagation();
       this.invOpen = !this.invOpen;

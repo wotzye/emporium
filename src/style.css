@@ -227,7 +227,7 @@ button:active { background: rgba(255,255,255,0.08); }
 #card .memframe canvas { position: static; inset: auto; width: 100%; height: 100%; display: block; animation: kenburns 9s ease-out forwards; filter: sepia(0.25) contrast(1.1); }
 @keyframes kenburns { from { transform: scale(1.0); } to { transform: scale(1.12) translate(-2%, -1%); } }
 #card .memtxt { font-size: calc(clamp(14px, 2.1vw, 18px) * var(--fs, 1.3)); min-height: 3.2em; max-width: 760px; }
-@media (max-height: 420px) { #card .memframe { width: min(70vw, calc(50vh * 16 / 9)); } #card .memtxt { font-size: calc(14px * var(--fs, 1.3)); } }
+@media (max-height: 460px) { #card.memory { gap: 6px; } #card .memframe { width: min(62vw, calc(44vh * 16 / 9)); } #card .memtxt { font-size: calc(13px * var(--fs, 1.3)); line-height: 1.35; min-height: 0; } }
 
 #modal .sensor { display: grid; gap: 12px; justify-items: center; min-width: min(70vw, 420px); }
 #modal .sicon { font-size: calc(40px * var(--fs, 1.3)); transition: transform 0.08s; }
@@ -244,3 +244,8 @@ button:active { background: rgba(255,255,255,0.08); }
 .tkey.down { transform: translateY(5px); box-shadow: 0 1px 0 #2a241c; background: radial-gradient(circle at 40% 35%, #5a2020, #1a0808); }
 .trow { display: flex; gap: 10px; justify-content: center; }
 .trow button { width: 64px; height: 44px; font-size: calc(22px * var(--fs, 1.3)); }
+
+/* tap markers, drawn over the 3D view */
+#markers { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+#markers .hsm { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.95); box-shadow: 0 0 0 2px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(0,0,0,0.35); display: none; will-change: transform, opacity; }
+#markers .hsm::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.6); }

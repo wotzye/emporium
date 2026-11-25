@@ -6,6 +6,7 @@ import { barberMemory, adaMemory, clockMemory, photoMemory, radioMemory } from '
 import { wallClock } from './ora_common';
 import { prop, cursify } from '../models';
 import { t } from '../i18n';
+import { preloadPhotos } from '../photos';
 
 export function createEmporio(g: Game): Location {
   const scene = new THREE.Scene();
@@ -629,6 +630,7 @@ export function createEmporio(g: Game): Location {
       }
     },
     enter: async () => {
+      preloadPhotos(['bar', 'ada', 'ora', 'foto', 'radio'].flatMap((k) => [1, 2, 3, 4, 5].map((n) => `mem_${k}_${n}`)));
       g.audio.sfx('bell');
       if (!g.flag('metMerchant')) {
         await sleep(600);

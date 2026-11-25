@@ -608,54 +608,49 @@ export class Game {
     scene.remove(c.group, under, under.target, fill);
   }
   private removeMarkers: (() => void) | null = null;
-  private static markerTex: THREE.Texture | null = null;
+  private markerLayer: HTMLElement | null = null;
   /**
    * Black and white swallows small things. A soft pulsing ring marks everything you can tap
    * (not the big furniture boxes), so nothing important gets lost in the dark. Can be turned off.
+   * They are drawn over the canvas (not in 3D), so the torch, the bloom and a white clock face
+   * can never wash them out.
    */
   private markers(L: Location) {
-    if (!Game.markerTex) {
-      const c = document.createElement('canvas');
-      c.width = c.height = 64;
-      const x = c.getContext('2d')!;
-      const gr = x.createRadialGradient(32, 32, 4, 32, 32, 30);
-      gr.addColorStop(0, 'rgba(255,255,255,0.9)');
-      gr.addColorStop(0.25, 'rgba(255,255,255,0.35)');
-      gr.addColorStop(0.55, 'rgba(255,255,255,0.0)');
-      gr.addColorStop(0.75, 'rgba(255,255,255,0.55)');
-      gr.addColorStop(1, 'rgba(255,255,255,0)');
-      x.fillStyle = gr;
-      x.fillRect(0, 0, 64, 64);
-      Game.markerTex = new THREE.CanvasTexture(c);
+    if (!this.markerLayer) {
+      this.markerLayer = document.createElement('div');
+      this.markerLayer.id = 'markers';
+      (this.engine.renderer.domElement.parentElement ?? document.body).appendChild(this.markerLayer);
     }
-    let list = L.scene.userData.markers as { h: Hotspot; s: THREE.Sprite; ph: number }[] | undefined;
+    const layer = this.markerLayer;
+    let list = L.scene.userData.markers as { h: Hotspot; el: HTMLElement; ph: number }[] | undefined;
     if (!list) {
       list = [];
       for (const h of L.hotspots) {
         if (h.lowPriority) continue;
-        const m = new THREE.SpriteMaterial({ map: Game.markerTex, transparent: true, depthTest: false, depthWrite: false, sizeAttenuation: false, opacity: 0 });
-        m.userData.shared = false;
-        const sp = new THREE.Sprite(m);
-        sp.layers.set(2);
-        sp.userData.noPick = true;
-        sp.renderOrder = 50;
-        sp.scale.setScalar(0.05);
-        L.scene.add(sp);
-        list.push({ h, s: sp, ph: Math.random() * 6 });
+        const el = document.createElement('div');
+        el.className = 'hsm';
+        list.push({ h, el, ph: Math.random() * 6 });
       }
       L.scene.userData.markers = list;
     }
+    layer.replaceChildren(...list.map((m) => m.el));
     const v = new THREE.Vector3();
     const items = list;
+    const cam = this.engine.camera;
+    const canvas = this.engine.renderer.domElement;
     return (_dt: number, time: number) => {
-      const on = (this.settings.markers ?? true) && !this.busy;
+      const on = (this.settings.markers ?? true) && !this.busy && this.loc === L;
+      const w = canvas.clientWidth, hh = canvas.clientHeight;
       for (const m of items) {
-        const show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true);
-        m.s.visible = show;
-        if (!show) continue;
-        m.h.obj.getWorldPosition(v);
-        m.s.position.copy(v);
-        (m.s.material as THREE.SpriteMaterial).opacity = 0.5 + 0.25 * Math.sin(time * 2.2 + m.ph);
+        let show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true);
+        if (show) {
+          m.h.obj.getWorldPosition(v);
+          v.project(cam);
+          show = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
+          if (show) m.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * hh}px)`;
+        }
+        m.el.style.display = show ? 'block' : 'none';
+        if (show) m.el.style.opacity = String(0.7 + 0.25 * Math.sin(time * 2.2 + m.ph));
       }
     };
   }

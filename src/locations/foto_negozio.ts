@@ -41,13 +41,13 @@ export function createFotoNegozio(g: Game): Location {
   SITTERS.forEach((name, i) => {
     const col = i % 4, row = Math.floor(i / 4);
     const p = framed(0.42, 0.52, (c, w, h) => villagerPortrait(c, w, h, i + 1, name), frameM);
-    p.position.set(-1.35 + col * 0.9, 1.95 - row * 0.68, -D / 2 + 0.03);
+    p.position.set(-1.75 + col * 0.82, 1.95 - row * 0.68, -D / 2 + 0.03);
     p.rotation.z = (i % 3 - 1) * 0.015;
     scene.add(p);
   });
   // the big sign over them
-  const sign = textPlane([t('foto.signShop')], 2.6, 0.3, { bg: '#1e1a16', fg: '#d9cfb6', size: 34, px: 96 });
-  sign.position.set(0, 2.66, -D / 2 + 0.02);
+  const sign = textPlane([t('foto.signShop')], 2.4, 0.28, { bg: '#1e1a16', fg: '#d9cfb6', size: 34, px: 96 });
+  sign.position.set(-0.52, 2.66, -D / 2 + 0.02);
   scene.add(sign);
 
   // ---------------- counter, the register, the cash box ----------------
@@ -111,7 +111,7 @@ export function createFotoNegozio(g: Game): Location {
 
   // ---------------- hotspots ----------------
   const hBook = hitBox(0.42, 0.12, 0.32, -0.4, 1.02, -0.7, 'register');
-  const hWall = hitBox(3.6, 1.5, 0.2, 0, 1.6, -D / 2 + 0.1, 'portraits');
+  const hWall = hitBox(3.1, 1.5, 0.2, -0.52, 1.6, -D / 2 + 0.1, 'portraits');
   const hCurtain = hitBox(0.3, 2.2, 1.1, -W / 2 + 0.15, 1.1, curtainZ, 'studio');
   const hArch = hitBox(0.3, 2.1, 1.0, W / 2 - 0.15, 1.05, archZ, 'archive');
   const hStairs = hitBox(0.95, 2.1, 0.3, stairX, 1.05, -D / 2 + 0.15, 'stairs');
@@ -190,7 +190,7 @@ export function createFotoNegozio(g: Game): Location {
     views: {
       main: { pos: [0.4, 1.6, 1.8], look: [-0.2, 1.3, -1.6], yaw: 65, pitch: 18 },
       counter: { pos: [0.0, 1.6, 0.35], look: [0.0, 0.95, -0.8], parent: 'main', yaw: 25, pitch: 12 },
-      wall: { pos: [0.0, 1.65, 0.6], look: [0.0, 1.65, -D / 2], parent: 'main', yaw: 30, pitch: 12, fov: 62 },
+      wall: { pos: [-0.52, 1.65, 0.6], look: [-0.52, 1.65, -D / 2], parent: 'main', yaw: 30, pitch: 12, fov: 62 },
       curtain: { pos: [0.3, 1.6, 0.6], look: [-W / 2, 1.2, curtainZ], parent: 'main', yaw: 20, pitch: 12 },
       archdoor: { pos: [-0.2, 1.6, 0.8], look: [W / 2, 1.2, archZ], parent: 'main', yaw: 20, pitch: 12 },
       stairs: { pos: [1.0, 1.6, 0.4], look: [stairX, 1.2, -D / 2], parent: 'main', yaw: 20, pitch: 12 },

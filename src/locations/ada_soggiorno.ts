@@ -324,7 +324,12 @@ export function createAdaSoggiorno(g: Game): Location {
     photoGroup.add(frame);
     frame.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (m.isMesh && /canvas/i.test(m.name)) m.material = new THREE.MeshStandardMaterial({ map: photoTex, roughness: 0.85 });
+      if (m.isMesh && /canvas/i.test(m.name)) {
+        // glTF UVs run top-down: the canvas must not be flipped
+        photoTex.flipY = false;
+        photoTex.needsUpdate = true;
+        m.material = new THREE.MeshStandardMaterial({ map: photoTex, roughness: 0.85 });
+      }
     });
     frame.position.y = -0.275;
   } else {
@@ -395,7 +400,7 @@ export function createAdaSoggiorno(g: Game): Location {
 
   // ---------------- hotspots ----------------
   const hTv = hitBox(0.8, 0.7, 0.6, tvX, 0.95, tvZ + 0.1, 'tv');
-  const hSofa = hitBox(1.8, 0.9, 0.9, -0.7, 0.45, 0.55, 'sofa');
+  const hSofa = hitBox(1.6, 0.75, 0.8, -0.6, 0.38, 0.6, 'sofa');
   const hRocker = hitBox(0.8, 1.1, 0.9, -1.85, 0.55, -0.55, 'rocker');
   const hWheel = hitBox(0.8, 1.0, 0.8, 1.85, 0.5, -1.55, 'wheelchair');
   const hPhoto = hitBox(0.5, 0.65, 0.15, 1.0, 1.6, -D / 2 + 0.08, 'photo');
@@ -440,7 +445,7 @@ export function createAdaSoggiorno(g: Game): Location {
       if (g.flag('a.tv')) return say('ada.tvAfter');
       return say('ada.tvSnow');
     } },
-    { id: 'sofa', obj: hSofa, view: 'sofa', tap: async (item) => {
+    { id: 'sofa', obj: hSofa, view: 'sofa', lowPriority: true, when: () => g.viewName !== 'rocker', tap: async (item) => {
       if (item) return g.nope();
       g.audio.sfx('paper');
       await g.ui.doc(t('ada.guideTitle'), [t('ada.guide1'), t('ada.guide2'), t('ada.guide3'), t('ada.guide4'), t('ada.guide5')].join('\n'));

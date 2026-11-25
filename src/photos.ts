@@ -99,3 +99,28 @@ function printInto(c: CanvasRenderingContext2D, w: number, h: number, img: HTMLI
     c.fill();
   }
 }
+
+/**
+ * A drawing that turns into a real photo when one ships with the game (photos/<key>.jpg):
+ * the memories use it, so a scene drawn with puppets can be swapped for a real print.
+ */
+const loaded = new Map<string, HTMLImageElement>();
+/** start loading real photos ahead of time (the Emporio does it for the memories) */
+export function preloadPhotos(keys: string[]) {
+  available().then((list) => {
+    for (const k of keys) {
+      if (!list.includes(k) || loaded.has(k)) continue;
+      const im = new Image();
+      im.onload = () => loaded.set(k, im);
+      im.src = `${base()}photos/${k}.jpg`;
+    }
+  });
+}
+export function photoOr(key: string, fallback: (c: CanvasRenderingContext2D, w: number, h: number) => void, o: PhotoOpts = { border: false, age: 0.4 }) {
+  preloadPhotos([key]);
+  return (c: CanvasRenderingContext2D, w: number, h: number) => {
+    const img = loaded.get(key);
+    if (img) printInto(c, w, h, img, o);
+    else fallback(c, w, h);
+  };
+}

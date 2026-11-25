@@ -158,6 +158,8 @@ export function createMap(g: Game): Location {
   const hotspots: Hotspot[] = [];
   const signs: THREE.Object3D[] = [];
   const labelFor: [THREE.Sprite, string][] = [];
+  /** every label, with where it wants to be: the update keeps them from covering each other */
+  const allLabels: { sp: THREE.Sprite; base: THREE.Vector3; open: boolean; dy: number }[] = [];
   const label = (text: string, x: number, y: number, z: number, open: boolean, target?: string) => {
     const font = "bold 58px 'American Typewriter', 'Courier New', monospace";
     const probe = document.createElement('canvas').getContext('2d')!;
@@ -184,6 +186,47 @@ export function createMap(g: Game): Location {
     if (target) labelFor.push([sp, target]);
     else sp.userData.noPick = true;
     scene.add(sp);
+    allLabels.push({ sp, base: sp.position.clone(), open, dy: 0 });
+  };
+  // ---- decluttering: open places first, then the rest; a label that would cover another
+  //      one is nudged up or down a little, and if there's no room it fades back
+  const camUp = new THREE.Vector3();
+  const camRight = new THREE.Vector3();
+  const pv = new THREE.Vector3();
+  const rectOf = (l: (typeof allLabels)[number], dy: number) => {
+    const cam = g.engine.camera;
+    pv.copy(l.base).addScaledVector(camUp, dy).project(cam);
+    const cx = pv.x, cy = pv.y;
+    pv.copy(l.base).addScaledVector(camUp, dy).addScaledVector(camRight, l.sp.scale.x / 2).addScaledVector(camUp, l.sp.scale.y * 0.32).project(cam);
+    const hw = Math.abs(pv.x - cx) * 0.92, hh = Math.abs(pv.y - cy);
+    return { x0: cx - hw, x1: cx + hw, y0: cy - hh, y1: cy + hh };
+  };
+  let declutterT = 0;
+  const declutter = () => {
+    const cam = g.engine.camera;
+    camUp.set(0, 1, 0).applyQuaternion(cam.quaternion);
+    camRight.set(1, 0, 0).applyQuaternion(cam.quaternion);
+    const order = [...allLabels].sort((a, b) => Number(b.open) - Number(a.open));
+    const taken: { x0: number; x1: number; y0: number; y1: number }[] = [];
+    const hit = (r: { x0: number; x1: number; y0: number; y1: number }) => taken.some((q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
+    for (const l of order) {
+      let placed = false;
+      for (const dy of [0, 0.7, -0.7, 1.4, -1.4, 2.1]) {
+        const r = rectOf(l, dy);
+        if (!hit(r)) {
+          taken.push(r);
+          l.dy += (dy - l.dy) * 0.25;
+          (l.sp.material as THREE.SpriteMaterial).opacity = 1;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        l.dy += (0 - l.dy) * 0.25;
+        (l.sp.material as THREE.SpriteMaterial).opacity = 0.25;
+      }
+      l.sp.position.copy(l.base).addScaledVector(camUp, l.dy);
+    }
   };
   // a finished shop opens again while it still holds something another unfinished shop needs
   const stillNeeded = {
@@ -445,6 +488,11 @@ export function createMap(g: Game): Location {
     },
     hotspots,
     update: (dt, time) => {
+      declutterT += dt;
+      if (declutterT > 0.1) {
+        declutterT = 0;
+        declutter();
+      }
       scene.traverse((o) => {
         if (o.userData.spin) o.rotation.y += dt * 1.5;
       });

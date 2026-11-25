@@ -5,6 +5,7 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { createBarberGhost } from '../characters';
 import { prop } from '../models';
 import { t } from '../i18n';
+import { oldPhoto } from '../photos';
 
 /** Chair facing: 0 = mirror, 1 = left wall, 2 = door, 3 = right wall. */
 const CHAIR_TARGET = [2, 0, 1];
@@ -104,7 +105,29 @@ export function createBarbiere(g: Game): Location {
   const shadeMat = shadeOpal.material as THREE.MeshStandardMaterial;
   const cone = lightCone(0, 2.4, -0.7, 2.4, 1.3, 0.045);
   scene.add(cone);
+  // the price board is a backlit sign: without power it's just smoked glass
+  let pricesMat: THREE.MeshStandardMaterial | null = null;
+  let pricesTex: THREE.Texture | null = null;
+  // switched off, the glass is just a dark, greasy pane: you can't read through it
+  const pricesOff = canvasTex(320, 352, (c, w, h) => {
+    c.fillStyle = '#121110';
+    c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#5a554c';
+    c.lineWidth = 8;
+    c.strokeRect(6, 6, w - 12, h - 12);
+    c.fillStyle = 'rgba(70,66,60,0.5)';
+    for (let i = 0; i < 6; i++) c.fillRect(40, 50 + i * 48, w - 80, 10);
+    noise(c, w, h, 3000, 0.25);
+  });
   const setLights = (on: number) => {
+    if (pricesMat) {
+      const lit = on > 0.3;
+      pricesMat.map = lit ? pricesTex : pricesOff;
+      pricesMat.emissiveMap = lit ? pricesTex : null;
+      pricesMat.color.setScalar(lit ? 1 : 0.6);
+      pricesMat.emissiveIntensity = lit ? 0.35 : 0;
+      pricesMat.needsUpdate = true;
+    }
     lamp.spot.intensity = 18 * on;
     lamp.fill.intensity = 2.2 * on;
     lampGlass.color.setScalar(on > 0.3 ? 1 : 0.15);
@@ -468,13 +491,9 @@ export function createBarbiere(g: Game): Location {
   d1.position.set(-2.97, 1.85, -0.1);
   d1.rotation.y = Math.PI / 2;
   scene.add(d1);
-  const d2 = framed(0.3, 0.38, (c, w, h) => {
+  // Aldo the day he opened, 1951 (the same photo is in his flat, first of the row)
+  const d2 = framed(0.3, 0.38, oldPhoto('aldo_1951', 300, 380, (c, w, h) => {
     c.fillStyle = '#9a958c';
-    c.fillRect(0, 0, w, h);
-    const gr = c.createRadialGradient(w / 2, h * 0.4, 10, w / 2, h * 0.4, w * 0.6);
-    gr.addColorStop(0, '#d8d2c6');
-    gr.addColorStop(1, '#4a4640');
-    c.fillStyle = gr;
     c.fillRect(0, 0, w, h);
     c.fillStyle = '#1b1916';
     c.beginPath();
@@ -482,7 +501,7 @@ export function createBarbiere(g: Game): Location {
     c.fill();
     c.fillRect(w * 0.22, h * 0.55, w * 0.56, h * 0.5);
     noise(c, w, h, 2500, 0.2);
-  }, woodDark);
+  }, { age: 0.5, border: false }), woodDark);
   d2.position.set(-2.97, 1.62, 0.32);
   d2.rotation.y = Math.PI / 2;
   scene.add(d2);
@@ -502,7 +521,11 @@ export function createBarbiere(g: Game): Location {
   scene.add(rack);
 
   // ---------------- right wall: price board, till, calendar ----------------
-  const prices = textPlane([t('bar.priceTitle'), t('bar.price1'), t('bar.price2'), t('bar.price3'), t('bar.price4'), t('bar.price5')], 0.96, 1.06, { bg: '#1c1a18', fg: '#efe9dc', size: 30, px: 320, border: '#8d8576', align: 'left' });
+  const prices = textPlane([t('bar.priceTitle'), t('bar.price1'), t('bar.price2'), t('bar.price3'), t('bar.price4'), t('bar.price5')], 0.96, 1.06, { bg: '#1c1a18', fg: '#efe9dc', size: 21, px: 320, border: '#8d8576', align: 'center' });
+  pricesMat = prices.material as THREE.MeshStandardMaterial;
+  pricesMat.emissive = new THREE.Color(0xffffff);
+  pricesTex = pricesMat.map;
+  setLights(lightLevel);
   prices.position.set(2.965, 1.75, 0.3);
   prices.rotation.y = -Math.PI / 2;
   scene.add(prices);
@@ -647,9 +670,77 @@ export function createBarbiere(g: Game): Location {
     await g.say([{ who: 'diego', key: 'bar.case1' }, { who: 'diego', key: 'bar.case2' }]);
     await openCase();
   };
+  // the photo is a real snapshot of this room, the chairs turned the way they were that day
+  let realPhoto = '';
+  const chairPhoto = () => {
+    if (realPhoto) return realPhoto;
+    try {
+      const r = g.engine.renderer;
+      const W = 600, H = 420;
+      const rt = new THREE.WebGLRenderTarget(W, H);
+      const cam = new THREE.PerspectiveCamera(52, W / H, 0.05, 30);
+      cam.position.set(0.4, 2.7, 1.9);
+      cam.lookAt(0, 0.5, -1.4);
+      const saved = chairs.map((c) => c.rotation.y);
+      chairs.forEach((c, i) => (c.rotation.y = CHAIR_TARGET[i] * (Math.PI / 2)));
+      const amb = new THREE.AmbientLight(0xffffff, 0.9);
+      const key = new THREE.DirectionalLight(0xffffff, 1.6);
+      key.position.set(1, 4, 3);
+      scene.add(amb, key);
+      const hidden: THREE.Object3D[] = [];
+      scene.traverse((o) => {
+        if (o.visible && (o.userData.ghost || o === motes.points)) {
+          o.visible = false;
+          hidden.push(o);
+        }
+      });
+      r.setRenderTarget(rt);
+      r.render(scene, cam);
+      const px = new Uint8Array(W * H * 4);
+      r.readRenderTargetPixels(rt, 0, 0, W, H, px);
+      r.setRenderTarget(null);
+      scene.remove(amb, key);
+      hidden.forEach((o) => (o.visible = true));
+      chairs.forEach((c, i) => (c.rotation.y = saved[i]));
+      rt.dispose();
+      const cv = document.createElement('canvas');
+      cv.width = W;
+      cv.height = H;
+      const c = cv.getContext('2d')!;
+      const img = c.createImageData(W, H);
+      let sum = 0;
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+          const i = ((H - 1 - y) * W + x) * 4, o = (y * W + x) * 4;
+          const v = 0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2];
+          sum += v;
+          img.data[o] = v * 1.04 + 8;
+          img.data[o + 1] = v + 4;
+          img.data[o + 2] = v * 0.9;
+          img.data[o + 3] = 255;
+        }
+      // a black frame means the GPU gave us nothing: fall back to the drawing
+      if (sum / (W * H) < 6) return null;
+      c.putImageData(img, 0, 0);
+      for (let i = 0; i < 9000; i++) {
+        const v = Math.random() < 0.5 ? 0 : 255;
+        c.fillStyle = `rgba(${v},${v},${v},${Math.random() * 0.12})`;
+        c.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+      }
+      const gr = c.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 380);
+      gr.addColorStop(0, 'rgba(0,0,0,0)');
+      gr.addColorStop(1, 'rgba(0,0,0,0.6)');
+      c.fillStyle = gr;
+      c.fillRect(0, 0, W, H);
+      realPhoto = cv.toDataURL('image/jpeg', 0.85);
+      return realPhoto;
+    } catch {
+      return null;
+    }
+  };
   g.examiners.photo = async () => {
     g.audio.sfx('paper');
-    await g.ui.picture(t('bar.photoTitle'), photoDataUrl(), t('bar.photoBack'));
+    await g.ui.picture(t('bar.photoTitle'), chairPhoto() ?? photoDataUrl(), t('bar.photoBack'));
   };
 
   const chairTap = async (i: number) => {

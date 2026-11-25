@@ -257,7 +257,13 @@ export function createBarbiereAlloggio(g: Game): Location {
       g.audio.sfx('glass');
       padKey.visible = true;
       await say('aldo.keyOut');
-      // and behind you, the cloth on the mirror slides down
+    } },
+    { id: 'padkey', obj: hKey, view: 'table', when: () => padKey.visible, tap: async (item) => {
+      if (item) return g.nope();
+      padKey.visible = false;
+      g.give('padkey');
+      await say('aldo.keyTaken');
+      // the moment you take it, behind you, the cloth on the mirror slides down
       if (!clothFallen()) {
         await sleep(600);
         g.audio.sfx('sheet');
@@ -272,12 +278,6 @@ export function createBarbiereAlloggio(g: Game): Location {
         await g.scare('barber', 650);
         await say('aldo.mirror');
       }
-    } },
-    { id: 'padkey', obj: hKey, view: 'table', when: () => padKey.visible, tap: async (item) => {
-      if (item) return g.nope();
-      padKey.visible = false;
-      g.give('padkey');
-      return say('aldo.keyTaken');
     } },
     { id: 'letter', obj: hLetter, view: 'table', tap: async (item) => {
       if (item) return g.nope();

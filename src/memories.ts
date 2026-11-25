@@ -1,4 +1,8 @@
 import { t } from './i18n';
+import { photoOr } from './photos';
+
+/** each panel can be a real photo: photos/mem_<story>_<n>.jpg */
+const withPhotos = (story: string, panels: { draw: Draw; text: string }[]) => panels.map((p, i) => ({ text: p.text, draw: photoOr(`mem_${story}_${i + 1}`, p.draw) }));
 
 type Draw = (c: CanvasRenderingContext2D, w: number, h: number) => void;
 
@@ -167,7 +171,7 @@ export function barberMemory(): { title: string; panels: { draw: Draw; text: str
       },
     },
   ];
-  return { title: t('mem.bar.title'), panels };
+  return { title: t('mem.bar.title'), panels: withPhotos('bar', panels) };
 }
 
 /** Ada and Ettore, 1946–1974. */
@@ -337,7 +341,7 @@ export function adaMemory(): { title: string; panels: { draw: Draw; text: string
       },
     },
   ];
-  return { title: t('mem.ada.title'), panels };
+  return { title: t('mem.ada.title'), panels: withPhotos('ada', panels) };
 }
 
 /** Ottavio and Clara, L'Ora Ferma, 1974. */
@@ -449,7 +453,7 @@ export function clockMemory(): { title: string; panels: { draw: Draw; text: stri
       },
     },
   ];
-  return { title: t('mem.ora.title'), panels };
+  return { title: t('mem.ora.title'), panels: withPhotos('ora', panels) };
 }
 
 export function photoMemory(): { title: string; panels: { draw: Draw; text: string }[] } {
@@ -547,7 +551,7 @@ export function photoMemory(): { title: string; panels: { draw: Draw; text: stri
       },
     },
   ];
-  return { title: t('mem.foto.title'), panels };
+  return { title: t('mem.foto.title'), panels: withPhotos('foto', panels) };
 }
 
 /** The radio man: Nello Sartori, and Paolo. */
@@ -680,5 +684,5 @@ export function radioMemory(): { title: string; panels: { draw: Draw; text: stri
       },
     },
   ];
-  return { title: t('mem.radio.title'), panels };
+  return { title: t('mem.radio.title'), panels: withPhotos('radio', panels) };
 }
