@@ -1053,5 +1053,9 @@
   "mem.radio.4": "It's true. Every night the radio speaks with Paolo's voice. And every night Nello eats less, sleeps less, fades.",
   "mem.radio.5": "With the antenna on the bell tower, Paolo's real voice came through. Nello keyed «end of transmission». And on the roof, at last, there is silence.",
   "diary.memRadio.title": "Memory: Nello and Paolo Sartori",
-  "diary.memRadio.text": "Nello Sartori, radio repairman, and his son Paolo, radio ham.\nOn 3 March 1973 Paolo dies during his military service.\nThe man in black sells Nello a red transistor: «You'll hear him again, every night.»\nThe radio speaks with Paolo's voice, and consumes Nello.\nWith the antenna on the bell tower, the real voice came through.\nNello keyed «end of transmission».\nInside the radio was the key to the bell tower."
+  "diary.memRadio.text": "Nello Sartori, radio repairman, and his son Paolo, radio ham.\nOn 3 March 1973 Paolo dies during his military service.\nThe man in black sells Nello a red transistor: «You'll hear him again, every night.»\nThe radio speaks with Paolo's voice, and consumes Nello.\nWith the antenna on the bell tower, the real voice came through.\nNello keyed «end of transmission».\nInside the radio was the key to the bell tower.",
+  "hint.map.gear": "The clockmaker's big wheel is in Ada's garden shed. Ada's house is open again.",
+  "hint.map.shears": "The shears for Ada's wisteria are in the barber's yard. The barber's is open again.",
+  "hint.map.hand": "The minute hand for the barber's clock is at the Stopped Hour, in an envelope on the counter.",
+  "hint.map.redbulb": "The red bulb for the darkroom is in Ada's attic, in a suitcase. Ada's house is open again."
 }

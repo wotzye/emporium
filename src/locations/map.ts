@@ -185,13 +185,30 @@ export function createMap(g: Game): Location {
     else sp.userData.noPick = true;
     scene.add(sp);
   };
+  // a finished shop opens again while it still holds something another unfinished shop needs
+  const stillNeeded = {
+    get ada() {
+      const gear = !g.flag('placedWatch') && !g.flag('a.gear') && !g.flag('o.gearIn') && !g.has('gear');
+      const bulb = !g.flag('placedCamera') && !g.flag('a.redbulb') && !g.flag('f.bulb') && !g.has('redbulb');
+      return gear || bulb;
+    },
+    get barbiere() {
+      return !g.flag('placedGlasses') && !g.flag('y.shears') && !g.flag('a.shears') && !g.flag('a.vines') && !g.has('shears');
+    },
+    get orologeria() {
+      return !g.flag('placedRazor') && !g.flag('o.hand') && !g.flag('c.hand') && !g.flag('c.clock') && !g.has('minutehand');
+    },
+    get fotografo() {
+      return !!g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn');
+    },
+  };
   const isOpen: Record<string, boolean> = {
     emporio: true,
     macelleria: !!g.flag('metMerchant') && !g.flag('fledButcher'),
-    barbiere: !!g.flag('fledButcher') && !g.flag('placedRazor'),
-    ada: !!g.flag('fledButcher') && !g.flag('placedGlasses'),
-    orologeria: !!g.flag('fledButcher') && !g.flag('placedWatch'),
-    fotografo: !!g.flag('fledButcher') && (!g.flag('placedCamera') || (!!g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn'))),
+    barbiere: !!g.flag('fledButcher') && (!g.flag('placedRazor') || stillNeeded.barbiere),
+    ada: !!g.flag('fledButcher') && (!g.flag('placedGlasses') || stillNeeded.ada),
+    orologeria: !!g.flag('fledButcher') && (!g.flag('placedWatch') || stillNeeded.orologeria),
+    fotografo: !!g.flag('fledButcher') && (!g.flag('placedCamera') || stillNeeded.fotografo),
     radio: !!g.flag('fledButcher') && !g.flag('placedRadio'),
   };
 
@@ -300,18 +317,18 @@ export function createMap(g: Game): Location {
         tap: async () => {
           if (b.id === 'barbiere') {
             if (!g.flag('fledButcher')) return g.say('map.barberLocked');
-            if (g.flag('placedRazor')) return g.say('map.barberDone');
+            if (g.flag('placedRazor') && !stillNeeded.barbiere) return g.say('map.barberDone');
             return g.go('barbiere');
           }
           if (b.id === 'orologeria') {
             if (!g.flag('fledButcher')) return g.say('map.oraLocked');
-            if (g.flag('placedWatch')) return g.say('map.oraDone');
+            if (g.flag('placedWatch') && !stillNeeded.orologeria) return g.say('map.oraDone');
             return g.go('ora_bottega');
           }
           if (b.id === 'fotografo') {
             if (!g.flag('fledButcher')) return g.say('map.fotoLocked');
             // the radio man's valve is still in Ferri's archive: you may go back in for it
-            if (g.flag('placedCamera') && !(g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn'))) return g.say('map.fotoDone');
+            if (g.flag('placedCamera') && !stillNeeded.fotografo) return g.say('map.fotoDone');
             return g.go('foto_negozio');
           }
           if (b.id === 'radio') {
@@ -321,7 +338,7 @@ export function createMap(g: Game): Location {
           }
           if (b.id === 'ada') {
             if (!g.flag('fledButcher')) return g.say('map.adaLocked');
-            if (g.flag('placedGlasses')) return g.say('map.adaDone');
+            if (g.flag('placedGlasses') && !stillNeeded.ada) return g.say('map.adaDone');
             return g.go('ada_soggiorno');
           }
           g.ui.toast(t('map.soon'));
@@ -460,6 +477,10 @@ export function createMap(g: Game): Location {
       if (g.has('watch')) return 'hint.map.returnWatch';
       if (g.has('camera')) return 'hint.map.returnCamera';
       if (g.has('radio')) return 'hint.map.returnRadio';
+      if (g.flag('placedGlasses') && stillNeeded.ada && g.flag('o.labEntered') && !g.flag('a.gear')) return 'hint.map.gear';
+      if (g.flag('placedGlasses') && stillNeeded.ada && g.flag('f.dark')) return 'hint.map.redbulb';
+      if (g.flag('placedRazor') && stillNeeded.barbiere && g.flag('a.shedKey')) return 'hint.map.shears';
+      if (g.flag('placedWatch') && stillNeeded.orologeria && g.flag('c.sheet.clock')) return 'hint.map.hand';
       if (!g.flag('placedRazor') && !g.flag('placedGlasses') && !g.flag('placedWatch') && !g.flag('placedCamera') && !g.flag('placedRadio')) return 'hint.map.choose';
       if (!g.flag('placedRazor')) return 'hint.map.barbiere';
       if (!g.flag('placedGlasses')) return 'hint.map.ada';
