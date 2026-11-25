@@ -11,6 +11,8 @@ export interface Settings {
   brightness: number;
   /** 0 normal, 1 large (default), 2 very large */
   textSize: number;
+  /** use microphone and motion for physical clues (else: hold a button) */
+  sensors: boolean;
 }
 
 export interface Save {
@@ -30,7 +32,7 @@ const SETTINGS_KEY = 'cosepreziose.settings.v1';
 
 export function defaultSettings(): Settings {
   const touch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
-  return { quality: touch ? 'medium' : 'high', reducedScares: false, noFlash: false, color: true, unlimitedHints: false, volume: 0.8, brightness: 1, textSize: 1 };
+  return { quality: touch ? 'medium' : 'high', reducedScares: false, noFlash: false, color: true, unlimitedHints: false, volume: 0.8, brightness: 1, textSize: 1, sensors: true };
 }
 
 export function newSave(lang: Lang, settings: Settings): Save {

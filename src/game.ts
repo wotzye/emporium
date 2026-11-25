@@ -5,7 +5,7 @@ import { Audio, DroneKind } from './audio';
 import { t, setLang, getLang, Lang } from './i18n';
 import { Save, newSave, loadSave, writeSave, clearSave, loadPrefs, Settings } from './state';
 import { drawScareFace } from './builders';
-import { createBarberGhost, createBruno, createAdaGhost, Character } from './characters';
+import { createBarberGhost, createBruno, createAdaGhost, createClara, Character } from './characters';
 import { realCharacters } from './characters_real';
 
 export interface Hotspot {
@@ -532,7 +532,7 @@ export class Game {
   }
 
   // ---------------- scares ----------------
-  async scare(kind: 'barber' | 'bruno' | 'ada', ms = 650) {
+  async scare(kind: 'barber' | 'bruno' | 'ada' | 'clara', ms = 650) {
     this.audio.stinger();
     this.engine.shake(0.08, 0.6);
     if (this.settings.reducedScares || this.settings.noFlash) {
@@ -547,12 +547,17 @@ export class Game {
     await this.ui.showScare(cv, ms);
   }
 
+  /** A clue you act out with the phone: blow, shout, shake. */
+  physical(kind: 'blow' | 'shout' | 'shake', textKey: string) {
+    return this.ui.sensor(kind, t('ui.sensor.' + kind), t(textKey), this.settings.sensors ?? true);
+  }
+
   /** The real thing: the character itself lunges at the camera, lit from below, face filling the screen. */
-  private scareChars: Partial<Record<'barber' | 'bruno' | 'ada', Character & { setOpacity?: (v: number) => void }>> = {};
-  private scareChar(kind: 'barber' | 'bruno' | 'ada') {
+  private scareChars: Partial<Record<'barber' | 'bruno' | 'ada' | 'clara', Character & { setOpacity?: (v: number) => void }>> = {};
+  private scareChar(kind: 'barber' | 'bruno' | 'ada' | 'clara') {
     let c = this.scareChars[kind];
     if (!c) {
-      c = kind === 'barber' ? createBarberGhost(true) : kind === 'bruno' ? createBruno() : createAdaGhost();
+      c = kind === 'barber' ? createBarberGhost(true) : kind === 'bruno' ? createBruno() : kind === 'clara' ? createClara() : createAdaGhost();
       c.group.traverse((o) => {
         o.userData.noPick = true;
         // the scare version of the face: black holes, veins, a mouth hanging open
@@ -566,7 +571,7 @@ export class Game {
   }
   /** Build the jumpscare figure for this place and compile it with the room's lights, so it can strike without a stall. */
   private async prepScare(id: string) {
-    const kind = id.startsWith('barbiere') ? 'barber' : id === 'macelleria' ? 'bruno' : id.startsWith('ada') ? 'ada' : null;
+    const kind = id.startsWith('barbiere') ? 'barber' : id === 'macelleria' ? 'bruno' : id.startsWith('ada') ? 'ada' : id.startsWith('ora') ? 'clara' : null;
     if (!kind || !realCharacters() || this.settings.reducedScares) return;
     const c = this.scareChar(kind);
     const scene = this.engine.scene;
@@ -586,7 +591,7 @@ export class Game {
     }
     scene.remove(c.group, under, under.target, fill);
   }
-  private async scare3d(kind: 'barber' | 'bruno' | 'ada', ms: number) {
+  private async scare3d(kind: 'barber' | 'bruno' | 'ada' | 'clara', ms: number) {
     const c = this.scareChar(kind);
     const cam = this.engine.camera;
     const scene = this.engine.scene;
@@ -740,6 +745,15 @@ export class Game {
           label: v === 0 ? t('ui.off') : v === 0.4 ? '50%' : '100%',
           on: s.volume === v,
           set: () => { s.volume = v; this.applySettings(); this.persist(); this.openSettings(); },
+        })),
+      },
+      {
+        label: t('ui.sensors'),
+        value: '',
+        options: [true, false].map((v) => ({
+          label: t(v ? 'ui.on' : 'ui.off'),
+          on: (s.sensors ?? true) === v,
+          set: () => { s.sensors = v; this.persist(); this.openSettings(); },
         })),
       },
       {

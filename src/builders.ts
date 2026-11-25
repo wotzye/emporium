@@ -327,7 +327,7 @@ export function figure(opts: { height?: number; bulk?: number; hat?: boolean; ap
 }
 
 /** Procedural face for jump-scares: a close, blurred, asymmetric face coming out of the dark. */
-export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno' | 'ada') {
+export function drawScareFace(cv: HTMLCanvasElement, kind: 'barber' | 'bruno' | 'ada' | 'clara') {
   const w = (cv.width = 960);
   const h = (cv.height = 540);
   const c = cv.getContext('2d')!;

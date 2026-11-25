@@ -339,3 +339,115 @@ export function adaMemory(): { title: string; panels: { draw: Draw; text: string
   ];
   return { title: t('mem.ada.title'), panels };
 }
+
+/** Ottavio and Clara, L'Ora Ferma, 1974. */
+export function clockMemory(): { title: string; panels: { draw: Draw; text: string }[] } {
+  const dial = (c: CanvasRenderingContext2D, x: number, y: number, r: number, h = 3, m = 17, red = false) => {
+    c.fillStyle = red ? '#8e0710' : '#dcd5c4';
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = red ? '#ffb0b0' : ink;
+    c.lineWidth = Math.max(2, r / 14);
+    c.stroke();
+    const ma = (m / 60) * Math.PI * 2, ha = ((h + m / 60) / 12) * Math.PI * 2;
+    c.beginPath();
+    c.moveTo(x, y);
+    c.lineTo(x + Math.sin(ma) * r * 0.8, y - Math.cos(ma) * r * 0.8);
+    c.moveTo(x, y);
+    c.lineTo(x + Math.sin(ha) * r * 0.5, y - Math.cos(ha) * r * 0.5);
+    c.stroke();
+  };
+  const panels: { draw: Draw; text: string }[] = [
+    {
+      text: t('mem.ora.1'),
+      draw: (c, w, h) => {
+        // the shop: walls of clocks, a man at the bench, a girl on a stool beside him
+        c.fillStyle = '#7d776c';
+        c.fillRect(0, 0, w, h);
+        for (let i = 0; i < 14; i++) dial(c, 80 + (i % 7) * 130, 90 + Math.floor(i / 7) * 120, 34 + (i % 3) * 8, i % 12, (i * 7) % 60);
+        c.fillStyle = '#3a3128';
+        c.fillRect(120, 380, 720, 40);
+        figure(c, 380, 540, 1.1, '#e2ddd2');
+        figure(c, 560, 540, 0.7, '#f0ece4');
+      },
+    },
+    {
+      text: t('mem.ora.2'),
+      draw: (c, w, h) => {
+        // a little bed, a man sitting beside it with his head in his hands
+        c.fillStyle = '#2b2925';
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = '#d8d3c8';
+        c.fillRect(380, 330, 380, 110);
+        c.beginPath();
+        c.arc(420, 320, 26, 0, Math.PI * 2);
+        c.fill();
+        figure(c, 260, 520, 1.15, '#bdb7ab');
+        dial(c, 820, 130, 50, 10, 40);
+      },
+    },
+    {
+      text: t('mem.ora.3'),
+      draw: (c, w, h) => {
+        // the man in black holds out a pocket watch on its chain, glowing red
+        c.fillStyle = '#34312d';
+        c.fillRect(0, 0, w, h);
+        figure(c, 640, 540, 1.6, '#050505', true, true);
+        c.fillStyle = '#d6cfc2';
+        c.beginPath();
+        c.ellipse(640, 300, 30, 40, 0, 0, Math.PI * 2);
+        c.fill();
+        figure(c, 280, 540, 1.2, '#d8d2c6');
+        c.strokeStyle = '#8e0710';
+        c.lineWidth = 3;
+        c.beginPath();
+        c.moveTo(560, 330);
+        c.lineTo(470, 370);
+        c.stroke();
+        c.shadowColor = '#ff2020';
+        c.shadowBlur = 20;
+        dial(c, 460, 400, 32, 3, 17, true);
+        c.shadowBlur = 0;
+      },
+    },
+    {
+      text: t('mem.ora.4'),
+      draw: (c, w, h) => {
+        // every clock says 3:17. The girl in bed, eyes open. Dust standing in the air.
+        c.fillStyle = '#1d1c1a';
+        c.fillRect(0, 0, w, h);
+        for (let i = 0; i < 10; i++) dial(c, 70 + i * 92, 80, 30);
+        c.fillStyle = '#d8d3c8';
+        c.fillRect(300, 330, 400, 110);
+        c.fillStyle = '#efeae0';
+        c.beginPath();
+        c.arc(340, 320, 26, 0, Math.PI * 2);
+        c.fill();
+        for (let i = 0; i < 400; i++) {
+          c.fillStyle = 'rgba(255,255,255,0.5)';
+          c.fillRect(Math.random() * w, 140 + Math.random() * 300, 2, 2);
+        }
+      },
+    },
+    {
+      text: t('mem.ora.5'),
+      draw: (c, w, h) => {
+        // an empty bed with a little grey dust on the pillow, and the clocks going again
+        c.fillStyle = '#2a2825';
+        c.fillRect(0, 0, w, h);
+        for (let i = 0; i < 10; i++) dial(c, 70 + i * 92, 80, 30, (i * 5) % 12, (i * 13) % 60);
+        c.fillStyle = '#d8d3c8';
+        c.fillRect(300, 330, 400, 110);
+        c.fillStyle = 'rgba(200,195,185,0.6)';
+        for (let i = 0; i < 120; i++) c.fillRect(320 + Math.random() * 60, 300 + Math.random() * 30, 2, 2);
+        c.fillStyle = 'rgba(210,215,220,0.2)';
+        c.beginPath();
+        c.arc(760, 240, 20, 0, Math.PI * 2);
+        c.fill();
+        c.fillRect(745, 262, 30, 90);
+      },
+    },
+  ];
+  return { title: t('mem.ora.title'), panels };
+}

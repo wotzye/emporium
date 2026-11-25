@@ -41,6 +41,19 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<circle cx="12" cy="22" r="6"/><circle cx="28" cy="22" r="6"/><path d="M18 21 Q20 18 22 21"/><path d="M6 21 L3 15 M34 21 L37 15"/>'),
   },
+  labkey: {
+    id: 'labkey',
+    svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v5 M26 20 v3"/>'),
+  },
+  windkey: {
+    id: 'windkey',
+    svg: s('<path d="M20 6 v18"/><rect x="16" y="24" width="8" height="10"/><path d="M8 6 H32 M8 6 v6 M32 6 v-0"/>'),
+  },
+  watch: {
+    id: 'watch',
+    cursed: true,
+    svg: s('<circle cx="20" cy="23" r="11"/><path d="M20 23 V16 M20 23 L25 26"/><circle cx="20" cy="8" r="3"/>'),
+  },
   page: {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),

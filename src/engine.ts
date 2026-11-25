@@ -375,7 +375,7 @@ export class Engine {
         const hit = this.raycaster.intersectObjects(this.scene.children, true).find((h) => h.object.visible && !(h.object as THREE.Mesh).userData.hit);
         this.raycaster.layers.enableAll();
         const d = hit ? hit.distance : 10;
-        this.torchNear = THREE.MathUtils.clamp((d / 2.2) ** 2, 0.12, 1);
+        this.torchNear = THREE.MathUtils.clamp((d / 2.2) ** 2, 0.06, 1);
       }
       this.torchNearS += (this.torchNear - this.torchNearS) * Math.min(dt * 6, 1);
     }

@@ -737,3 +737,11 @@ export function createAdaGhost(): Character & { setOpacity: (v: number) => void 
   c.group.scale.setScalar(1.15);
   return c;
 }
+
+/** Clara, the clockmaker's daughter: a little girl in a nightgown, dark hair over her face. */
+export function createClara(): Character & { setOpacity: (v: number) => void } {
+  if (realCharacters()) return realAdaGhost({ scale: 0.62, darkHair: true });
+  const c = createLisa(0);
+  c.group.scale.setScalar(0.7);
+  return c;
+}

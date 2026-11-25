@@ -443,20 +443,20 @@ export function realBarberGhost(scare = false): Character & { setOpacity: (v: nu
 // ======================================================================
 // Ada: an old widow, long grey hair loose over her face, a nightgown that moves on its own.
 // Half there: a pale translucent body with a cold glow at the edges, wisps where her feet should be.
-export function realAdaGhost(): Character & { setOpacity: (v: number) => void } {
-  const { g, body, b } = base('female', 0.92);
+export function realAdaGhost(o: { scale?: number; darkHair?: boolean } = {}): Character & { setOpacity: (v: number) => void } {
+  const { g, body, b } = base('female', o.scale ?? 0.92);
   dress(body, { cloth: '#c9c5bd', clothRough: 0.95, puff: 0.045, skinTint: '#d8dde0', skinBright: 1.0, bare: /^lowerarm_/, face: { sockets: 1, gaunt: 1 } });
   const faceU = body.userData.faceU;
   if (faceU) faceU.uScare.value = 0.55; // dark hollow eyes, veins, the mouth a little open
   browColor(body, 0x8d8983);
-  const hair = attachHair(body, 'hairLong', 0xb9b6b0);
+  const hair = attachHair(body, 'hairLong', o.darkHair ? 0x2a2622 : 0xb9b6b0);
   // long grey hair hanging straight down over the face, parted just enough to show one eye
   const strands = canvasTex(256, 512, (c, w, h) => {
     c.clearRect(0, 0, w, h);
     for (let i = 0; i < 260; i++) {
       let x = Math.random() * w;
       if (Math.abs(x - w * 0.42) < 16 && Math.random() < 0.85) continue; // the parting
-      const shade = 150 + Math.random() * 70;
+      const shade = o.darkHair ? 25 + Math.random() * 35 : 150 + Math.random() * 70;
       c.strokeStyle = `rgba(${shade},${shade - 4},${shade - 10},${0.35 + Math.random() * 0.5})`;
       c.lineWidth = 0.8 + Math.random() * 2.2;
       c.beginPath();

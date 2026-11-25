@@ -10,6 +10,10 @@ import { createLab } from './locations/lab';
 import { createAdaSoggiorno } from './locations/ada_soggiorno';
 import { createAdaCucina } from './locations/ada_cucina';
 import { createAdaSoffitta } from './locations/ada_soffitta';
+import { createOraBottega } from './locations/ora_bottega';
+import { createOraLaboratorio } from './locations/ora_laboratorio';
+import { createOraCamera } from './locations/ora_camera';
+import { createOraTorre } from './locations/ora_torre';
 import { preloadModels } from './models';
 import { createBarbiereCantina } from './locations/barbiere_cantina';
 
@@ -24,6 +28,10 @@ game.register('barbiere_cantina', createBarbiereCantina);
 game.register('ada_soggiorno', createAdaSoggiorno);
 game.register('ada_cucina', createAdaCucina);
 game.register('ada_soffitta', createAdaSoffitta);
+game.register('ora_bottega', createOraBottega);
+game.register('ora_laboratorio', createOraLaboratorio);
+game.register('ora_camera', createOraCamera);
+game.register('ora_torre', createOraTorre);
 if (location.search.includes('lab')) game.register('lab', createLab);
 
 // expose for automated tests

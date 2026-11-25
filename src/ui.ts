@@ -1,8 +1,9 @@
 import { ICONS, ITEMS } from './items';
 import { t } from './i18n';
+import { listen, SensorKind } from './sensors';
 
 export interface Line {
-  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore';
+  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara';
   key: string;
   vars?: Record<string, string | number>;
 }
@@ -280,6 +281,74 @@ export class UI {
       b.append(ul);
     }
     this.openModal(title, b);
+  }
+
+  /**
+   * A physical action: blow into the mic, shout, or shake the phone.
+   * Shows what to do and a progress ring; there is always a "hold here" button as an alternative.
+   * Resolves true when done, false if closed.
+   */
+  sensor(kind: SensorKind, title: string, text: string, useSensors: boolean): Promise<boolean> {
+    return new Promise((res) => {
+      const b = el('div', 'sensor');
+      const icon = el('div', 'sicon ' + kind);
+      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : '💨';
+      const p = el('div', 'paper');
+      p.textContent = text;
+      const bar = el('div', 'sbar');
+      const fill = el('div', 'sfill');
+      bar.append(fill);
+      const hold = el('button', 'shold');
+      hold.textContent = t('ui.sensorHold');
+      b.append(icon, p, bar, hold);
+      const cancel = { cancelled: false };
+      let done = false;
+      let k = 0;
+      const set = (v: number) => {
+        k = Math.max(k, v);
+        fill.style.width = `${Math.round(k * 100)}%`;
+        icon.style.transform = kind === 'shake' ? `rotate(${Math.sin(performance.now() / 40) * 18 * v}deg)` : `scale(${1 + v * 0.4})`;
+      };
+      const finish = (ok: boolean) => {
+        if (done) return;
+        done = true;
+        cancel.cancelled = true;
+        if (ok) {
+          close();
+          res(true);
+        }
+      };
+      const close = this.openModal(title, b, () => {
+        cancel.cancelled = true;
+        if (!done) {
+          done = true;
+          res(false);
+        }
+      });
+      // the touch alternative: hold the button for a moment and a half
+      let holdT = 0;
+      let holding = false;
+      let last = performance.now();
+      const loop = () => {
+        if (done) return;
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - last) / 1000);
+        last = now;
+        if (holding) {
+          holdT += dt / 1.5;
+          set(holdT);
+          if (holdT >= 1) return finish(true);
+        }
+        requestAnimationFrame(loop);
+      };
+      hold.onpointerdown = (e) => {
+        e.preventDefault();
+        holding = true;
+      };
+      hold.onpointerup = hold.onpointerleave = () => (holding = false);
+      loop();
+      if (useSensors) listen(kind, set, cancel).then((ok) => ok && finish(true));
+    });
   }
 
   /** Numeric keypad. check() decides if the code is right; resolves true when solved, false when closed. */
