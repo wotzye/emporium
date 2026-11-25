@@ -255,8 +255,9 @@ export function createAdaGiardino(g: Game): Location {
   const hBath = hitBox(0.7, 0.9, 0.7, -1.1, 0.45, 0.4, 'birdbath');
   const hWisteria = hitBox(3.2, 0.6, 1.2, -0.9, pergolaY - 0.1, -D / 2 + 0.6, 'wisteria');
   // the shed door itself gets a marker (the shed box is low priority, so the shears inside win)
-  const hShedDoor = hitBox(SW * 0.7, SH * 0.8, 0.12, shedX, SH * 0.42, shedZ + SD / 2 + 0.03, 'shedDoor');
-  scene.add(hWindow, hShed, hShears, hKitchen, hSwing, hBath, hWisteria, hShedDoor);
+  const hShedDoor = hitBox(SW * 0.7, SH * 0.8, 0.12, 0, SH * 0.42, SD / 2 + 0.03, 'shedDoor');
+  shed.add(hShedDoor); // in the shed's own frame: the shed is turned
+  scene.add(hWindow, hShed, hShears, hKitchen, hSwing, hBath, hWisteria);
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [

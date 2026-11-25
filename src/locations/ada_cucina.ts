@@ -385,17 +385,21 @@ export function createAdaCucina(g: Game): Location {
   // tap a piece (without dragging it) to look at it closely
   const pieceSpots: Hotspot[] = pieces.map((p) => ({
     id: 'look' + p.id,
-    obj: p.g.userData.hb as THREE.Object3D,
+    obj: p.g, // the whole cup: whichever part the finger lands on
     view: 'table',
     when: () => !tableDone(),
     tap: async (item: string | null) => {
       if (item) return g.nope();
+      if (!g.flag('a.tableSeen')) {
+        g.set('a.tableSeen');
+        await say('ada.table');
+      }
       return say('ada.piece' + p.id);
     },
   }));
   const hotspots: Hotspot[] = [
     ...pieceSpots,
-    { id: 'table', obj: hTable, view: 'table', tap: async (item) => {
+    { id: 'table', obj: hTable, view: 'table', lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
       if (tableDone()) return say('ada.tableAfter');
       if (!g.flag('a.tableSeen')) {
