@@ -3,6 +3,7 @@ import { prop } from '../models';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, box, cyl, sphere, mat, mesh, rbox, lathe, fx, dust, textPlane, hitBox, bulb, canvasTex, noise, tileMaterial, woodMaterial, plasterMaterial, liveCanvas, handwheel, lightCone } from '../builders';
 import { t } from '../i18n';
+import { lisaInk, onWall } from './lisa_uv';
 
 /** The barber's back room: sink, towels, a bench of bottles, the boiler, a trapdoor to the cellar. */
 const RINGS_Z = [-1.2, -0.65, -0.1, 0.45, 0.95];
@@ -23,6 +24,8 @@ export function createBarbiereRetro(g: Game): Location {
     floor: tileMaterial({ a: '#7c7a74', b: '#4c4a46', n: 8, repeat: [3, 3], grout: '#2a2825', grime: 1, rough: 0.5 }),
     ceil: plasterMaterial({ base: '#3a3733', repeat: [2, 2], damp: 0.8 }),
   }));
+  // Lisa's message, in invisible ink (UV torch)
+  scene.add(onWall(lisaInk(g, 'barbiere'), 'left', W, D, 0.3, 1.9));
   const woodDark = woodMaterial({ base: '#3b2c1f' });
   const woodMid = woodMaterial({ base: '#5b4430' });
   const chrome = new THREE.MeshStandardMaterial({ color: 0xd0d0d0, roughness: 0.2, metalness: 1, envMapIntensity: 1.5 });
@@ -356,6 +359,9 @@ export function createBarbiereRetro(g: Game): Location {
   const hDrawer = hitBox(0.2, 0.25, 0.6, -1.32, benchY - 0.12, -0.2, 'drawer');
   const hSink = hitBox(0.7, 1.2, 0.5, -1.1, 1.2, -1.5, 'sink');
   const hBoiler = hitBox(0.8, 1.9, 0.9, 1.5, 0.95, -1.25, 'boiler');
+  // the sooty plate gets its own marker: that's where you rub
+  const hPlate = hitBox(0.06, 0.22, 0.32, 1.17, 1.32, -1.25, 'plate');
+  scene.add(hPlate);
   const hTrap = hitBox(1.2, 0.3, 1.1, 0.35, 0.1, 0.4, 'trap');
   const hHelmet = hitBox(0.6, 1.7, 0.6, 1.4, 0.85, 1.2, 'helmet');
   const hYard = hitBox(0.3, 2.1, 0.9, W / 2 - 0.15, 1.05, yardZ, 'yard');
@@ -399,6 +405,10 @@ export function createBarbiereRetro(g: Game): Location {
       if (item) return g.nope();
       if (allPlaced()) return say('retro.benchDone');
       await say('retro.bench');
+    } },
+    { id: 'plate', obj: hPlate, view: 'boiler', when: () => !g.flag('r.plate'), tap: async (item) => {
+      if (item) return g.nope();
+      return say(g.held === 'cloth' ? 'retro.plateRub' : 'retro.plateDirty');
     } },
     { id: 'boiler', obj: hBoiler, view: 'boiler', tap: async (item) => {
       if (item) return g.nope();

@@ -4,6 +4,7 @@ import { room, rbox, mesh, hitBox, canvasTex, noise, woodMaterial, mat, cyl, lat
 import { createClara } from '../characters';
 import { prop } from '../models';
 import { t } from '../i18n';
+import { lisaInk, onWall } from './lisa_uv';
 import { wallClock, brassMat } from './ora_common';
 import { wallpaper } from './ada_common';
 
@@ -26,6 +27,8 @@ export function createOraCamera(g: Game): Location {
     floor: woodMaterial({ base: '#3d3024', repeat: [3, 3], plank: true }),
     ceil: woodMaterial({ base: '#2a2219', repeat: [2, 2], plank: true }),
   }));
+  // Lisa's message, in invisible ink (UV torch)
+  scene.add(onWall(lisaInk(g, 'ora'), 'right', W, D, -0.2, 1.7));
   const restarted = () => !!g.flag('o.restarted');
 
   // moonlight, frozen

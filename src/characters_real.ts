@@ -164,10 +164,15 @@ export function realMerchant(handsAt?: { y: number; z: number; spread: number })
   // a tall black top hat, a little too tall, all black
   const head = b.Head;
   const hp = wp(head);
-  const silk = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.55, metalness: 0, envMapIntensity: 0.3, side: THREE.DoubleSide });
+  const silk = new THREE.MeshStandardMaterial({ color: 0x070707, roughness: 0.8, metalness: 0, envMapIntensity: 0.1, side: THREE.DoubleSide });
+  // the crown's top takes the light from the lamp straight on: keep it a matte black, no white rim
+  const top = new THREE.MeshLambertMaterial({ color: 0x030303 });
   const hat = new THREE.Group();
   hat.add(lathe([[0, 0], [0.2, 0], [0.215, 0.006], [0.205, 0.016], [0.14, 0.018], [0, 0.018]], silk, 0, 0, 0, 32)); // brim
-  hat.add(lathe([[0.14, -0.02], [0.136, 0.08], [0.134, 0.2], [0.138, 0.26], [0, 0.262]], silk, 0, 0, 0, 32)); // crown, slightly flared
+  hat.add(lathe([[0.14, -0.02], [0.136, 0.08], [0.134, 0.2], [0.138, 0.258]], silk, 0, 0, 0, 32)); // crown, slightly flared
+  hat.add(mesh(new THREE.CircleGeometry(0.138, 32), top, 0, 0.258, 0, false).rotateX(-Math.PI / 2)); // flat top
+  // a dull silk band, black on black
+  hat.add(mesh(new THREE.CylinderGeometry(0.1395, 0.1405, 0.035, 32, 1, true), new THREE.MeshLambertMaterial({ color: 0x0b0b0b, side: THREE.DoubleSide }), 0, 0.035, 0, false));
   hat.position.set(0, hp.y + 0.095, hp.z - 0.005);
   hat.rotation.x = -0.08;
   hat.scale.set(1.0, 1, 1.18);

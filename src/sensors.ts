@@ -3,7 +3,7 @@
  * Each one degrades gracefully: if the sensor is missing, blocked, or switched off in the
  * settings, the player holds a button instead. Nothing ever stalls the game.
  */
-export type SensorKind = 'blow' | 'shout' | 'shake';
+export type SensorKind = 'blow' | 'shout' | 'shake' | 'flip' | 'facedown';
 
 let micStream: MediaStream | null = null;
 let micCtx: AudioContext | null = null;
@@ -93,6 +93,40 @@ export function listen(kind: SensorKind, onLevel: (k: number) => void, cancel: {
       }
     };
     let lastShake = 0;
+    // ---- turn the phone over (and back), or keep it face down: gravity tells which way is up ----
+    if (kind === 'flip' || kind === 'facedown') {
+      if (!(await askMotion())) return finish(false);
+      let z0 = 0, down = false;
+      const onTilt = (e: DeviceMotionEvent) => {
+        const z = e.accelerationIncludingGravity?.z ?? 0;
+        if (!z0 && Math.abs(z) > 4) z0 = z; // how the phone was held when we started
+        if (!z0) return;
+        const flipped = z * z0 < 0 && Math.abs(z) > 6;
+        if (kind === 'flip') {
+          if (flipped && !down) {
+            down = true;
+            progress = Math.max(progress, 0.55);
+          } else if (down && !flipped && z * z0 > 0 && Math.abs(z) > 6) progress = 1;
+        } else down = flipped;
+      };
+      window.addEventListener('devicemotion', onTilt);
+      const tick = () => {
+        if (cancel.cancelled || progress >= 1) {
+          window.removeEventListener('devicemotion', onTilt);
+          if (progress >= 1) {
+            onLevel(1);
+            return finish(true);
+          }
+          return finish(false);
+        }
+        // face down: about two seconds of darkness fill the bar
+        if (kind === 'facedown') progress = down ? Math.min(1, progress + 0.009) : Math.max(0, progress - 0.01);
+        onLevel(progress);
+        requestAnimationFrame(tick);
+      };
+      tick();
+      return;
+    }
     if (kind === 'shake') {
       if (!(await askMotion())) return finish(false);
       window.addEventListener('devicemotion', onMotion);

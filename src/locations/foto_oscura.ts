@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, rbox, mesh, textPlane, hitBox, canvasTex, liveCanvas, noise, woodMaterial, mat, cyl } from '../builders';
 import { t } from '../i18n';
+import { lisaInk, onWall } from './lisa_uv';
 import { fotoWall, safelight, sleep } from './foto_common';
 
 /**
@@ -32,6 +33,8 @@ export function createFotoOscura(g: Game): Location {
     floor: woodMaterial({ base: '#2a2119', repeat: [3, 3], plank: true }),
     ceil: woodMaterial({ base: '#1e1915', repeat: [2, 2], plank: true }),
   }));
+  // Lisa's message, in invisible ink (UV torch)
+  scene.add(onWall(lisaInk(g, 'foto'), 'right', W, D, 0.3, 1.9));
   scene.add(new THREE.AmbientLight(0xffffff, 0.015));
 
   // ---------------- the safelight over the bench ----------------

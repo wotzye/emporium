@@ -99,6 +99,45 @@ export class Game {
     this.ui.onHeldTap = () => this.setHeld(null);
     this.applySettings();
     this.ui.showHud(false);
+    // the UV lens: tap it twice in the inventory to slip it on the torch (or off)
+    this.examiners.uvlens = () => this.setUV(!this.uvOn);
+    this.engine.addUpdater(() => this.updateUvInk());
+  }
+
+  // ---------------- UV light ----------------
+  get uvOn() {
+    return !!this.flag('uvOn') && this.has('uvlens');
+  }
+  setUV(on: boolean) {
+    this.set('uvOn', on);
+    this.audio.sfx('click');
+    if (!this.engine.torchOn) this.setTorch(true, true);
+    else this.setTorch(true, true);
+    this.ui.toast(t(on ? 'ui.uvOn' : 'ui.uvOff'));
+    this.persist();
+  }
+  /** writing in invisible ink: it shows only in the UV torch beam (and may tell you once it's been read) */
+  private updateUvInk() {
+    const L = this.loc;
+    if (!L) return;
+    let list = L.scene.userData.uvList as THREE.Mesh[] | undefined;
+    if (!list) {
+      list = [];
+      L.scene.traverse((o) => {
+        if (o.userData.uvInk) list!.push(o as THREE.Mesh);
+      });
+      L.scene.userData.uvList = list;
+    }
+    const uv = this.uvOn && this.engine.torchOn;
+    for (const m of list) {
+      const k = uv ? this.torchOn(m, 5) : 0;
+      const mat = m.material as THREE.MeshBasicMaterial;
+      mat.opacity += (k * 0.95 - mat.opacity) * 0.2;
+      if (k > 0.7 && !m.userData.uvSeen && !this.busy) {
+        m.userData.uvSeen = true;
+        (m.userData.onReveal as (() => void) | undefined)?.();
+      }
+    }
   }
 
   register(id: string, f: LocationFactory) {
@@ -553,8 +592,9 @@ export class Game {
     on = on && has && this.loc?.id !== 'map';
     if (!silent && on !== this.engine.torchOn) this.audio.sfx('switch');
     this.engine.torchOn = on;
+    this.engine.torch.color.set(this.uvOn ? 0x8a66ff : 0xfff4e0);
     if (this.loc?.id !== 'map') this.save.flags.torchOn = on;
-    this.ui.setTorch(has && this.loc?.id !== 'map', on);
+    this.ui.setTorch(has && this.loc?.id !== 'map', on, this.uvOn);
   }
   toggleTorch() {
     if (this.busy && !this.engine.torchOn) return;
@@ -593,7 +633,7 @@ export class Game {
   }
 
   /** A clue you act out with the phone: blow, shout, shake. */
-  physical(kind: 'blow' | 'shout' | 'shake', textKey: string) {
+  physical(kind: 'blow' | 'shout' | 'shake' | 'flip' | 'facedown', textKey: string) {
     return this.ui.sensor(kind, t('ui.sensor.' + kind), t(textKey), this.settings.sensors ?? true);
   }
 

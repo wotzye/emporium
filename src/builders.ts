@@ -873,3 +873,27 @@ export const woodMaterial = (o: Parameters<typeof _woodMaterial>[0] = {}) => cac
 export const plasterMaterial = (o: Parameters<typeof _plasterMaterial>[0] = {}) => cached('plaster' + JSON.stringify(o), () => _plasterMaterial(o));
 export const stoneMaterial = (repeat: [number, number] = [2, 1], base = '#6b665d') => cached('stone' + repeat + base, () => _stoneMaterial(repeat, base));
 export { cached as cachedMaterial };
+
+/**
+ * Invisible ink: pale violet writing that only shows in the beam of the UV torch.
+ * Set onReveal on its userData to react the first time it's read.
+ */
+export function uvInk(lines: string[], w: number, h: number, o: { size?: number; font?: string; onReveal?: () => void } = {}) {
+  const px = 160;
+  const tex = canvasTex(Math.round(px * (w / h)), px, (c, W, H) => {
+    const size = o.size ?? H / (lines.length + 1);
+    c.font = `${size}px ${o.font ?? "'Bradley Hand', 'Segoe Print', cursive"}`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.shadowColor = 'rgba(190,150,255,0.9)';
+    c.shadowBlur = 10;
+    c.fillStyle = '#efe6ff';
+    lines.forEach((l, i) => c.fillText(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * size * 1.2));
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
+  m.userData.uvInk = true;
+  m.userData.noPick = true;
+  m.userData.onReveal = o.onReveal;
+  m.renderOrder = 3;
+  return m;
+}

@@ -4,6 +4,7 @@ import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, cyl, mat, mesh, rbox, lathe, dust, hitBox, canvasTex, noise, woodMaterial, cursedMat } from '../builders';
 import { createAdaGhost } from '../characters';
 import { t } from '../i18n';
+import { lisaInk, onWall } from './lisa_uv';
 import { sleep } from './ada_common';
 
 /** Ada's attic: low, dark, crates stacked in front of the trunk she climbed up to every night. */
@@ -17,6 +18,8 @@ export function createAdaSoffitta(g: Game): Location {
   const W = 4.6, H = 2.3, D = 4.2;
   const boards = woodMaterial({ base: '#3b2e21', repeat: [4, 4], plank: true });
   scene.add(room(W, H, D, { wall: woodMaterial({ base: '#2e241a', repeat: [3, 1.5], plank: true }), floor: boards, ceil: woodMaterial({ base: '#241c14', repeat: [3, 3], plank: true }) }));
+  // Lisa's message, in invisible ink (UV torch)
+  scene.add(onWall(lisaInk(g, 'ada'), 'back', W, D, 0.8, 1.55));
   const woodDark = woodMaterial({ base: '#2a2016' });
   // rafters
   for (let x = -2; x <= 2; x += 0.8) scene.add(rbox(0.12, 0.16, D, 0.01, woodDark, x, H - 0.08, 0));

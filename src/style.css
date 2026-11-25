@@ -249,3 +249,5 @@ button:active { background: rgba(255,255,255,0.08); }
 #markers { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
 #markers .hsm { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.95); box-shadow: 0 0 0 2px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(0,0,0,0.35); display: none; will-change: transform, opacity; }
 #markers .hsm::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.6); }
+
+#hud .btns button.on.uv { background: rgba(170,140,255,0.9); }

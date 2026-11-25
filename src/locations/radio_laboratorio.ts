@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot, Interaction } from '../game';
-import { room, rbox, mesh, dust, textPlane, hitBox, bulb, woodMaterial, tileMaterial, plasterMaterial, mat, framed, cyl } from '../builders';
+import { room, rbox, mesh, dust, textPlane, hitBox, bulb, woodMaterial, tileMaterial, plasterMaterial, mat, framed, cyl, uvInk } from '../builders';
 import { t } from '../i18n';
 import { oldPhoto } from '../photos';
 import { radioHint } from './radio_negozio';
@@ -94,6 +94,21 @@ export function createRadioLaboratorio(g: Game): Location {
   trLabel.position.set(0.3, bY + 0.08, bZ + 0.223);
   scene.add(trLabel);
 
+  // ---------------- the Wood's lens (UV), repaired for the parish ----------------
+  const lensTaken = () => !!g.flag('rl.lens');
+  const lens = new THREE.Group();
+  lens.add(cyl(0.045, 0.045, 0.012, new THREE.MeshStandardMaterial({ color: 0x2a1a44, roughness: 0.05, metalness: 0.2, emissive: 0x1a0a33, transparent: true, opacity: 0.9 }), 0, 0.006, 0, 20));
+  lens.add(mesh(new THREE.TorusGeometry(0.046, 0.006, 6, 20), mat(0x1a1a1a, { metalness: 0.7 }), 0, 0.006, 0).rotateX(Math.PI / 2));
+  const lensTag = textPlane([t('radio.lensTag')], 0.09, 0.04, { bg: '#e2dccb', size: 26, px: 64 });
+  lensTag.rotation.x = -Math.PI / 2;
+  lensTag.position.set(0.07, 0.002, 0.03);
+  lens.add(lensTag);
+  lens.position.set(-0.6, bY + 0.026, bZ + 0.18);
+  lens.visible = !lensTaken();
+  scene.add(lens);
+  // in invisible ink, on the wall above the recorder: Paolo's joke for whoever has the lens
+  scene.add(uvInk([t('radio.uvTape1'), t('radio.uvTape2')], 0.7, 0.26).translateX(0.3).translateY(1.3).translateZ(-D / 2 + 0.03));
+
   // ---------------- hotspots ----------------
   const hTape = hitBox(0.55, 0.2, 0.4, 0.3, bY + 0.1, bZ + 0.05, 'tape');
   const hBench = hitBox(3.2, 0.4, 0.8, 0, bY + 0.15, bZ, 'bench');
@@ -101,7 +116,8 @@ export function createRadioLaboratorio(g: Game): Location {
   const hSchema = hitBox(0.55, 0.4, 0.1, -0.9, 1.9, -D / 2 + 0.08, 'schema');
   const hCal = hitBox(0.1, 0.45, 0.35, W / 2 - 0.05, 1.6, -0.6, 'calendar');
   const hOut = hitBox(1.0, 2.1, 0.2, 0, 1.05, D / 2 - 0.1, 'out');
-  scene.add(hTape, hBench, hPhoto, hSchema, hCal, hOut);
+  const hLens = hitBox(0.16, 0.08, 0.14, -0.6, bY + 0.04, bZ + 0.18, 'lens');
+  scene.add(hTape, hBench, hPhoto, hSchema, hCal, hOut, hLens);
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
@@ -116,6 +132,16 @@ export function createRadioLaboratorio(g: Game): Location {
         return g.say([{ who: 'diego', key: 'radio.tapeAfter1' }, { who: 'diego', key: 'radio.tapeAfter2' }]);
       }
       return say(g.flag('rl.code') ? 'radio.tapeDone' : 'radio.tapeHint');
+    } },
+    { id: 'lens', obj: hLens, view: 'bench', when: () => !lensTaken(), tap: async (item) => {
+      if (item) return g.nope();
+      lens.visible = false;
+      g.set('rl.lens');
+      g.give('uvlens');
+      g.audio.sfx('pickup');
+      await g.say([{ who: 'diego', key: 'radio.lens1' }, { who: 'diego', key: 'radio.lens2' }]);
+      g.ui.toast(t('radio.lensHow'));
+      g.rebuild('map');
     } },
     { id: 'bench', obj: hBench, view: 'bench', lowPriority: true, tap: async (item) => {
       if (item) return g.nope();

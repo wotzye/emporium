@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
-import { room, rbox, mesh, dust, textPlane, hitBox, woodMaterial, mat, framed, cyl } from '../builders';
+import { room, rbox, mesh, dust, textPlane, hitBox, woodMaterial, mat, framed, cyl, canvasTex } from '../builders';
 import { t } from '../i18n';
+import { lisaInk, onWall } from './lisa_uv';
 import { oldPhoto } from '../photos';
 import { wallpaper } from './ada_common';
 import { radioHint } from './radio_negozio';
@@ -25,6 +26,8 @@ export function createRadioCamera(g: Game): Location {
     floor: woodMaterial({ base: '#3a2d21', repeat: [3, 3], plank: true }),
     ceil: woodMaterial({ base: '#26201a', repeat: [2, 2], plank: true }),
   }));
+  // Lisa's message, in invisible ink (UV torch)
+  scene.add(onWall(lisaInk(g, 'radio'), 'left', W, D, 0.0, 1.75));
   scene.add(new THREE.AmbientLight(0xffffff, 0.05));
   const desk = new THREE.PointLight(0xffd9a0, g.flag('rl.power') ? 1.8 : 0.4, 4, 1.6);
   desk.position.set(-1.0, 1.3, -1.0);
@@ -112,6 +115,31 @@ export function createRadioCamera(g: Game): Location {
     scene.add(q);
   }
 
+  // ---------------- glow-in-the-dark stars on the ceiling, over the bed ----------------
+  const starsTex = canvasTex(512, 256, (c, w, h) => {
+    const star = (x: number, y: number, r: number) => {
+      c.beginPath();
+      for (let k = 0; k < 10; k++) {
+        const a = (k / 10) * Math.PI * 2 - Math.PI / 2;
+        const rr = k % 2 ? r * 0.45 : r;
+        c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+      }
+      c.closePath();
+      c.fill();
+    };
+    c.shadowColor = 'rgba(190,255,200,0.9)';
+    c.shadowBlur = 8;
+    c.fillStyle = '#d8ffd8';
+    for (let i = 0; i < 26; i++) star(Math.random() * w, Math.random() * h, 3 + Math.random() * 4);
+    c.font = "bold 58px 'Courier New', monospace";
+    c.textAlign = 'center';
+    c.fillText(t('radio.starsWords'), w / 2, h / 2 + 18);
+  });
+  const stars = mesh(new THREE.PlaneGeometry(1.2, 0.6), new THREE.MeshBasicMaterial({ map: starsTex, transparent: true, opacity: g.flag('rl.stars') ? 0.6 : 0, depthWrite: false }), -W / 2 + 0.6, H - 0.01, 0.6, false);
+  stars.rotation.x = Math.PI / 2;
+  stars.userData.noPick = true;
+  scene.add(stars);
+
   // ---------------- hotspots ----------------
   const hNb = hitBox(0.3, 0.1, 0.36, dX - 0.2, dY + 0.04, dZ + 0.05, 'notebook');
   const hPortrait = hitBox(0.28, 0.36, 0.1, dX + 0.05, dY + 0.2, dZ - 0.2, 'portrait');
@@ -164,7 +192,19 @@ export function createRadioCamera(g: Game): Location {
     } },
     { id: 'bed', obj: hBed, view: 'bed', lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
-      return say('radio.bed');
+      if (g.flag('rl.stars')) return say('radio.starsAfter');
+      await g.say([{ who: 'diego', key: 'radio.bed' }, { who: 'diego', key: 'radio.bedStars' }]);
+      // only real darkness lights them: put the phone face down
+      const ok = await g.physical('facedown', 'radio.starsText');
+      if (!ok) return;
+      g.set('rl.stars');
+      for (let i = 0; i <= 20; i++) {
+        (stars.material as THREE.MeshBasicMaterial).opacity = (i / 20) * 0.9;
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      g.audio.sfx('whisper');
+      await say('radio.starsSeen');
+      (stars.material as THREE.MeshBasicMaterial).opacity = 0.6;
     } },
     { id: 'window', obj: hWin, view: 'window', tap: async (item) => {
       if (item) return g.nope();

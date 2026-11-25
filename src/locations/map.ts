@@ -228,21 +228,26 @@ export function createMap(g: Game): Location {
       l.sp.position.copy(l.base).addScaledVector(camUp, l.dy);
     }
   };
+  // ...or while Lisa's message in invisible ink is still unread there (and you have the UV lens)
+  const uvLeft = (k: string) => g.has('uvlens') && !g.flag('uv.' + k);
   // a finished shop opens again while it still holds something another unfinished shop needs
   const stillNeeded = {
     get ada() {
       const gear = !g.flag('placedWatch') && !g.flag('a.gear') && !g.flag('o.gearIn') && !g.has('gear');
       const bulb = !g.flag('placedCamera') && !g.flag('a.redbulb') && !g.flag('f.bulb') && !g.has('redbulb');
-      return gear || bulb;
+      return gear || bulb || uvLeft('ada');
     },
     get barbiere() {
-      return !g.flag('placedGlasses') && !g.flag('y.shears') && !g.flag('a.shears') && !g.flag('a.vines') && !g.has('shears');
+      return (!g.flag('placedGlasses') && !g.flag('y.shears') && !g.flag('a.shears') && !g.flag('a.vines') && !g.has('shears')) || uvLeft('barbiere');
     },
     get orologeria() {
-      return !g.flag('placedRazor') && !g.flag('o.hand') && !g.flag('c.hand') && !g.flag('c.clock') && !g.has('minutehand');
+      return (!g.flag('placedRazor') && !g.flag('o.hand') && !g.flag('c.hand') && !g.flag('c.clock') && !g.has('minutehand')) || uvLeft('ora');
     },
     get fotografo() {
-      return !!g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn');
+      return (!!g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) || uvLeft('foto');
+    },
+    get radio() {
+      return uvLeft('radio');
     },
   };
   const isOpen: Record<string, boolean> = {
@@ -252,7 +257,7 @@ export function createMap(g: Game): Location {
     ada: !!g.flag('fledButcher') && (!g.flag('placedGlasses') || stillNeeded.ada),
     orologeria: !!g.flag('fledButcher') && (!g.flag('placedWatch') || stillNeeded.orologeria),
     fotografo: !!g.flag('fledButcher') && (!g.flag('placedCamera') || stillNeeded.fotografo),
-    radio: !!g.flag('fledButcher') && !g.flag('placedRadio'),
+    radio: !!g.flag('fledButcher') && (!g.flag('placedRadio') || stillNeeded.radio),
   };
 
   for (const b of buildings) {
@@ -376,7 +381,7 @@ export function createMap(g: Game): Location {
           }
           if (b.id === 'radio') {
             if (!g.flag('fledButcher')) return g.say('map.radioLocked');
-            if (g.flag('placedRadio')) return g.say('map.radioDone');
+            if (g.flag('placedRadio') && !stillNeeded.radio) return g.say('map.radioDone');
             return g.go('radio_negozio');
           }
           if (b.id === 'ada') {
@@ -536,6 +541,7 @@ export function createMap(g: Game): Location {
       if (!g.flag('placedCamera')) return 'hint.map.foto';
       if (g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) return 'hint.map.valve';
       if (!g.flag('placedRadio')) return 'hint.map.radio';
+      if (g.has('uvlens') && ['radio', 'barbiere', 'ada', 'ora', 'foto'].some((k) => !g.flag('uv.' + k))) return 'hint.map.lisaUv';
       return 'hint.map.done';
     },
   };

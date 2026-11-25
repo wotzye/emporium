@@ -119,7 +119,8 @@ export class UI {
     this.held.innerHTML = label ? `✋ ${label}<small>${t('ui.putDown')}</small>` : '';
   }
 
-  setTorch(available: boolean, on: boolean) {
+  setTorch(available: boolean, on: boolean, uv = false) {
+    this.btnTorch.classList.toggle('uv', uv);
     this.btnTorch.style.display = available ? '' : 'none';
     this.btnTorch.classList.toggle('on', on);
   }
@@ -314,7 +315,7 @@ export class UI {
     return new Promise((res) => {
       const b = el('div', 'sensor');
       const icon = el('div', 'sicon ' + kind);
-      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : '💨';
+      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : kind === 'flip' ? '🔄' : kind === 'facedown' ? '🌑' : '💨';
       const p = el('div', 'paper');
       p.textContent = text;
       const bar = el('div', 'sbar');
@@ -370,7 +371,7 @@ export class UI {
       hold.onpointerup = hold.onpointerleave = () => (holding = false);
       loop();
       const start = () => listen(kind, set, cancel).then((ok) => ok && finish(true));
-      if (useSensors && kind === 'shake' && motionNeedsTap()) {
+      if (useSensors && (kind === 'shake' || kind === 'flip' || kind === 'facedown') && motionNeedsTap()) {
         // iPhone: the motion sensors need a yes, given from a tap
         const en = el('button', 'senable');
         en.textContent = t('ui.sensorEnable');

@@ -433,6 +433,20 @@ export function createEmporio(g: Game): Location {
   const hShelves = hitBox(0.6, 2.4, 4.6, -3.2, 1.3, -0.5, 'shelves');
   const hLedger = hitBox(0.6, 0.3, 0.5, -1.2, 1.1 + CU, -1.2, 'ledger');
   scene.add(hMerchant, hCase, hSlot, hShelves, hLedger);
+  // an hourglass on the counter: turn it over (turn the phone over) and the sand runs
+  const hourglass = new THREE.Group();
+  const glassM = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, roughness: 0.05 });
+  hourglass.add(lathe([[0, 0], [0.045, 0], [0.045, 0.006], [0.04, 0.03], [0.006, 0.075], [0.04, 0.12], [0.045, 0.144], [0.045, 0.15], [0, 0.15]], glassM, 0, 0, 0, 16));
+  for (const y of [0, 0.15]) hourglass.add(cyl(0.055, 0.055, 0.012, brass, 0, y, 0, 16));
+  for (let k = 0; k < 3; k++) hourglass.add(cyl(0.004, 0.004, 0.15, brass, Math.cos(k * 2.1) * 0.05, 0.075, Math.sin(k * 2.1) * 0.05, 5));
+  const sand = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.04, 14), mat(0xcfc4a8, { roughness: 1 }));
+  sand.position.y = 0.11;
+  sand.rotation.x = Math.PI;
+  hourglass.add(sand);
+  hourglass.position.set(-0.05, 1.0, -1.12);
+  onCounter.add(hourglass);
+  const hHourglass = hitBox(0.16, 0.22, 0.16, -0.05, 1.08 + CU, -1.12, 'hourglass');
+  scene.add(hHourglass);
 
   const giveTorch = async () => {
     await g.say([{ who: 'mercante', key: 'emp.torch1' }]);
@@ -598,6 +612,25 @@ export function createEmporio(g: Game): Location {
     { id: 'shelves', obj: hShelves, tap: async (item) => {
       if (item) return g.nope();
       await g.say('emp.shelves');
+    } },
+    { id: 'hourglass', obj: hHourglass, view: 'counter', tap: async (item) => {
+      if (item) return g.nope();
+      await g.say([{ who: 'mercante', key: 'emp.hourglass1' }]);
+      const ok = await g.physical('flip', 'emp.hourglassText');
+      if (!ok) return;
+      for (let i = 0; i <= 20; i++) {
+        hourglass.rotation.z = (i / 20) * Math.PI;
+        await sleep(25);
+      }
+      hourglass.rotation.z = 0;
+      sand.position.y = 0.035;
+      sand.rotation.x = 0;
+      g.audio.sfx('sheet');
+      await g.say([{ who: 'mercante', key: 'emp.hourglass2' }, { who: 'diego', key: 'emp.hourglass3' }]);
+      setTimeout(() => {
+        sand.position.y = 0.11;
+        sand.rotation.x = Math.PI;
+      }, 8000);
     } },
     { id: 'ledger', obj: hLedger, view: 'counter', tap: async (item) => {
       if (item) return g.nope();
