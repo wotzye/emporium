@@ -775,11 +775,11 @@
   "foto.chairAfter": "The chair is empty. Really empty, now.",
   "foto.backdrop": "The backdrop: painted clouds and a fake balustrade. I can't see anything odd. With the naked eye.",
   "foto.lens1": "Under the black cloth, the ground glass. The picture is upside down, as always... and out of focus.",
-  "foto.lens2": "There's someone by the chair. There's nobody in the room. I need to focus: the brass wheel.",
+  "foto.lens2": "There's something on the backdrop, but it's all blurred. I need to focus: the brass wheel.",
   "foto.lensBlur": "Out of focus. Turn the brass wheel beside the glass to focus.",
-  "foto.lensSharp": "In focus. He's still there, by the chair. And behind him, on the backdrop, those numbers.",
-  "foto.sharp1": "Now I can see. A thin man in a waistcoat, standing by the chair. He's looking into the lens.",
-  "foto.sharp2": "And behind him, on the backdrop, numbers that aren't there to the naked eye: 2 7 0 4.",
+  "foto.lensSharp": "In focus. On the backdrop, those numbers you can't see with the naked eye.",
+  "foto.sharp1": "Now I can see it. On the empty backdrop, in the glass, numbers appear that aren't in the room.",
+  "foto.sharp2": "2 7 0 4.",
   "note.darkcode": "Through the lens, on the backdrop: 2 7 0 4.",
   "foto.darkSign1": "DARKROOM",
   "foto.darkSign2": "DO NOT OPEN",
@@ -1102,5 +1102,6 @@
   "radio.starsText": "Make it really dark: put the phone face down for a few seconds.",
   "radio.starsWords": "HI DAD",
   "radio.starsSeen": "In the dark, the stars light up. In the middle, words: HI DAD. He made it for him.",
-  "radio.starsAfter": "The stars on the ceiling still glow a little. HI DAD."
+  "radio.starsAfter": "The stars on the ceiling still glow a little. HI DAD.",
+  "foto.lensSharpGiulio": "In focus. Giulio is there, by the chair, waiting for his portrait."
 }

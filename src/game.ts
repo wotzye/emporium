@@ -61,7 +61,7 @@ const HINTS_PER_LOCATION = 2;
 /** close-up photos for the jumpscares (photos/<key>.jpg) */
 const SCARE_PHOTO: Record<'barber' | 'bruno' | 'ada' | 'clara', string[]> = {
   barber: ['scare_barbiere'],
-  bruno: ['scare_macellaio'],
+  bruno: ['scare_macellaio2'],
   ada: ['scare_donna'],
   clara: ['scare_ragazza', 'scare_donna'],
 };

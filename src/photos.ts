@@ -120,8 +120,18 @@ export function photoOr(key: string, fallback: (c: CanvasRenderingContext2D, w: 
   preloadPhotos([key]);
   return (c: CanvasRenderingContext2D, w: number, h: number) => {
     const img = loaded.get(key);
-    if (img) printInto(c, w, h, img, o);
-    else fallback(c, w, h);
+    if (img) return printInto(c, w, h, img, o);
+    fallback(c, w, h);
+    // not here yet: as soon as it arrives, print it over the drawing
+    available().then((list) => {
+      if (!list.includes(key)) return;
+      const im = new Image();
+      im.onload = () => {
+        loaded.set(key, im);
+        printInto(c, w, h, im, o);
+      };
+      im.src = `${base()}photos/${key}.jpg`;
+    });
   };
 }
 /** a real photo, if it has already arrived */

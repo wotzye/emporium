@@ -152,7 +152,10 @@ export function createFotoStudio(g: Game): Location {
     o.userData.noPick = true;
   });
   const freed = () => !!g.flag('f.freed');
-  giulio.group.visible = !freed();
+  // he only stands by the chair once he has asked for his last portrait (upstairs)
+  let fading = false;
+  const waiting = () => !!g.flag('f.talked') && !freed();
+  giulio.group.visible = waiting();
   scene.add(giulio.group);
 
   // ---------------- the darkroom door (right wall) ----------------
@@ -199,6 +202,7 @@ export function createFotoStudio(g: Game): Location {
     const ok = await g.physical('shout', 'foto.shoutText');
     if (!ok) return;
     await flash();
+    fading = true;
     g.set('f.freed');
     giulio.group.traverse((o) => o.layers.set(0));
     for (let i = 20; i >= 0; i--) {
@@ -206,6 +210,7 @@ export function createFotoStudio(g: Game): Location {
       await sleep(60);
     }
     giulio.group.visible = false;
+    fading = false;
     g.audio.sfx('whisper');
     await g.say([{ who: 'giulio', key: 'foto.giulio9' }, { who: 'diego', key: 'foto.freed1' }, { who: 'diego', key: 'foto.freed2' }]);
   };
@@ -246,7 +251,7 @@ export function createFotoStudio(g: Game): Location {
       if (item) return g.nope();
       if (g.flag('f.bulbIn')) return lastPortrait();
       if (g.viewName !== 'lens') await g.view('lens');
-      return say(sharp() ? 'foto.lensSharp' : 'foto.lensBlur');
+      return say(sharp() ? (waiting() ? 'foto.lensSharpGiulio' : 'foto.lensSharp') : 'foto.lensBlur');
   };
   const hotspots: Hotspot[] = [
     { id: 'camera', obj: hCam, view: 'camera', when: () => !taken() && g.viewName !== 'lens', tap: camTap },
@@ -334,7 +339,8 @@ export function createFotoStudio(g: Game): Location {
     interactions,
     update: (dt, time) => {
       motes.update(dt, time);
-      giulio.update(dt, time, lensCam);
+      if (!fading) giulio.group.visible = waiting();
+      if (giulio.group.visible) giulio.update(dt, time, lensCam);
       ggMat.uniforms.blur.value = Math.abs(focus - FOCUS_OK) * 0.09;
       ggMat.uniforms.time.value = time;
       // only render the lens picture while you're looking at it

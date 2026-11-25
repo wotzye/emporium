@@ -775,11 +775,11 @@
   "foto.chairAfter": "La sedia è vuota. Per davvero, adesso.",
   "foto.backdrop": "Il fondale: nuvole dipinte e una balaustra finta. Non vedo niente di strano. A occhio nudo.",
   "foto.lens1": "Sotto il panno nero, il vetro smerigliato. L'immagine è capovolta, come sempre... e sfocata.",
-  "foto.lens2": "Accanto alla sedia c'è qualcuno. Nella stanza non c'è nessuno. Devo mettere a fuoco: la rotella d'ottone.",
+  "foto.lens2": "Sul fondale c'è qualcosa, ma è tutto sfocato. Devo mettere a fuoco: la rotella d'ottone.",
   "foto.lensBlur": "Sfocato. Gira la rotella d'ottone accanto al vetro per mettere a fuoco.",
-  "foto.lensSharp": "A fuoco. Lui è ancora lì, vicino alla sedia. E dietro di lui, sul fondale, quei numeri.",
-  "foto.sharp1": "Adesso si vede. Un uomo magro, col gilè, in piedi accanto alla sedia. Mi guarda nell'obiettivo.",
-  "foto.sharp2": "E dietro di lui, sul fondale, dei numeri che a occhio nudo non ci sono: 2 7 0 4.",
+  "foto.lensSharp": "A fuoco. Sul fondale, quei numeri che a occhio nudo non ci sono.",
+  "foto.sharp1": "Adesso si vede. Sul fondale vuoto, nel vetro, compaiono dei numeri che nella stanza non ci sono.",
+  "foto.sharp2": "2 7 0 4.",
   "note.darkcode": "Attraverso l'obiettivo, sul fondale: 2 7 0 4.",
   "foto.darkSign1": "CAMERA OSCURA",
   "foto.darkSign2": "NON APRIRE",
@@ -1102,5 +1102,6 @@
   "radio.starsText": "Fai buio davvero: metti il telefono a faccia in giù per qualche secondo.",
   "radio.starsWords": "CIAO PAPÀ",
   "radio.starsSeen": "Al buio, le stelline si accendono. In mezzo, una scritta: CIAO PAPÀ. L'aveva fatta per lui.",
-  "radio.starsAfter": "Le stelline sul soffitto brillano ancora un po'. CIAO PAPÀ."
+  "radio.starsAfter": "Le stelline sul soffitto brillano ancora un po'. CIAO PAPÀ.",
+  "foto.lensSharpGiulio": "A fuoco. Giulio è lì, accanto alla sedia, che aspetta il suo ritratto."
 }
