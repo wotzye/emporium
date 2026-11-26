@@ -198,10 +198,32 @@ export class Engine {
   }
 
   /** Free the GPU memory of a scene we've left far behind (it is rebuilt from the save if we come back). */
-  disposeScene(scene: THREE.Scene) {
+  /** every texture a scene uses, added to `out` */
+  texturesOf(scene: THREE.Scene, out: Set<THREE.Texture>) {
+    scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material;
+      if (!m) return;
+      for (const mt of Array.isArray(m) ? m : [m])
+        for (const v of Object.values(mt as unknown as Record<string, unknown>)) if (v instanceof THREE.Texture) out.add(v);
+    });
+    return out;
+  }
+
+  /**
+   * Free a scene's GPU memory. The models' textures are shared between rooms: those go too, unless
+   * one of the scenes still standing (`alive`) uses them.
+   */
+  disposeScene(scene: THREE.Scene, alive: () => THREE.Scene[] = () => []): void {
+    const shared = new Set<THREE.Texture>();
+    scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material;
+      if (!m) return;
+      for (const mt of Array.isArray(m) ? m : [m])
+        if (mt.userData.modelTex || mt.userData.shared) for (const v of Object.values(mt as unknown as Record<string, unknown>)) if (v instanceof THREE.Texture) shared.add(v);
+    });
     // three keeps polling the shaders it is compiling: freeing their materials under it throws. Wait.
     if (scene.userData.compiling) {
-      setTimeout(() => this.disposeScene(scene), 1500);
+      setTimeout(() => this.disposeScene(scene, alive), 1500);
       return;
     }
     const done = new Set<unknown>();
@@ -227,6 +249,11 @@ export class Engine {
       const l = o as THREE.Light & { shadow?: THREE.LightShadow };
       if (l.isLight && l.shadow?.map) l.shadow.map.dispose();
     });
+    if (shared.size) {
+      const used = new Set<THREE.Texture>();
+      for (const sc of alive()) if (sc !== scene) this.texturesOf(sc, used);
+      for (const tx of shared) if (!used.has(tx)) tx.dispose();
+    }
   }
 
   /**

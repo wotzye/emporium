@@ -1620,5 +1620,7 @@
   "mem.bruno.7": "One evening the man in black goes down to the cellar and sits waiting for him. Dad goes down. When he comes back up, he's laughing.",
   "mem.bruno.8": "And now I remember this too: Dad holding me on his shoulders in front of the sign. «It's yours too, Diego.»",
   "fin.creditsHead": "A game by EmporiumEscape\ninspired by the Emporium escape room in Novate Milanese\n\nStory, puzzles and pictures\nAlessandro Pozzoni\n\nProgramming and writing\nAlessandro with Claude",
-  "fin.creditsTail": "Thank you for playing.\nAnd remember them."
+  "fin.creditsTail": "Thank you for playing.\nAnd remember them.",
+  "title.resume": "Resume",
+  "ui.loading": "Loading the room…"
 }

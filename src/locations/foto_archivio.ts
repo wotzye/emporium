@@ -105,10 +105,13 @@ export function createFotoArchivio(g: Game): Location {
   scene.add(neg);
   // the door back to the shop, and the little door to the retouching room
   scene.add(rbox(0.85, 2.05, 0.05, 0.01, woodDark, 0, 1.025, D / 2 - 0.03));
-  scene.add(rbox(0.7, 1.9, 0.05, 0.01, woodMid, -1.35, 0.95, D / 2 - 0.03));
+  // the retouching room's door is on the left wall, where you can see it from where you stand
+  const RX = -W / 2 + 0.03, RZ = 0.1;
+  scene.add(rbox(0.05, 1.9, 0.7, 0.01, woodMid, RX, 0.95, RZ));
+  scene.add(rbox(0.06, 0.05, 0.05, 0.01, mat(0x9a8a62, { metalness: 1, roughness: 0.35 }), RX + 0.04, 0.95, RZ - 0.25));
   const ritSign = textPlane([t('foto.ritSign')], 0.4, 0.09, { bg: '#d9d3c4', size: 20, px: 64 });
-  ritSign.position.set(-1.35, 2.02, D / 2 - 0.06);
-  ritSign.rotation.y = Math.PI;
+  ritSign.position.set(RX + 0.03, 2.02, RZ);
+  ritSign.rotation.y = Math.PI / 2;
   scene.add(ritSign);
   // two pieces of a torn photo: up on a shelf between the boxes, and on the floor under the light table
   // (in plain sight if you look: on top of the drawer cabinet, and on the floor by the light table)
@@ -128,7 +131,7 @@ export function createFotoArchivio(g: Game): Location {
   const hCab = hitBox(cabW + 0.1, cabH + 0.1, 0.5, 0, cabY + cabH / 2, -D / 2 + 0.3, 'cabinet');
   const hLight = hitBox(0.9, 0.2, 0.6, 1.0, 0.85, 0.6, 'lightbox');
   const hDoor = hitBox(1.0, 2.1, 0.2, 0, 1.05, D / 2 - 0.1, 'door');
-  const hRit = hitBox(0.8, 2.0, 0.2, -1.35, 1.0, D / 2 - 0.1, 'ritocco');
+  const hRit = hitBox(0.2, 2.0, 0.8, RX + 0.08, 1.0, RZ, 'ritocco');
   const hP1 = hitBox(0.3, 0.2, 0.3, 0.65, cabY + cabH + 0.12, -D / 2 + 0.3, 'piece1');
   const hP2 = hitBox(0.35, 0.12, 0.35, 0.5, 0.05, -0.75, 'piece2');
   const hTin = hitBox(0.2, 0.1, 0.16, 0, 0.06, 0.05, 'tin');
@@ -227,7 +230,7 @@ export function createFotoArchivio(g: Game): Location {
       if (item) return g.nope();
       return findPiece(2, p2);
     } },
-    { id: 'ritocco', obj: hRit, lowPriority: true, tap: async (item) => {
+    { id: 'ritocco', obj: hRit, exit: true, tap: async (item) => {
       if (item) return g.nope();
       g.audio.sfx('creak');
       g.audio.steps(2, 0.45, false);

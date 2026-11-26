@@ -213,10 +213,11 @@ export class UI {
         who.textContent = w === 'narr' ? '' : t(`who.${w}`);
         txt.className = 'txt ' + w;
         txt.textContent = '';
-        let n = 0;
+        const t0 = performance.now();
         clearInterval(typing);
+        // by the clock, not by the tick: a busy phone skips ticks, the text must not crawl
         typing = window.setInterval(() => {
-          n += 2;
+          const n = Math.ceil((performance.now() - t0) / 11);
           txt.textContent = full.slice(0, n);
           if (n >= full.length) clearInterval(typing);
         }, 22);
@@ -956,10 +957,10 @@ export class UI {
         cv.style.animation = '';
         full = panels[i].text;
         txt.textContent = '';
-        let n = 0;
+        const t0 = performance.now();
         clearInterval(typing);
         typing = window.setInterval(() => {
-          n += 1;
+          const n = Math.ceil((performance.now() - t0) / 30);
           txt.textContent = full.slice(0, n);
           if (n >= full.length) clearInterval(typing);
         }, 30);
@@ -996,10 +997,10 @@ export class UI {
       const show = () => {
         full = t(keys[i]);
         txt.textContent = '';
-        let n = 0;
+        const t0 = performance.now();
         clearInterval(typing);
         typing = window.setInterval(() => {
-          n += 1;
+          const n = Math.ceil((performance.now() - t0) / 28);
           txt.textContent = full.slice(0, n);
           if (n >= full.length) clearInterval(typing);
         }, 28);

@@ -100,11 +100,17 @@ game.engine.renderer.domElement.addEventListener('webglcontextlost', (e) => {
   n.style.cssText = 'position:fixed;inset:0;background:#000;color:#cfc8b8;display:grid;place-items:center;font:16px monospace;z-index:99';
   n.textContent = '…';
   document.body.append(n);
+  // straight back into the game after the reload: no logo, no title screen
+  try {
+    sessionStorage.setItem('cp.resume', '1');
+  } catch {
+    /* private mode */
+  }
   setTimeout(() => location.reload(), 1200);
 });
 
 /** shown in a corner of the title screen, so you can tell which version the phone is running */
-const VERSION = 'v0.24.1';
+const VERSION = 'v0.25';
 
 /** EmporiumEscape presents: the logo out of the dark, a bell, then the title */
 function splash(): Promise<void> {
@@ -252,7 +258,32 @@ function title() {
   });
 }
 
-splash().then(title);
+/** after the phone took the graphics away: one tap (sound needs it) and you are where you were */
+function resume() {
+  const el = game.ui.title;
+  el.innerHTML = `<div class="tvig"></div><div class="menu"><button data-a="resume">${t('title.resume')}</button></div>`;
+  el.classList.add('on');
+  el.querySelector<HTMLButtonElement>('[data-a="resume"]')!.onclick = async (ev) => {
+    (ev.currentTarget as HTMLButtonElement).textContent = '…';
+    game.audio.init();
+    game.applySettings();
+    await models;
+    el.classList.remove('on');
+    if (!game.continueGame()) return title();
+    game.ui.refreshStatic();
+    await game.go(game.save.location || 'map');
+  };
+}
+
+let resuming = false;
+try {
+  resuming = sessionStorage.getItem('cp.resume') === '1' && game.hasSave();
+  sessionStorage.removeItem('cp.resume');
+} catch {
+  /* private mode */
+}
+if (resuming) resume();
+else splash().then(title);
 
 // iPhone: ask for the motion sensors at the first tap (it can only be asked from a tap),
 // so that shaking the phone works when the game needs it

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Engine, View } from './engine';
+import { modelsReady, modelsDone } from './models';
 import { UI, Line } from './ui';
 import { Audio, DroneKind } from './audio';
 import { t, setLang, getLang, Lang } from './i18n';
@@ -62,6 +63,9 @@ const HINTS_PER_LOCATION = 2;
 
 /** close-up photos for the jumpscares (photos/<key>.jpg) */
 preloadPhotos(['macelleria_famiglia', 'mem_bruno_3']);
+
+/** rooms that belong to the same building (the butcher's back rooms are 'mac_…') */
+const building = (id: string) => { const g = id.split('_')[0]; return g === 'mac' ? 'macelleria' : g; };
 
 export class Game {
   engine: Engine;
@@ -323,7 +327,10 @@ export class Game {
     const out = new Set<string>([...(L.next ?? [])]);
     if (L.exitTo) out.add(L.exitTo);
     if (L.id !== 'map') out.add('map');
-    return [...out].filter((id) => this.factories[id] && id !== L.id);
+    // only the rooms of this same building (and the square): building every shop in advance
+    // from the map filled the phone's memory, and the phone killed the page
+    const here = building(L.id);
+    return [...out].filter((id) => this.factories[id] && id !== L.id && (id === 'map' || (L.id !== 'map' && building(id) === here)));
   }
   private prewarmTimer = 0;
   private schedulePrewarm(L: Location) {
@@ -355,16 +362,22 @@ export class Game {
     this.removeUpdater?.();
     this.selected = null;
     this.setHeld(null);
+    // a room built before its furniture has arrived would stay empty: wait for it (rarely needed)
+    if (!this.built[id] && id !== 'map' && !modelsDone()) {
+      this.ui.toast(t('ui.loading'));
+      await Promise.race([modelsReady, new Promise((r) => setTimeout(r, 9000))]);
+    }
     const L = this.location(id);
     // keep only this place and its neighbours in memory: phones (iPhone above all) lose the
     // WebGL context, and with it the whole picture, if too many rooms sit on the GPU at once
-    const keep = new Set([id, 'map', ...this.neighbours(L)]);
-    const group = (k: string) => k.split('_')[0];
+    const keep = new Set([id, 'map']);
+    const alive = () => Object.values(this.built).map((b) => b.scene);
     for (const k of Object.keys(this.built)) {
       // rooms of the same building stay together (they share state and set each other up)
-      if (keep.has(k) || group(k) === group(id)) continue;
-      this.engine.disposeScene(this.built[k].scene);
+      if (keep.has(k) || building(k) === building(id)) continue;
+      const sc = this.built[k].scene;
       delete this.built[k];
+      this.engine.disposeScene(sc, alive);
     }
     this.loc = L;
     this.applySettings();
@@ -634,6 +647,8 @@ export class Game {
           if (startPos) it.obj.position.copy(startPos);
           return;
         }
+        // a dial that was only touched, not turned: nothing to do, let the tap describe it
+        if (tap && it.kind === 'dial') return;
         const run = async () => {
           this.busy = true;
           try {
@@ -905,6 +920,16 @@ export class Game {
         if (h.lowPriority && !exit) continue;
         const el = document.createElement('div');
         el.className = 'hsm';
+        // only the edge arrows take taps: they lead straight through the door they point at
+        el.onclick = async () => {
+          if (!el.classList.contains('edge') || this.busy || this.loc !== L) return;
+          this.busy = true;
+          try {
+            await h.tap(null);
+          } finally {
+            this.busy = false;
+          }
+        };
         el.dataset.dir = /trap|crypt|cellar|hatchDown|^down$/i.test(h.id) ? 'down' : 'up';
         list.push({ h, el, ph: Math.random() * 6, exit });
       }
@@ -921,12 +946,21 @@ export class Game {
       for (const m of items) {
         const isExit = typeof m.exit === 'function' ? m.exit() : m.exit;
         let show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true) && (isExit || !m.h.lowPriority);
+        let edge = 0;
         if (show) {
           m.h.obj.getWorldPosition(v);
           v.project(cam);
-          show = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
-          if (show) m.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * hh}px)`;
+          const inside = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
+          // a way out just off the side of a narrow (portrait) screen: an arrow on the edge, pointing to it
+          if (!inside && isExit && v.z < 1 && Math.abs(v.y) < 1.2 && L.id !== 'map') edge = v.x < 0 ? -1 : 1;
+          show = inside || edge !== 0;
+          if (show) {
+            const x = edge ? (edge < 0 ? 26 : w - 26) : ((v.x + 1) / 2) * w;
+            const y = Math.min(Math.max(((1 - v.y) / 2) * hh, 90), hh - 160);
+            m.el.style.transform = `translate(${x}px, ${y}px)` + (edge ? ` rotate(${edge * 90}deg)` : '');
+          }
         }
+        m.el.classList.toggle('edge', edge !== 0);
         m.el.style.display = show ? 'block' : 'none';
         if (show) {
           m.el.classList.toggle('exit', isExit);

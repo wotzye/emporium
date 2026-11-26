@@ -419,7 +419,8 @@ export function createBarbiereRetro(g: Game): Location {
       if (g.flag('r.valves')) return say('retro.boilerDone');
       return say(g.flag('r.plate') ? 'retro.valveTapPlate' : 'retro.valveTap');
     } })),
-    { id: 'boiler', obj: hBoiler, view: 'boiler', tap: async (item) => {
+    // close up, the boiler itself steps aside: the plate and the three wheels answer for themselves
+    { id: 'boiler', obj: hBoiler, view: 'boiler', when: () => g.viewName !== 'boiler', tap: async (item) => {
       if (item) return g.nope();
       if (g.flag('r.valves')) return say('retro.boilerDone');
       if (!g.flag('r.plate')) return say(g.held === 'cloth' ? 'retro.plateRub' : 'retro.plateDirty');

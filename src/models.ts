@@ -105,17 +105,40 @@ const FILES = {
 export type ModelId = keyof typeof FILES;
 
 const cache: Partial<Record<ModelId, GLTF>> = {};
+let allLoaded: () => void = () => {};
+let allIn = false;
+export const modelsDone = () => allIn;
+/** resolves when every model is in (rooms wait for it, behind the black screen, before they are built) */
+export const modelsReady = new Promise<void>((r) => (allLoaded = () => { allIn = true; r(); }));
 let loading: Promise<void> | null = null;
 
-const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns', 'merchant', 'butcherScale', 'fingers', 'hand', 'brain', 'meatHook'];
+const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns', 'merchant', 'butcherScale', 'fingers', 'hand', 'brain', 'meatHook', 'barberPole', 'streetLamp'];
 /** Resolves when the characters are in; props keep loading in the background. */
 export function preloadModels(onProgress?: (k: number) => void) {
   if (loading) return loading;
   const loader = new GLTFLoader();
   const all = Object.keys(FILES) as ModelId[];
   const ids = CHAR_IDS;
-  for (const id of all.filter((i) => !CHAR_IDS.includes(i)))
-    loader.loadAsync(import.meta.env.MODE === 'single' ? FILES[id].replace('models/', 'models-json/').replace('.glb', '.json') : FILES[id]).then((g) => (cache[id] = g)).catch(() => {});
+  const url = (id: ModelId) => (import.meta.env.MODE === 'single' ? FILES[id].replace('models/', 'models-json/').replace('.glb', '.json') : FILES[id]);
+  // the props one after the other, in the gaps: seventy downloads and decodes at once froze phones
+  // (taps lost, text crawling) and filled their memory
+  const rest = all.filter((i) => !CHAR_IDS.includes(i));
+  let lanes = 3;
+  const next = () => {
+    const id = rest.shift();
+    if (!id) {
+      if (--lanes <= 0) allLoaded();
+      return;
+    }
+    if (cache[id]) return next();
+    loader
+      .loadAsync(url(id))
+      .then((g) => (cache[id] = g))
+      .catch(() => {})
+      .finally(() => (typeof requestIdleCallback === 'function' ? requestIdleCallback(() => next(), { timeout: 400 }) : setTimeout(next, 60)));
+  };
+  // three lanes are enough to finish on the title screen on a decent connection
+  setTimeout(() => { next(); next(); next(); }, 300);
   let done = 0;
   loading = Promise.all(
     ids.map((id) =>

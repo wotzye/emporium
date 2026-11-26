@@ -1620,5 +1620,7 @@
   "mem.bruno.7": "Una sera l'uomo in nero scende in cantina e si siede ad aspettarlo. Papà scende. Quando risale, ride.",
   "mem.bruno.8": "E adesso ricordo anche questo: papà che mi tiene sulle spalle davanti all'insegna. «È anche tua, Diego.»",
   "fin.creditsHead": "Un gioco di EmporiumEscape\nispirato all'escape room Emporium di Novate Milanese\n\nStoria, enigmi e immagini\nAlessandro Pozzoni\n\nProgrammazione e scrittura\nAlessandro con Claude",
-  "fin.creditsTail": "Grazie per aver giocato.\nE ricordati di loro."
+  "fin.creditsTail": "Grazie per aver giocato.\nE ricordati di loro.",
+  "title.resume": "Riprendi",
+  "ui.loading": "Carico la stanza…"
 }
