@@ -491,6 +491,175 @@ export class UI {
     });
   }
 
+  /**
+   * Knock on a door: tap the panel with the right rhythm. `gaps` is the rhythm as the pauses between
+   * knocks, 'S' short and 'L' long (a pause longer than ~0.45 s). Resolves true when it matches.
+   */
+  knock(title: string, text: string, gaps: string, onKnock?: () => void): Promise<boolean> {
+    return new Promise((res) => {
+      const b = el('div');
+      const p = el('div', 'paper');
+      p.textContent = text;
+      const door = el('button', 'kdoor', '');
+      const dots = el('div', 'display');
+      dots.textContent = '·';
+      b.append(p, door, dots);
+      let times: number[] = [];
+      let solved = false;
+      let idle: ReturnType<typeof setTimeout> | null = null;
+      const render = () => {
+        const g = times.slice(1).map((t, i) => (t - times[i] > 450 ? ' — ' : ' '));
+        dots.textContent = times.length ? times.map((_, i) => (i ? g[i - 1] : '') + '●').join('') : '·';
+      };
+      const check = () => {
+        const got = times.slice(1).map((t, i) => (t - times[i] > 450 ? 'L' : 'S')).join('');
+        if (got === gaps) {
+          solved = true;
+          setTimeout(() => {
+            close();
+            res(true);
+          }, 500);
+          return;
+        }
+        dots.classList.remove('err');
+        void dots.offsetWidth;
+        dots.classList.add('err');
+        times = [];
+        setTimeout(render, 500);
+      };
+      door.onpointerdown = (e) => {
+        e.preventDefault();
+        if (solved) return;
+        times.push(performance.now());
+        onKnock?.();
+        door.classList.remove('hit');
+        void door.offsetWidth;
+        door.classList.add('hit');
+        render();
+        if (idle) clearTimeout(idle);
+        if (times.length === gaps.length + 1) idle = setTimeout(check, 300);
+        else idle = setTimeout(() => {
+          // stopped halfway: start over
+          if (times.length) check();
+        }, 1800);
+      };
+      const close = this.openModal(title, b, () => {
+        if (idle) clearTimeout(idle);
+        if (!solved) res(false);
+      });
+    });
+  }
+
+  /**
+   * A little maze in a box: tilt the phone to roll the ball to the exit (or push it with a finger).
+   * Rows: '#' wall, '.' floor, 'S' start, 'E' exit. Resolves true when the ball reaches the exit.
+   */
+  tiltMaze(title: string, text: string, rows: string[], useSensors: boolean, onBump?: () => void): Promise<boolean> {
+    return new Promise((res) => {
+      const b = el('div');
+      const p = el('div', 'paper');
+      p.textContent = text;
+      const cv = el('canvas', 'maze') as HTMLCanvasElement;
+      const R = rows.length, C = rows[0].length;
+      const cell = 22;
+      cv.width = C * cell;
+      cv.height = R * cell;
+      // keep the board square-celled whatever the modal does to canvases
+      cv.style.cssText = `width: min(100%, calc(52vh * ${C / R})); height: auto; aspect-ratio: ${C} / ${R};`;
+      b.append(p, cv);
+      const ctx = cv.getContext('2d')!;
+      let bx = 0, by = 0, vx = 0, vy = 0, ex = 0, ey = 0;
+      rows.forEach((r, y) => [...r].forEach((ch, x) => {
+        if (ch === 'S') { bx = x + 0.5; by = y + 0.5; }
+        if (ch === 'E') { ex = x + 0.5; ey = y + 0.5; }
+      }));
+      const wall = (x: number, y: number) => {
+        const cx = Math.floor(x), cy = Math.floor(y);
+        return cy < 0 || cy >= R || cx < 0 || cx >= C || rows[cy][cx] === '#';
+      };
+      const rad = 0.3;
+      const hits = (x: number, y: number) => wall(x - rad, y - rad) || wall(x + rad, y - rad) || wall(x - rad, y + rad) || wall(x + rad, y + rad);
+      let tx = 0, ty = 0; // tilt, -1..1
+      let drag: { x: number; y: number } | null = null;
+      let done = false;
+      const onOri = (e: DeviceOrientationEvent) => {
+        const a = ((screen.orientation?.angle ?? (window as unknown as { orientation?: number }).orientation ?? 0) + 360) % 360;
+        const beta = e.beta ?? 0, gamma = e.gamma ?? 0;
+        let sx = gamma, sy = beta;
+        if (a === 90) { sx = beta; sy = -gamma; }
+        else if (a === 270) { sx = -beta; sy = gamma; }
+        else if (a === 180) { sx = -gamma; sy = -beta; }
+        tx = Math.max(-1, Math.min(1, sx / 25));
+        ty = Math.max(-1, Math.min(1, sy / 25));
+      };
+      if (useSensors) window.addEventListener('deviceorientation', onOri);
+      const pos = (e: PointerEvent) => {
+        const r = cv.getBoundingClientRect();
+        return { x: ((e.clientX - r.left) / r.width) * C, y: ((e.clientY - r.top) / r.height) * R };
+      };
+      cv.onpointerdown = (e) => { e.preventDefault(); drag = pos(e); cv.setPointerCapture(e.pointerId); };
+      cv.onpointermove = (e) => { if (drag) drag = pos(e); };
+      cv.onpointerup = () => (drag = null);
+      let last = performance.now();
+      let bumpT = 0;
+      const step = () => {
+        if (done) return;
+        const now = performance.now();
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        let ax = tx * 14, ay = ty * 14;
+        if (drag) { ax = (drag.x - bx) * 12; ay = (drag.y - by) * 12; }
+        vx = (vx + ax * dt) * 0.985;
+        vy = (vy + ay * dt) * 0.985;
+        const n = 4;
+        for (let i = 0; i < n; i++) {
+          const nx = bx + (vx * dt) / n;
+          if (hits(nx, by)) { if (Math.abs(vx) > 2 && now - bumpT > 150) { bumpT = now; onBump?.(); } vx *= -0.3; } else bx = nx;
+          const ny = by + (vy * dt) / n;
+          if (hits(bx, ny)) { if (Math.abs(vy) > 2 && now - bumpT > 150) { bumpT = now; onBump?.(); } vy *= -0.3; } else by = ny;
+        }
+        // draw: old wood, brass rails, the hole at the exit
+        ctx.fillStyle = '#3a2c1e';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        rows.forEach((r, y) => [...r].forEach((ch, x) => {
+          if (ch === '#') {
+            ctx.fillStyle = '#8a7a52';
+            ctx.fillRect(x * cell + 1, y * cell + 1, cell - 2, cell - 2);
+          }
+        }));
+        ctx.fillStyle = '#050505';
+        ctx.beginPath();
+        ctx.arc(ex * cell, ey * cell, cell * 0.38, 0, Math.PI * 2);
+        ctx.fill();
+        const gr = ctx.createRadialGradient(bx * cell - 3, by * cell - 3, 1, bx * cell, by * cell, cell * rad);
+        gr.addColorStop(0, '#ffffff');
+        gr.addColorStop(1, '#8a8a8a');
+        ctx.fillStyle = gr;
+        ctx.beginPath();
+        ctx.arc(bx * cell, by * cell, cell * rad, 0, Math.PI * 2);
+        ctx.fill();
+        if (Math.hypot(bx - ex, by - ey) < 0.35) {
+          done = true;
+          window.removeEventListener('deviceorientation', onOri);
+          setTimeout(() => {
+            close();
+            res(true);
+          }, 400);
+          return;
+        }
+        requestAnimationFrame(step);
+      };
+      const close = this.openModal(title, b, () => {
+        window.removeEventListener('deviceorientation', onOri);
+        if (!done) {
+          done = true;
+          res(false);
+        }
+      });
+      requestAnimationFrame(step);
+    });
+  }
+
   /** Letter wheels lock. */
   letterLock(title: string, len: number, check: (word: string) => boolean, onKey?: () => void): Promise<boolean> {
     return new Promise((res) => {

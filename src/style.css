@@ -251,3 +251,10 @@ button:active { background: rgba(255,255,255,0.08); }
 #markers .hsm::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.6); }
 
 #hud .btns button.on.uv { background: rgba(170,140,255,0.9); }
+
+/* knocking on a door */
+.kdoor { display: block; margin: 10px auto; width: 170px; height: 120px; border-radius: 6px; background: repeating-linear-gradient(90deg, #3a2a1c 0 22px, #33251a 22px 24px); border: 3px solid #1a120c; box-shadow: inset 0 0 18px #000; touch-action: none; }
+.kdoor.hit { animation: knockhit 0.15s ease-out; }
+@keyframes knockhit { 0% { transform: scale(0.97); } 100% { transform: scale(1); } }
+/* the tilting maze */
+#app canvas.maze { display: block; margin: 8px auto 0; max-width: 100%; max-height: 52vh; width: auto; height: auto; border: 6px solid #1c1510; border-radius: 4px; touch-action: none; position: static; inset: auto; }

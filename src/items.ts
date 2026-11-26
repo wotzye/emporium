@@ -99,6 +99,14 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<rect x="20" y="12" width="14" height="16"/><path d="M20 14 L9 17 V23 L20 26"/><circle cx="7" cy="20" r="3"/>'),
   },
+  cemkey: {
+    id: 'cemkey',
+    svg: s('<circle cx="11" cy="20" r="6"/><path d="M17 20 H34 M30 20 v6 M26 20 v4"/><path d="M8 17 l6 6"/>'),
+  },
+  suitcasekey: {
+    id: 'suitcasekey',
+    svg: s('<circle cx="12" cy="20" r="5"/><path d="M17 20 H32 M29 20 v4 M26 20 v3"/><path d="M5 9 h10 v6 h-10z"/>'),
+  },
   uvlens: {
     id: 'uvlens',
     svg: s('<circle cx="20" cy="20" r="11"/><circle cx="20" cy="20" r="7"/><path d="M12 12 l3 3 M28 12 l-3 3 M12 28 l3 -3 M28 28 l-3 -3"/>'),

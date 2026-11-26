@@ -881,8 +881,15 @@ export { cached as cachedMaterial };
 export function uvInk(lines: string[], w: number, h: number, o: { size?: number; font?: string; onReveal?: () => void } = {}) {
   const px = 160;
   const tex = canvasTex(Math.round(px * (w / h)), px, (c, W, H) => {
-    const size = o.size ?? H / (lines.length + 1);
-    c.font = `${size}px ${o.font ?? "'Bradley Hand', 'Segoe Print', cursive"}`;
+    let size = o.size ?? H / (lines.length + 1);
+    const font = (n: number) => `${n}px ${o.font ?? "'Bradley Hand', 'Segoe Print', cursive"}`;
+    c.font = font(size);
+    // shrink to fit the widest line
+    const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+    if (widest > W * 0.92) {
+      size *= (W * 0.92) / widest;
+      c.font = font(size);
+    }
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.shadowColor = 'rgba(190,150,255,0.9)';

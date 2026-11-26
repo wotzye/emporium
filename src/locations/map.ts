@@ -4,6 +4,7 @@ import { Game, Location, Hotspot } from '../game';
 import { box, cyl, sphere, mat, mesh, canvasTex, noise, textPlane, hitBox, cursedMat, fx, rbox, lathe, normalFromCanvas, woodMaterial, plasterMaterial } from '../builders';
 import { LAYER_FX } from '../engine';
 import { t } from '../i18n';
+import { churchOpen } from './chiesa_common';
 import { createHaunts } from './map_haunt';
 
 interface Building {
@@ -297,6 +298,21 @@ export function createMap(g: Game): Location {
       tip.rotation.y = Math.PI / 4;
       grp.add(tip);
     }
+    if (b.id === 'chiesa') {
+      const cp = new THREE.Vector3(0, b.h + 1.2, b.d / 2).applyAxisAngle(new THREE.Vector3(0, 1, 0), b.rot).add(new THREE.Vector3(b.x, 0, b.z));
+      label(t('label.chiesa'), cp.x, cp.y, cp.z, churchOpen(g) && !g.flag('ch.done'), 'chiesa');
+      const hc = hitBox(b.w + 0.4, b.h + 0.4, b.d + 0.4, 0, b.h / 2, 0, 'chiesa');
+      grp.add(hc);
+      hotspots.push({
+        id: 'chiesa',
+        obj: hc,
+        tap: async () => {
+          if (!churchOpen(g)) return g.say('map.churchLocked');
+          if (g.flag('ch.done')) return g.say('map.churchDone');
+          return g.go('chiesa_navata');
+        },
+      });
+    }
     if (b.id !== 'chiesa') {
       const wp = new THREE.Vector3(0, b.h + 2.1, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), b.rot).add(new THREE.Vector3(b.x, 0, b.z));
       if (b.id === 'macelleria') {
@@ -542,6 +558,7 @@ export function createMap(g: Game): Location {
       if (g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) return 'hint.map.valve';
       if (!g.flag('placedRadio')) return 'hint.map.radio';
       if (g.has('uvlens') && ['radio', 'barbiere', 'ada', 'ora', 'foto'].some((k) => !g.flag('uv.' + k))) return 'hint.map.lisaUv';
+      if (churchOpen(g) && !g.flag('ch.done')) return 'hint.map.church';
       return 'hint.map.done';
     },
   };

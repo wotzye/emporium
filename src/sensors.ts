@@ -55,6 +55,9 @@ export async function askMotion(): Promise<boolean> {
       const r = await D.requestPermission();
       // only a real answer is remembered; "not from a tap" errors leave the door open
       motionGranted = r === 'granted';
+      // the tilt maze reads the orientation too: on iPhone that's a separate yes (same prompt)
+      const O = (window as unknown as { DeviceOrientationEvent?: MotionCtor }).DeviceOrientationEvent;
+      if (motionGranted && O && typeof O.requestPermission === 'function') await O.requestPermission().catch(() => 'denied');
     } catch {
       return false;
     }
