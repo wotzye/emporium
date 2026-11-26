@@ -264,7 +264,7 @@ export function createFotoStudio(g: Game): Location {
       if (item) return g.nope();
       return say('foto.backdrop');
     } },
-    { id: 'darkroom', obj: hDark, view: 'door', tap: async (item) => {
+    { id: 'darkroom', exit: () => darkOpen(), obj: hDark, view: 'door', tap: async (item) => {
       if (darkOpen()) {
         if (item) return g.nope();
         g.audio.steps(2, 0.45, false);

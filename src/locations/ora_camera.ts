@@ -203,7 +203,7 @@ export function createOraCamera(g: Game): Location {
       if (item) return g.nope();
       return say(restarted() ? 'ora.dustAfter' : 'ora.dust');
     } },
-    { id: 'tower', obj: hTower, tap: async (item) => {
+    { id: 'tower', exit: () => !!g.flag('o.towerDoor'), obj: hTower, tap: async (item) => {
       if (!g.flag('o.towerDoor')) {
         if (item) return g.nope();
         g.audio.sfx('wrong');

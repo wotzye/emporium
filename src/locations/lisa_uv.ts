@@ -28,6 +28,8 @@ export function lisaInk(g: Game, id: LisaUv, w = 0.95, h = 0.36) {
       if (n === LISA_UV.length) g.diaryPage('lisaUv');
     },
   });
+  // the patch of wall around it can be tapped (and zoomed to) even before you have the lens
+  m.userData.lisaWall = id;
   return m as THREE.Mesh;
 }
 

@@ -476,7 +476,7 @@ export function createAdaSoggiorno(g: Game): Location {
       await g.ui.doc(t('ada.photoBackTitle'), t('ada.photoBack'), true);
       g.note('note.seats');
     } },
-    { id: 'hatch', obj: hHatch, view: 'hatch', tap: async (item) => {
+    { id: 'hatch', exit: () => hatchOpen(), obj: hHatch, view: 'hatch', tap: async (item) => {
       if (hatchOpen()) {
         if (item) return g.nope();
         g.audio.steps(5, 0.4, false);

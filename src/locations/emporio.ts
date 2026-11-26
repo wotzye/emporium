@@ -578,31 +578,31 @@ export function createEmporio(g: Game): Location {
       if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
       if (g.flag('placedRazor')) return replay('razor');
-      return g.say('emp.slotEmpty');
+      return g.say([{ who: 'diego', key: 'emp.slotEmpty', vars: { name: t('tag.barbiere') } }]);
     } },
     { id: 'slotFoto', obj: hSlotFoto, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'camera') return placeObject('camera');
       if (item) return g.nope();
       if (g.flag('placedCamera')) return replay('camera');
-      return g.say('emp.slotEmpty');
+      return g.say([{ who: 'diego', key: 'emp.slotEmpty', vars: { name: t('tag.fotografo') } }]);
     } },
     { id: 'slotRadio', obj: hSlotRadio, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'radio') return placeObject('radio');
       if (item) return g.nope();
       if (g.flag('placedRadio')) return replay('radio');
-      return g.say('emp.slotEmpty');
+      return g.say([{ who: 'diego', key: 'emp.slotEmpty', vars: { name: t('tag.radio') } }]);
     } },
     { id: 'slotOra', obj: hSlotOra, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'watch') return placeObject('watch');
       if (item) return g.nope();
       if (g.flag('placedWatch')) return replay('watch');
-      return g.say('emp.slotEmpty');
+      return g.say([{ who: 'diego', key: 'emp.slotEmpty', vars: { name: t('tag.orologeria') } }]);
     } },
     { id: 'slotAda', obj: hSlotAda, when: () => g.viewName === 'case', tap: async (item) => {
       if (item === 'glasses') return placeObject('glasses');
       if (item) return g.nope();
       if (g.flag('placedGlasses')) return replay('glasses');
-      return g.say('emp.slotEmpty');
+      return g.say([{ who: 'diego', key: 'emp.slotEmpty', vars: { name: t('tag.ada') } }]);
     } },
     { id: 'case', obj: hCase, view: 'case', when: () => g.viewName !== 'case', tap: async (item) => {
       if (item === 'razor') return placeRazor();

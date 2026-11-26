@@ -207,7 +207,7 @@ export function createOraBottega(g: Game): Location {
       if (item) return g.nope();
       return say(g.flag('o.restarted') ? 'ora.gfAfter' : 'ora.gf');
     } },
-    { id: 'labdoor', obj: hLab, tap: async (item) => {
+    { id: 'labdoor', exit: () => !!g.flag('o.labOpen'), obj: hLab, tap: async (item) => {
       if (g.flag('o.labOpen')) {
         if (item) return g.nope();
         g.audio.steps(3, 0.45, false);
@@ -229,7 +229,7 @@ export function createOraBottega(g: Game): Location {
       g.audio.sfx('wrong');
       return say('ora.labLocked');
     } },
-    { id: 'stairs', obj: hStairs, view: 'stairs', tap: async (item) => {
+    { id: 'stairs', exit: () => !!g.flag('o.stairs'), obj: hStairs, view: 'stairs', tap: async (item) => {
       if (g.flag('o.stairs')) {
         if (item) return g.nope();
         g.audio.steps(6, 0.4, false);

@@ -141,7 +141,7 @@ export function createChiesaNavata(g: Game): Location {
       }
       return say('ch.confAgain');
     } },
-    { id: 'tower', obj: hTower, view: 'towerdoor', tap: async (item) => {
+    { id: 'tower', exit: () => towerOpen(), obj: hTower, view: 'towerdoor', tap: async (item) => {
       if (towerOpen()) {
         if (item) return g.nope();
         g.audio.steps(4, 0.5, false);

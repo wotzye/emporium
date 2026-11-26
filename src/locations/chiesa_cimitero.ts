@@ -179,7 +179,7 @@ export function createChiesaCimitero(g: Game): Location {
       if (g.flag('ch.grave')) return say('ch.crossAfter');
       return say(g.has('uvlens') ? 'ch.crossUv' : 'ch.cross');
     } },
-    { id: 'crypt', obj: hCrypt, view: 'chapel', when: () => gateOpen(), tap: async (item) => {
+    { id: 'crypt', exit: () => !!g.flag('ch.crypt'), obj: hCrypt, view: 'chapel', when: () => gateOpen(), tap: async (item) => {
       if (item) return g.nope();
       if (g.flag('ch.crypt')) {
         g.audio.steps(6, 0.5, false);

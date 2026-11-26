@@ -80,6 +80,10 @@ export function createOraLaboratorio(g: Game): Location {
   wkey.add(rbox(0.08, 0.012, 0.04, 0.004, steel, 0, 0, -0.06));
   wkey.position.set(0.15, 0.08, 0);
   drawer.add(wkey);
+  wkey.scale.setScalar(1.4);
+  const hPhoto = hitBox(0.18, 0.05, 0.14, -0.1, 0.08, 0, 'drawerPhoto');
+  const hWkey = hitBox(0.12, 0.06, 0.2, 0.15, 0.08, -0.02, 'drawerKey');
+  drawer.add(hPhoto, hWkey);
   photo.visible = !g.flag('o.photo');
   wkey.visible = !g.flag('o.windKey');
 
@@ -287,7 +291,23 @@ export function createOraLaboratorio(g: Game): Location {
       g.note('note.gears');
       return say('ora.plateRead');
     } },
-    { id: 'drawer', obj: hDrawer, view: 'drawer', tap: async (item) => {
+    { id: 'drawerPhoto', obj: hPhoto, view: 'drawer', when: () => drawerOpen() && photo.visible, tap: async (item) => {
+      if (item) return g.nope();
+      photo.visible = false;
+      g.set('o.photo');
+      g.audio.sfx('paper');
+      await g.ui.doc(t('ora.photoTitle'), t('ora.photoBack'), true);
+      g.note('note.clara');
+    } },
+    { id: 'drawerKey', obj: hWkey, view: 'drawer', when: () => drawerOpen() && wkey.visible, tap: async (item) => {
+      if (item) return g.nope();
+      wkey.visible = false;
+      g.set('o.windKey');
+      g.give('windkey');
+      g.audio.sfx('pickup');
+      return say('ora.windKey');
+    } },
+    { id: 'drawer', obj: hDrawer, view: 'drawer', when: () => !drawerOpen() || (!photo.visible && !wkey.visible) || g.viewName !== 'drawer', tap: async (item) => {
       if (item) return g.nope();
       if (!drawerOpen()) return say('ora.drawerShut');
       if (photo.visible) {

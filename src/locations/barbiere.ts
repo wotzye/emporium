@@ -838,7 +838,7 @@ export function createBarbiere(g: Game): Location {
       g.note('note.receipt');
       await g.say([{ who: 'diego', key: 'bar.tillPage' }]);
     } },
-    { id: 'cabinet', obj: hCabinet, view: 'cabinet', tap: async (item) => {
+    { id: 'cabinet', exit: () => !!g.flag('b.cabinet'), obj: hCabinet, view: 'cabinet', tap: async (item) => {
       if (g.flag('b.cabinet')) {
         if (item) return g.nope();
         g.audio.sfx('creak');

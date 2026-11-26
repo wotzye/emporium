@@ -240,6 +240,7 @@ export function createBarbiereRetro(g: Game): Location {
   const valveVals: number[] = (g.flag('r.valveVals') as string | undefined)?.split(',').map(Number) ?? [0, 0, 0];
   const valveAngle = valveVals.map((v) => (v / 10) * Math.PI * 2);
   const wheels: THREE.Group[] = [];
+  const grips: THREE.Object3D[] = [];
   const digits: ReturnType<typeof liveCanvas>[] = [];
   const valveZ = [-0.95, -1.25, -1.55];
   valveZ.forEach((z, i) => {
@@ -249,7 +250,9 @@ export function createBarbiereRetro(g: Game): Location {
     w.rotation.y = -Math.PI / 2;
     w.rotation.z = valveAngle[i];
     // a generous invisible grip, so a finger doesn't have to find the thin spokes
-    w.add(hitBox(0.22, 0.22, 0.05, 0, 0, 0.05, 'valveGrip'));
+    const grip = hitBox(0.22, 0.22, 0.05, 0, 0, 0.05, 'valveGrip');
+    grips.push(grip);
+    w.add(grip);
     scene.add(w);
     wheels.push(w);
     const dc = liveCanvas(64, 64);
@@ -411,13 +414,18 @@ export function createBarbiereRetro(g: Game): Location {
       if (item) return g.nope();
       return say(g.held === 'cloth' ? 'retro.plateRub' : 'retro.plateDirty');
     } },
+    ...grips.map((grip, i): Hotspot => ({ id: 'valve' + i, obj: grip, view: 'boiler', tap: async (item) => {
+      if (item) return g.nope();
+      if (g.flag('r.valves')) return say('retro.boilerDone');
+      return say(g.flag('r.plate') ? 'retro.valveTapPlate' : 'retro.valveTap');
+    } })),
     { id: 'boiler', obj: hBoiler, view: 'boiler', tap: async (item) => {
       if (item) return g.nope();
       if (g.flag('r.valves')) return say('retro.boilerDone');
       if (!g.flag('r.plate')) return say(g.held === 'cloth' ? 'retro.plateRub' : 'retro.plateDirty');
       return say('retro.valvesHint');
     } },
-    { id: 'trap', obj: hTrap, view: 'trap', tap: async (item) => {
+    { id: 'trap', exit: () => !!g.flag('r.trap'), obj: hTrap, view: 'trap', tap: async (item) => {
       if (g.flag('r.trap')) {
         if (item) return g.nope();
         g.audio.steps(4, 0.45, false);
@@ -437,7 +445,7 @@ export function createBarbiereRetro(g: Game): Location {
       if (item) return g.nope();
       return say('retro.turnCrank');
     } },
-    { id: 'yard', obj: hYard, view: 'yard', tap: async (item) => {
+    { id: 'yard', exit: () => yardOpen(), obj: hYard, view: 'yard', tap: async (item) => {
       if (yardOpen()) {
         if (item) return g.nope();
         g.audio.steps(3, 0.45, false);

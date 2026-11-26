@@ -276,3 +276,6 @@ button:active { background: rgba(255,255,255,0.08); }
 @keyframes knockhit { 0% { transform: scale(0.97); } 100% { transform: scale(1); } }
 /* the tilting maze */
 #app canvas.maze { display: block; margin: 8px auto 0; max-width: 100%; max-height: 52vh; width: auto; height: auto; border: 6px solid #1c1510; border-radius: 4px; touch-action: none; position: static; inset: auto; }
+#markers .hsm.exit { border-color: rgba(255,255,255,0.95); background: rgba(0,0,0,0.35); }
+#markers .hsm.exit::after { width: 0; height: 0; margin: -6px 0 0 -5px; border-radius: 0; background: none; box-shadow: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid #fff; filter: drop-shadow(0 0 1px rgba(0,0,0,0.8)); }
+#markers .hsm.exit[data-dir='down']::after { margin-top: -3px; border-bottom: 0; border-top: 9px solid #fff; }

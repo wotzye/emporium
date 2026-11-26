@@ -159,7 +159,7 @@ export function createFotoNegozio(g: Game): Location {
       g.audio.steps(2, 0.45, false);
       return g.go('foto_archivio');
     } },
-    { id: 'stairs', obj: hStairs, view: 'stairs', tap: async (item) => {
+    { id: 'stairs', exit: () => stairsOpen(), obj: hStairs, view: 'stairs', tap: async (item) => {
       if (stairsOpen()) {
         if (item) return g.nope();
         g.audio.steps(8, 0.4, false);

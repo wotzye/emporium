@@ -210,7 +210,7 @@ export function createRadioCamera(g: Game): Location {
       await say('radio.starsSeen');
       (stars.material as THREE.MeshBasicMaterial).opacity = 0.6;
     } },
-    { id: 'window', obj: hWin, view: 'window', tap: async (item) => {
+    { id: 'window', exit: () => winOpen(), obj: hWin, view: 'window', tap: async (item) => {
       if (item) return g.nope();
       if (!winOpen()) {
         g.set('rl.window');

@@ -244,7 +244,7 @@ export function createMacRetro(g: Game): Location {
     } else {
       brunoC.setEyes(true);
       g.audio.rec('smash', { gain: 1.1 });
-      await g.scare('bruno', 600);
+      await g.scare('bruno', 600, 'scare_macellaio2#close');
       bruno.visible = false;
       await g.say([{ who: 'narr', key: 'm2.hideFail' }, { who: 'diego', key: 'm2.hideFail2' }]);
     }
@@ -290,7 +290,7 @@ export function createMacRetro(g: Game): Location {
       g.give('salt');
       return say('m2.saltTaken');
     } },
-    { id: 'trap', obj: hTrap, view: 'trap', tap: async (item) => {
+    { id: 'trap', exit: () => !!g.flag('m2.cellarOpen'), obj: hTrap, view: 'trap', tap: async (item) => {
       if (g.flag('m2.cellarOpen')) {
         if (item) return g.nope();
         g.audio.steps(6, 0.45, false);

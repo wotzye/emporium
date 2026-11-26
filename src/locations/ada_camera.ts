@@ -133,7 +133,10 @@ export function createAdaCamera(g: Game): Location {
   const wardKey = new THREE.Group();
   wardKey.add(cyl(0.003, 0.003, 0.04, brass, 0, 0, 0, 6).rotateZ(Math.PI / 2));
   wardKey.add(mesh(new THREE.TorusGeometry(0.008, 0.002, 6, 10), brass, -0.025, 0, 0).rotateX(Math.PI / 2));
-  wardKey.position.set(0, 0.03, 0);
+  wardKey.position.set(0.035, 0.03, 0);
+  wardKey.scale.setScalar(1.8);
+  const hKey = hitBox(0.08, 0.05, 0.08, 0.035, 0.035, 0, 'mbkey');
+  mbDrawer.add(hKey);
   mbDrawer.add(wardKey);
   const winder = new THREE.Group();
   winder.add(cyl(0.004, 0.004, 0.03, brass, 0, 0, 0.015, 6).rotateX(Math.PI / 2));
@@ -218,7 +221,14 @@ export function createAdaCamera(g: Game): Location {
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
-    { id: 'musicbox', obj: hBox, view: 'dresser', tap: async (item) => {
+    { id: 'mbkey', obj: hKey, view: 'dresser', when: () => boxPlayed() && wardKey.visible, tap: async (item) => {
+      if (item) return g.nope();
+      wardKey.visible = false;
+      g.set('ac.wardKey');
+      g.give('wardkey');
+      return say('ac.keyTaken');
+    } },
+    { id: 'musicbox', obj: hBox, view: 'dresser', when: () => !(boxPlayed() && wardKey.visible), tap: async (item) => {
       if (item) return g.nope();
       if (boxPlayed()) {
         if (wardKey.visible) {

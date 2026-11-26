@@ -588,15 +588,15 @@ export function createMacelleria(g: Game): Location {
     if (!ok) {
       bruno.position.z = -0.4;
       g.audio.rec('smash', { gain: 1.2 });
-      await g.scare('bruno', 450);
+      await g.scare('bruno', 450, 'scare_macellaio2#close');
       await g.say([{ who: 'narr', key: 'mac.caught' }]);
     }
-    await g.ui.fadeOut(300);
     g.setFlicker(false);
     g.set('fledButcher');
     g.rebuild('map');
+    // straight out into the square: catch your breath there, not on a black screen
+    await g.go('map');
     await g.say([{ who: 'diego', key: 'mac.outside1' }, { who: 'diego', key: 'mac.outside2' }]);
-    await g.go('map', false);
   };
 
   const after = async () => {
@@ -639,7 +639,7 @@ export function createMacelleria(g: Game): Location {
       if (item) return g.nope();
       await g.say('mac.hooks');
     } },
-    { id: 'stairs', obj: hStairs, tap: async (item) => {
+    { id: 'stairs', exit: () => !!g.flag('m2.labOpen'), obj: hStairs, tap: async (item) => {
       if (item) return g.nope();
       await g.say('mac.stairs');
     } },
@@ -694,7 +694,7 @@ export function createMacelleria(g: Game): Location {
       if (item) return g.nope();
       return g.say('m2.hooks');
     } },
-    { id: 'stairs', obj: hStairs, tap: async (item) => {
+    { id: 'stairs', exit: () => !!g.flag('m2.labOpen'), obj: hStairs, tap: async (item) => {
       if (g.flag('m2.labOpen')) {
         if (item) return g.nope();
         g.audio.steps(3, 0.5, false);

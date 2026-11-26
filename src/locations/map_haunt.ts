@@ -14,16 +14,30 @@ import { createLisa, createMerchant } from '../characters';
  * faintest ones come back dark, and with mipmaps they pile up into black blotches (iPhone).
  * Repaint every pixel in one flat fog colour, keeping only the alpha.
  */
-function soft(t: THREE.CanvasTexture, color = '#d6d7d5') {
-  const cv = t.image as HTMLCanvasElement;
-  const c = cv.getContext('2d')!;
-  c.globalCompositeOperation = 'source-in';
-  c.fillStyle = color;
-  c.fillRect(0, 0, cv.width, cv.height);
-  c.globalCompositeOperation = 'source-over';
-  t.needsUpdate = true;
-  return t;
+function soft(t: THREE.CanvasTexture) {
+  // keep only the alpha, as an opaque grey picture: used as an alphaMap over a flat fog colour,
+  // nothing premultiplied can come back dark (the old black blotches on the iPhone)
+  const src = t.image as HTMLCanvasElement;
+  const cv = document.createElement('canvas');
+  cv.width = src.width;
+  cv.height = src.height;
+  const a = src.getContext('2d')!.getImageData(0, 0, src.width, src.height);
+  const d = a.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = d[i + 3];
+    d[i] = d[i + 1] = d[i + 2] = v;
+    d[i + 3] = 255;
+  }
+  cv.getContext('2d')!.putImageData(a, 0, 0);
+  const out = new THREE.CanvasTexture(cv);
+  out.colorSpace = THREE.NoColorSpace;
+  out.wrapS = t.wrapS;
+  out.wrapT = t.wrapT;
+  t.dispose();
+  return out;
 }
+/** the flat colour of all the fog on the square */
+const FOG = 0xd6d7d5;
 
 export function createHaunts(scene: THREE.Scene, g: Game) {
   const rnd = (a: number, b: number) => a + Math.random() * (b - a);
@@ -173,7 +187,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
     }
   }));
   const fogs = Array.from({ length: 6 }, (_, i) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: fogTex, transparent: true, depthWrite: false, opacity: 0.55 }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ color: FOG, alphaMap: fogTex, transparent: true, depthWrite: false, opacity: 0.55 }));
     m.rotation.x = -Math.PI / 2;
     m.position.set(rnd(-12, 12), 0.3 + i * 0.12, rnd(-10, 10));
     fx(m);
@@ -279,7 +293,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
     c.globalCompositeOperation = 'source-over';
   }));
   const wall = Array.from({ length: 26 }, (_, i) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(rnd(14, 19), rnd(5, 7.5)), new THREE.MeshBasicMaterial({ map: wallTex, transparent: true, depthWrite: false, opacity: 0, fog: false }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(rnd(14, 19), rnd(5, 7.5)), new THREE.MeshBasicMaterial({ color: FOG, alphaMap: wallTex, transparent: true, depthWrite: false, opacity: 0, fog: false }));
     fx(m);
     m.userData.noPick = true;
     m.userData.a = (i / 26) * Math.PI * 2 + rnd(-0.1, 0.1);
@@ -386,7 +400,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
     c.fillRect(0, 0, w, h * 0.3);
   }));
   const walkers = Array.from({ length: 3 }, (_, i) => {
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: figTex, transparent: true, depthWrite: false, opacity: 0, fog: false }));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xe6e8eb, alphaMap: figTex, transparent: true, depthWrite: false, opacity: 0, fog: false }));
     sp.scale.set(1.1, 2.2, 1);
     sp.userData.noPick = true;
     scene.add(sp);

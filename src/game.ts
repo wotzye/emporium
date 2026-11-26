@@ -18,6 +18,8 @@ export interface Hotspot {
   /** Only chosen if nothing else is tappable behind it (e.g. furniture in front of the counter). */
   lowPriority?: boolean;
   tap: (item: string | null) => void | Promise<void>;
+  /** a way out (door, stairs, trapdoor): drawn as an arrow, not a dot, while it is open. Guessed from tap when unset. */
+  exit?: boolean | (() => boolean);
 }
 
 export type Interaction =
@@ -141,6 +143,35 @@ export class Game {
     const inks: THREE.Mesh[] = [];
     L.scene.traverse((o) => {
       if (o.userData.uvInk) inks.push(o as THREE.Mesh);
+    });
+    // Lisa's messages: the wall around each one is a place you can go and look at, so the beam
+    // can be put right on it (the writing itself becomes tappable once it glows)
+    L.scene.updateMatrixWorld(true);
+    inks.forEach((m, i) => {
+      if (!m.userData.lisaWall) return;
+      const p = m.getWorldPosition(new THREE.Vector3());
+      const n = new THREE.Vector3(0, 0, 1).applyQuaternion(m.getWorldQuaternion(new THREE.Quaternion()));
+      const name = 'uvwall' + i;
+      const eye = p.clone().addScaledVector(n, 1.4);
+      eye.y = Math.max(1.45, p.y - 0.15);
+      L.views[name] = { pos: [eye.x, eye.y, eye.z], look: [p.x, p.y, p.z], parent: L.startView, yaw: 25, pitch: 15, fov: 55 };
+      const geo = (m.geometry as THREE.PlaneGeometry).parameters;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(geo.width + 0.3, geo.height + 0.3, 0.04), new THREE.MeshBasicMaterial({ visible: false }));
+      box.position.copy(p).addScaledVector(n, -0.02);
+      box.quaternion.copy(m.getWorldQuaternion(new THREE.Quaternion()));
+      box.userData.hit = true;
+      L.scene.add(box);
+      L.hotspots.push({
+        id: name,
+        obj: box,
+        view: name,
+        lowPriority: true,
+        tap: async (item) => {
+          if (item) return this.nope();
+          if (this.flag('uv.' + m.userData.lisaWall)) return this.say('uv.wallSeen');
+          return this.say(this.uvOn && this.engine.torchOn ? 'uv.wallAim' : this.has('uvlens') ? 'uv.wallLens' : 'uv.wallNoLens');
+        },
+      });
     });
     inks.forEach((m, i) =>
       L.hotspots.push({
@@ -349,6 +380,7 @@ export class Game {
     this.removeUpdater = L.update ? this.engine.addUpdater(L.update) : null;
     this.uvHotspots(L);
     this.removeMarkers?.();
+    for (const it of L.interactions ?? []) it.obj.userData.passThrough = true;
     this.removeMarkers = this.engine.addUpdater(this.markers(L));
     this.ui.setPlace(t(L.nameKey));
     this.ui.showHud(true);
@@ -664,15 +696,27 @@ export class Game {
       return;
     }
     // a real close-up photo, when one ships with the game, beats the puppets
-    const shot = photo ? photoImage(photo) : null;
+    // 'key#close': the same face, much closer (the eyes), for a second scare in the same place
+    const [pKey, variant] = (photo ?? '').split('#');
+    const shot = pKey ? photoImage(pKey) : null;
     if (shot) {
       const cv = document.createElement('canvas');
       cv.width = 1024;
       cv.height = 576;
       const c = cv.getContext('2d')!;
-      const k = Math.max(cv.width / shot.width, cv.height / shot.height) * 1.08;
+      const close = variant === 'close';
+      const k = Math.max(cv.width / shot.width, cv.height / shot.height) * (close ? 1.9 : 1.08);
       const w = shot.width * k, h = shot.height * k;
-      c.drawImage(shot, (cv.width - w) / 2, (cv.height - h) / 2 - h * 0.04, w, h);
+      // soft, like everything else in the world: blurred, washed in fog, dark at the edges
+      c.filter = 'blur(3.5px) grayscale(1) contrast(1.15) brightness(0.8)';
+      c.drawImage(shot, (cv.width - w) / 2, (cv.height - h) / 2 + (close ? h * 0.12 : -h * 0.04), w, h);
+      c.filter = 'none';
+      const haze = c.createRadialGradient(cv.width / 2, cv.height / 2, cv.height * 0.15, cv.width / 2, cv.height / 2, cv.width * 0.6);
+      haze.addColorStop(0, 'rgba(200,200,196,0.10)');
+      haze.addColorStop(0.6, 'rgba(160,160,156,0.18)');
+      haze.addColorStop(1, 'rgba(0,0,0,0.85)');
+      c.fillStyle = haze;
+      c.fillRect(0, 0, cv.width, cv.height);
       // film grain, like the rest of the world
       const img = c.getImageData(0, 0, cv.width, cv.height);
       const px = img.data;
@@ -756,14 +800,18 @@ export class Game {
       (this.engine.renderer.domElement.parentElement ?? document.body).appendChild(this.markerLayer);
     }
     const layer = this.markerLayer;
-    let list = L.scene.userData.markers as { h: Hotspot; el: HTMLElement; ph: number }[] | undefined;
+    type Mk = { h: Hotspot; el: HTMLElement; ph: number; exit: boolean | (() => boolean) };
+    let list = L.scene.userData.markers as Mk[] | undefined;
     if (!list) {
       list = [];
       for (const h of L.hotspots) {
-        if (h.lowPriority) continue;
+        // a way out: an arrow pointing the way in (down for trapdoors, stairs down and crypts)
+        const exit = L.id === 'map' ? false : h.exit ?? /\.go\(|\.back\(\)/.test(h.tap.toString());
+        if (h.lowPriority && !exit) continue;
         const el = document.createElement('div');
         el.className = 'hsm';
-        list.push({ h, el, ph: Math.random() * 6 });
+        el.dataset.dir = /trap|crypt|cellar|hatchDown|^down$/i.test(h.id) ? 'down' : 'up';
+        list.push({ h, el, ph: Math.random() * 6, exit });
       }
       L.scene.userData.markers = list;
     }
@@ -776,7 +824,8 @@ export class Game {
       const on = (this.settings.markers ?? true) && !this.busy && this.loc === L;
       const w = canvas.clientWidth, hh = canvas.clientHeight;
       for (const m of items) {
-        let show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true);
+        const isExit = typeof m.exit === 'function' ? m.exit() : m.exit;
+        let show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true) && (isExit || !m.h.lowPriority);
         if (show) {
           m.h.obj.getWorldPosition(v);
           v.project(cam);
@@ -784,7 +833,10 @@ export class Game {
           if (show) m.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * hh}px)`;
         }
         m.el.style.display = show ? 'block' : 'none';
-        if (show) m.el.style.opacity = String(0.7 + 0.25 * Math.sin(time * 2.2 + m.ph));
+        if (show) {
+          m.el.classList.toggle('exit', isExit);
+          m.el.style.opacity = String(0.7 + 0.25 * Math.sin(time * 2.2 + m.ph));
+        }
       }
     };
   }

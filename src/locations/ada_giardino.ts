@@ -261,7 +261,7 @@ export function createAdaGiardino(g: Game): Location {
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
-    { id: 'frenchwindow', obj: hWindow, view: 'window', tap: async (item) => {
+    { id: 'frenchwindow', exit: () => vinesCut(), obj: hWindow, view: 'window', tap: async (item) => {
       if (vinesCut()) {
         if (item) return g.nope();
         g.audio.sfx('creak');
