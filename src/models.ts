@@ -51,6 +51,12 @@ const FILES = {
   armyCrate: 'models/wooden_military_crate.glb',
   catStatue: 'models/concrete_cat_statue.glb',
   doll: 'models/doll.glb',
+  // CC-BY 4.0 (Sketchfab): the man in black, the butcher's scale and what's on the block
+  merchant: 'models/merchant.glb',
+  butcherScale: 'models/butcher_scale.glb',
+  fingers: 'models/fingers.glb',
+  hand: 'models/hand.glb',
+  brain: 'models/brain.glb',
   shoe: 'models/shoe.glb',
 } as const;
 export type ModelId = keyof typeof FILES;
@@ -58,7 +64,7 @@ export type ModelId = keyof typeof FILES;
 const cache: Partial<Record<ModelId, GLTF>> = {};
 let loading: Promise<void> | null = null;
 
-const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns'];
+const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns', 'merchant', 'butcherScale', 'fingers', 'hand', 'brain'];
 /** Resolves when the characters are in; props keep loading in the background. */
 export function preloadModels(onProgress?: (k: number) => void) {
   if (loading) return loading;
@@ -388,7 +394,7 @@ export function ghostMaterial(uniforms: { time: { value: number }; opacity: { va
  * turned so that its front faces `face` (radians about y). Only one child of a multi-object
  * file can be picked with `only` (e.g. one of the three candleholders).
  */
-export function prop(id: ModelId, o: { height?: number; width?: number; turn?: number; only?: string | RegExp; rot?: [number, number, number] } = {}) {
+export function prop(id: ModelId, o: { height?: number; width?: number; turn?: number; only?: string | RegExp; rot?: [number, number, number]; grey?: number } = {}) {
   const src = instance(id);
   if (!src) return null;
   let obj: THREE.Object3D = src;
@@ -429,9 +435,22 @@ export function prop(id: ModelId, o: { height?: number; width?: number; turn?: n
     if (m.isMesh) {
       m.castShadow = true;
       m.receiveShadow = true;
+      // pale and bloodless: no red may survive the noir filter except on the cursed things
+      if (o.grey !== undefined) for (const x of Array.isArray(m.material) ? m.material : [m.material]) greyOut(x, o.grey);
     }
   });
   return outer;
+}
+
+function greyOut(mt: THREE.Material, bright: number) {
+  mt.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace(
+      '#include <map_fragment>',
+      `#include <map_fragment>\n  diffuseColor.rgb = vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))) * ${bright.toFixed(3)} * vec3(1.0, 0.97, 0.93);`,
+    );
+  };
+  mt.customProgramCacheKey = () => 'grey' + bright;
+  mt.needsUpdate = true;
 }
 
 /** Turn a real model into a cursed object: deep red, keeping its surface detail (normals, roughness). */

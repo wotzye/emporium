@@ -147,7 +147,16 @@ export function createMacelleria(g: Game): Location {
     m.scale.set(sx, sy, 1);
     return m;
   };
-  const pieces: [number, number, number, number][] = [[-2.1, 0.12, 0.7, 1.4], [-1.5, 0.1, 0.9, 1.1], [-0.9, 0.09, 0.8, 0.7], [-0.3, 0.12, 0.75, 1.6], [0.35, 0.08, 0.8, 0.9], [0.9, 0.11, 0.85, 1.2]];
+  // the real thing, if the models are in: fingers on a tray, a forearm, a brain. Lumps only in between.
+  const parts = {
+    fingers: prop('fingers', { width: 0.34, turn: 0.15, grey: 1.1 }),
+    hand: prop('hand', { width: 0.46, turn: -0.35, grey: 1.9 }),
+    brain: prop('brain', { height: 0.13, turn: 0.6, grey: 0.85 }),
+  };
+  const real = !!(parts.fingers && parts.hand && parts.brain);
+  const pieces: [number, number, number, number][] = real
+    ? [[-2.1, 0.12, 0.7, 1.4], [-1.55, 0.09, 0.8, 0.9], [0.5, 0.08, 0.8, 0.9]]
+    : [[-2.1, 0.12, 0.7, 1.4], [-1.5, 0.1, 0.9, 1.1], [-0.9, 0.09, 0.8, 0.7], [-0.3, 0.12, 0.75, 1.6], [0.35, 0.08, 0.8, 0.9], [0.9, 0.11, 0.85, 1.2]];
   pieces.forEach(([x, r, sy, sx], i) => {
     const p = lump(r, sx, sy, i * 1.7);
     p.position.set(x, 0.89 + r * 0.3 * sy, cz - 0.05 + (i % 2) * 0.06);
@@ -170,7 +179,17 @@ export function createMacelleria(g: Game): Location {
   hand.add(rbox(0.02, 0.022, 0.065, 0.009, meat, 0.065, 0, 0.03).rotateY(-0.6));
   hand.position.set(-1.2, 0.905, cz + 0.1);
   hand.rotation.y = 0.6;
-  scene.add(hand);
+  if (real) {
+    // an enamel tray for the fingers, laid out in a row like sausages
+    const tray = rbox(0.42, 0.02, 0.22, 0.01, mat(0xd8d4ca, { roughness: 0.3 }), -1.0, 0.885, cz + 0.02);
+    scene.add(tray);
+    parts.fingers!.position.set(-1.0, 0.895, cz + 0.02);
+    scene.add(parts.fingers!);
+    parts.hand!.position.set(0.02, 0.885, cz - 0.02);
+    scene.add(parts.hand!);
+    parts.brain!.position.set(0.9, 0.885, cz - 0.02);
+    scene.add(parts.brain!);
+  } else scene.add(hand);
   // price cards on little spikes
   const cards = [['price.tongue'], ['price.fingers'], ['price.special']];
   [-2.1, -1.2, -0.3].forEach((x, i) => {
@@ -216,7 +235,12 @@ export function createMacelleria(g: Game): Location {
   scaleG.add(dialFace);
   scaleG.add(lathe([[0, 0], [0.15, 0.0], [0.17, 0.03], [0.175, 0.035], [0, 0.02]], steel, 0, 0.1, 0.03, 28));
   scaleG.position.set(1.1, 0.86, cz);
-  scene.add(scaleG);
+  // the real scale (enamel, chipped) if the model is in
+  const realScale = prop('butcherScale', { height: 0.5, turn: -0.25 });
+  if (realScale) {
+    realScale.position.set(1.15, 0.86, cz - 0.02);
+    scene.add(realScale);
+  } else scene.add(scaleG);
 
   // delivery ledger, open, with a pencil
   const book = new THREE.Group();

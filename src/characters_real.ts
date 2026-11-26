@@ -80,7 +80,68 @@ function makeLook(head: THREE.Bone, g: THREE.Group, maxYaw: number, maxPitch: nu
 }
 
 // ======================================================================
+/**
+ * The man in black from a sculpted model (a single static mesh): he breathes, turns his whole body
+ * a little towards you, and his eyes catch the light when they should.
+ */
+export function modelMerchant(): Character | null {
+  const o = instance('merchant');
+  if (!o) return null;
+  const g = new THREE.Group();
+  // stand him on the floor, 2.04 m to the top of the hat, facing +z
+  const box = new THREE.Box3().setFromObject(o);
+  const size = box.getSize(new THREE.Vector3());
+  const k = 2.04 / size.y;
+  o.scale.setScalar(k);
+  o.position.set(-((box.min.x + box.max.x) / 2) * k, -box.min.y * k, -((box.min.z + box.max.z) / 2) * k);
+  o.traverse((c) => {
+    const m = c as THREE.Mesh;
+    if (m.isMesh) {
+      const mm = m.material as THREE.MeshStandardMaterial;
+      mm.roughness = 0.85;
+      mm.metalness = 0;
+      mm.envMapIntensity = 0.15;
+    }
+  });
+  const body = new THREE.Group();
+  body.add(o);
+  g.add(body);
+  // where the head is: for the speech, the scares and the eyes
+  const head = new THREE.Object3D();
+  head.position.set(EYE.x, EYE.y, EYE.z);
+  body.add(head);
+  const eyeM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
+  for (const sx of [-1, 1]) {
+    const e = new THREE.Mesh(new THREE.CircleGeometry(0.006, 10), eyeM);
+    e.position.set(sx * EYE.dx, 0, 0.002);
+    head.add(e);
+  }
+  g.traverse((c) => (c.castShadow = true));
+  let yaw = 0;
+  const camW = new THREE.Vector3(), me = new THREE.Vector3();
+  return {
+    group: g,
+    head,
+    setEyes: (on) => (eyeM.opacity = on ? 0.85 : 0),
+    update: (dt, t, camera) => {
+      // turn (a little) towards whoever is looking
+      camera.getWorldPosition(camW);
+      g.getWorldPosition(me);
+      const local = g.worldToLocal(camW.clone());
+      const want = THREE.MathUtils.clamp(Math.atan2(local.x, local.z), -0.35, 0.35);
+      yaw += (want - yaw) * Math.min(dt * 0.8, 1);
+      body.rotation.y = yaw + Math.sin(t * 0.37) * 0.02;
+      // breathing, slow
+      body.scale.set(1 + Math.sin(t * 1.3) * 0.004, 1 + Math.sin(t * 1.3) * 0.003, 1 + Math.sin(t * 1.3) * 0.006);
+    },
+  };
+}
+/** Eyes on the sculpted model, in his own space (metres, feet at 0). */
+const EYE = { x: 0, y: 1.78, z: 0.122, dx: 0.037 };
+
 export function realMerchant(handsAt?: { y: number; z: number; spread: number }): Character {
+  const sculpted = modelMerchant();
+  if (sculpted) return sculpted;
   const { g, body, b } = base('male', 1.08);
   dress(body, { cloth: '#121212', clothRough: 0.8, puff: 0.014, skinTint: '#e6e1d8', skinBright: 1.08, face: { sockets: 1, grin: 1, gaunt: 1 } });
   browColor(body, 0x1a1a1a);
