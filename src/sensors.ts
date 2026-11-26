@@ -3,7 +3,7 @@
  * Each one degrades gracefully: if the sensor is missing, blocked, or switched off in the
  * settings, the player holds a button instead. Nothing ever stalls the game.
  */
-export type SensorKind = 'blow' | 'shout' | 'shake' | 'flip' | 'facedown';
+export type SensorKind = 'blow' | 'shout' | 'shake' | 'flip' | 'facedown' | 'jump';
 
 let micStream: MediaStream | null = null;
 let micCtx: AudioContext | null = null;
@@ -124,6 +124,46 @@ export function listen(kind: SensorKind, onLevel: (k: number) => void, cancel: {
         }
         // face down: about two seconds of darkness fill the bar
         if (kind === 'facedown') progress = down ? Math.min(1, progress + 0.009) : Math.max(0, progress - 0.01);
+        onLevel(progress);
+        requestAnimationFrame(tick);
+      };
+      tick();
+      return;
+    }
+    // ---- jump with the phone in your hand: a moment of free fall, then the landing ----
+    if (kind === 'jump') {
+      if (!(await askMotion())) return finish(false);
+      let fallStart = 0, fell = false;
+      const onJump = (e: DeviceMotionEvent) => {
+        const ag = e.accelerationIncludingGravity;
+        if (!ag || ag.x === null) return;
+        const m = Math.hypot(ag.x ?? 0, ag.y ?? 0, ag.z ?? 0);
+        const now = performance.now();
+        // weightless: well under gravity for a moment (in the air)
+        if (m < 4.5) {
+          if (!fallStart) fallStart = now;
+          if (now - fallStart > 90) {
+            fell = true;
+            progress = Math.max(progress, 0.6);
+          }
+        } else {
+          fallStart = 0;
+          // and down again, with a jolt
+          if (fell && m > 14) progress = 1;
+          // a hop without the clean free fall still counts, if it's a good one
+          if (m > 22) progress = Math.max(progress, 0.5);
+        }
+      };
+      window.addEventListener('devicemotion', onJump);
+      const tick = () => {
+        if (cancel.cancelled || progress >= 1) {
+          window.removeEventListener('devicemotion', onJump);
+          if (progress >= 1) {
+            onLevel(1);
+            return finish(true);
+          }
+          return finish(false);
+        }
         onLevel(progress);
         requestAnimationFrame(tick);
       };

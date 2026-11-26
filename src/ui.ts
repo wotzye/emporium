@@ -330,7 +330,7 @@ export class UI {
     return new Promise((res) => {
       const b = el('div', 'sensor');
       const icon = el('div', 'sicon ' + kind);
-      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : kind === 'flip' ? '🔄' : kind === 'facedown' ? '🌑' : '💨';
+      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : kind === 'flip' ? '🔄' : kind === 'facedown' ? '🌑' : kind === 'jump' ? '⤒' : '💨';
       const p = el('div', 'paper');
       p.textContent = text;
       const bar = el('div', 'sbar');
@@ -386,7 +386,7 @@ export class UI {
       hold.onpointerup = hold.onpointerleave = () => (holding = false);
       loop();
       const start = () => listen(kind, set, cancel).then((ok) => ok && finish(true));
-      if (useSensors && (kind === 'shake' || kind === 'flip' || kind === 'facedown') && motionNeedsTap()) {
+      if (useSensors && (kind === 'shake' || kind === 'flip' || kind === 'facedown' || kind === 'jump') && motionNeedsTap()) {
         // iPhone: the motion sensors need a yes, given from a tap
         const en = el('button', 'senable');
         en.textContent = t('ui.sensorEnable');
@@ -397,6 +397,30 @@ export class UI {
         };
         b.insertBefore(en, hold);
       } else if (useSensors) start();
+    });
+  }
+
+  /** A choice that matters: one button per option; resolves with the index picked (it can't be closed). */
+  choice(title: string, text: string, options: string[]): Promise<number> {
+    return new Promise((res) => {
+      const b = el('div', 'choice');
+      const p = el('div', 'paper');
+      p.textContent = text;
+      b.append(p);
+      let close = () => {};
+      options.forEach((o, i) => {
+        const btn = el('button', 'opt');
+        btn.textContent = o;
+        btn.onclick = () => {
+          close();
+          res(i);
+        };
+        b.append(btn);
+      });
+      close = this.openModal(title, b);
+      // no way out but to choose
+      (this.modal.querySelector('.close') as HTMLElement | null)?.remove();
+      this.modal.onpointerup = null;
     });
   }
 

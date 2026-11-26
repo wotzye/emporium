@@ -739,7 +739,7 @@ export class Game {
   }
 
   /** A clue you act out with the phone: blow, shout, shake. */
-  physical(kind: 'blow' | 'shout' | 'shake' | 'flip' | 'facedown', textKey: string) {
+  physical(kind: 'blow' | 'shout' | 'shake' | 'flip' | 'facedown' | 'jump', textKey: string) {
     return this.ui.sensor(kind, t('ui.sensor.' + kind), t(textKey), this.settings.sensors ?? true);
   }
 

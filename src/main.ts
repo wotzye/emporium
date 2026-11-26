@@ -39,6 +39,8 @@ import { createBarbiereCantina } from './locations/barbiere_cantina';
 import { createMacRetro } from './locations/mac_retro';
 import { createMacCella } from './locations/mac_cella';
 import { createMacCantina } from './locations/mac_cantina';
+import { createValigiaBottega } from './locations/valigia_bottega';
+import { createValigiaSogno } from './locations/valigia_sogno';
 
 const root = document.getElementById('app')!;
 const game = new Game(root);
@@ -48,6 +50,8 @@ game.register('macelleria', createMacelleria);
 game.register('mac_retro', createMacRetro);
 game.register('mac_cella', createMacCella);
 game.register('mac_cantina', createMacCantina);
+game.register('valigia_bottega', createValigiaBottega);
+game.register('valigia_sogno', createValigiaSogno);
 game.register('barbiere', createBarbiere);
 game.register('barbiere_retro', createBarbiereRetro);
 game.register('barbiere_cantina', createBarbiereCantina);

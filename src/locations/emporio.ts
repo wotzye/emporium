@@ -152,6 +152,8 @@ export function createEmporio(g: Game): Location {
   merchant.position.set(-0.8, 0, -2.15);
   merchant.traverse((o) => (o.userData.noPick = true));
   scene.add(merchant);
+  // after the end he is gone: only his empty chair is left
+  merchant.visible = !g.flag('finale');
   const eyes = { set visible(v: boolean) { merchantC.setEyes(v); } };
   merchantC.setEyes(false);
 
@@ -355,6 +357,18 @@ export function createEmporio(g: Game): Location {
     scene.add(tg);
   });
 
+  // the end: Lisa's ribbon on the last pedestal, the one with her name
+  if (g.flag('finale')) {
+    const rib = new THREE.Group();
+    for (const sd of [-1, 1]) {
+      const loop = mesh(new THREE.TorusGeometry(0.04, 0.01, 6, 14), mat(0xece8e0, { roughness: 0.7 }), 0, 0, sd * 0.04);
+      loop.scale.y = 0.6;
+      loop.rotation.y = Math.PI / 2;
+      rib.add(loop);
+    }
+    rib.position.set(caseX, lowY + 0.13, lowZ[5]);
+    scene.add(rib);
+  }
   // razor on its pedestal (hidden until placed)
   const razor = new THREE.Group();
   const blade = box(0.02, 0.03, 0.2, cm, 0, 0.12, 0.05);
@@ -470,6 +484,8 @@ export function createEmporio(g: Game): Location {
         await g.say([{ who: 'mercante', key: 'emp.haveRadio' }]);
       } else if (g.has('watch')) {
         await g.say([{ who: 'mercante', key: 'emp.haveWatch' }]);
+      } else if (g.flag('finale')) {
+        await g.say([{ who: 'diego', key: 'emp.final1' }, { who: 'diego', key: 'emp.final2' }]);
       } else if (g.flag('m2.done')) {
         await g.say([{ who: 'mercante', key: 'emp.afterBruno1' }, { who: 'diego', key: 'emp.afterBruno2' }, { who: 'mercante', key: 'emp.afterBruno3' }]);
       } else if (g.flag('ch.done')) {

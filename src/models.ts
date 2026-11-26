@@ -86,6 +86,13 @@ const FILES = {
   bones: 'models/bones.glb',
   reliquary: 'models/reliquary.glb',
   tomb: 'models/tomb.glb',
+  // the suitcase maker's (CC-BY 4.0)
+  suitA: 'models/suitA.glb',
+  suitB: 'models/suitB.glb',
+  suitC: 'models/suitC.glb',
+  suitD: 'models/suitD.glb',
+  trunkA: 'models/trunkA.glb',
+  trunkB: 'models/trunkB.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;

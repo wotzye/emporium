@@ -279,3 +279,6 @@ button:active { background: rgba(255,255,255,0.08); }
 #markers .hsm.exit { border-color: rgba(255,255,255,0.95); background: rgba(0,0,0,0.35); }
 #markers .hsm.exit::after { width: 0; height: 0; margin: -6px 0 0 -5px; border-radius: 0; background: none; box-shadow: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid #fff; filter: drop-shadow(0 0 1px rgba(0,0,0,0.8)); }
 #markers .hsm.exit[data-dir='down']::after { margin-top: -3px; border-bottom: 0; border-top: 9px solid #fff; }
+.choice { display: flex; flex-direction: column; gap: 12px; }
+.choice .opt { min-height: 48px; padding: 10px 16px; font: inherit; font-size: 17px; color: #efe9dc; background: #1c1a17; border: 1px solid #8a8070; border-radius: 6px; text-align: left; }
+.choice .opt:active { background: #3a352d; }
