@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mat, rbox, cyl, mesh, canvasTex, noise, plasterMaterial, woodMaterial } from '../builders';
 import { cursify } from '../models';
+import { photoOr } from '../photos';
 
 /** L'Ultimo Scatto — shared bits: walls, the bellows camera, the portraits of the villagers. */
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -115,3 +116,78 @@ export function safelight(lit: boolean) {
 }
 
 export { canvasTex };
+
+// ---------------- the torn group photograph (archive and retouching room) ----------------
+/** where the scratched-out face is in the group photo (fractions of the picture) */
+const SCRATCHED = [0.8, 0.34];
+/** the five pieces of the torn photo: where each one is hidden */
+export const PIECES = 5;
+export const piecesFound = (g: { flag: (k: string) => unknown }) => [1, 2, 3, 4, 5].filter((i) => g.flag('f.p' + i)).length;
+
+/**
+ * The village feast, 1973: everybody from the shops in one picture, in front of San Michele.
+ * One face is scratched out with a nail, like in the photo at the butcher's: Bruno.
+ * photos/foto_gruppo.jpg replaces the drawing when it ships.
+ */
+export function groupPhoto(): HTMLCanvasElement {
+  const cv = document.createElement('canvas');
+  cv.width = 1000;
+  cv.height = 640;
+  const c = cv.getContext('2d')!;
+  const scratch = (x0: number, y0: number, w: number, h: number) => {
+    c.strokeStyle = 'rgba(236,230,218,0.92)';
+    c.lineCap = 'round';
+    const fx = x0 + w * SCRATCHED[0], fy = y0 + h * SCRATCHED[1];
+    for (let i = 0; i < 36; i++) {
+      c.lineWidth = 1 + Math.random() * 3;
+      c.beginPath();
+      c.moveTo(fx - w * 0.035 + Math.random() * w * 0.025, fy - h * 0.06 + Math.random() * h * 0.03);
+      c.lineTo(fx + w * 0.01 + Math.random() * w * 0.03, fy + h * 0.01 + Math.random() * h * 0.06);
+      c.stroke();
+    }
+  };
+  photoOr('foto_gruppo', (cc, w, h) => {
+    const gr = cc.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#c9c3b6');
+    gr.addColorStop(1, '#6e6a62');
+    cc.fillStyle = gr;
+    cc.fillRect(0, 0, w, h);
+    // the church front behind them
+    cc.fillStyle = '#8a857b';
+    cc.fillRect(w * 0.3, 0, w * 0.4, h * 0.45);
+    cc.fillStyle = '#3a3630';
+    cc.fillRect(w * 0.46, h * 0.18, w * 0.08, h * 0.27);
+    // nine people: two rows, kids in front
+    const people: [number, number, number][] = [[0.12, 1, 1], [0.24, 1.05, 1], [0.36, 0.95, 1], [0.48, 1, 1], [0.6, 1.08, 1], [0.8, 1.15, 1], [0.92, 1, 1], [0.66, 0.62, 0.7], [0.72, 0.68, 0.7]];
+    for (const [fx, s, k] of people) {
+      const x = fx * w, top = h * (0.92 - 0.6 * s * k);
+      cc.fillStyle = '#26241f';
+      cc.beginPath();
+      cc.arc(x, top, 22 * k, 0, Math.PI * 2);
+      cc.fill();
+      cc.fillRect(x - 34 * k, top + 24 * k, 68 * k, h);
+      cc.fillStyle = '#d8d2c4';
+      cc.fillRect(x - 10 * k, top + 26 * k, 20 * k, 30 * k);
+    }
+    // the big man on the right wears an apron
+    cc.fillStyle = '#cfc8b8';
+    cc.fillRect(w * 0.8 - 30, h * 0.5, 60, h * 0.4);
+    cc.fillStyle = '#1a1814';
+    cc.font = 'italic 26px Georgia, serif';
+    cc.fillText('Festa di San Michele — 1973', w * 0.05, h * 0.97);
+  }, { border: false, age: 0.5, tone: 'grey', after: (_c, x0, y0, w, h) => scratch(x0, y0, w, h) })(c, cv.width, cv.height);
+  // the fallback drawing gets its scratches too (the real photo gets them in `after`)
+  scratch(0, 0, cv.width, cv.height);
+  return cv;
+}
+
+/** a scrap of the torn photo, lying somewhere (small, pale, easy to miss) */
+export function photoScrap(i: number) {
+  const tex = new THREE.CanvasTexture(groupPhoto());
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.repeat.set(1 / PIECES, 1);
+  tex.offset.set((i - 1) / PIECES, 0);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.11), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, side: THREE.DoubleSide }));
+  m.castShadow = false;
+  return m;
+}

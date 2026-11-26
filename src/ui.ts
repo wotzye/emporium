@@ -400,6 +400,66 @@ export class UI {
     });
   }
 
+  /**
+   * A torn photograph to put back together: n vertical strips, shuffled. Tap one, then another,
+   * to swap them. Resolves true when the picture is whole, false if closed.
+   */
+  collage(title: string, text: string, src: HTMLCanvasElement, n: number, onSwap?: () => void): Promise<boolean> {
+    return new Promise((res) => {
+      const b = el('div', 'collage');
+      const p = el('div', 'paper');
+      p.textContent = text;
+      const row = el('div', 'strips');
+      b.append(p, row);
+      // a shuffle that is never already solved
+      let order = [...Array(n).keys()];
+      do order.sort(() => Math.random() - 0.5);
+      while (order.every((v, i) => v === i));
+      let sel = -1;
+      let done = false;
+      const sw = src.width / n;
+      const render = () => {
+        row.replaceChildren(
+          ...order.map((piece, slot) => {
+            const c = document.createElement('canvas');
+            c.width = Math.round(sw);
+            c.height = src.height;
+            const x = c.getContext('2d')!;
+            x.drawImage(src, piece * sw, 0, sw, src.height, 0, 0, sw, src.height);
+            c.className = 'strip' + (slot === sel ? ' sel' : '');
+            c.style.transform = `rotate(${((piece * 37) % 7) - 3}deg)`;
+            if (done) c.style.transform = 'none';
+            c.onclick = () => {
+              if (done) return;
+              if (sel < 0) sel = slot;
+              else if (sel === slot) sel = -1;
+              else {
+                [order[sel], order[slot]] = [order[slot], order[sel]];
+                sel = -1;
+                onSwap?.();
+              }
+              if (order.every((v, i) => v === i)) {
+                done = true;
+                render();
+                setTimeout(() => {
+                  close();
+                  res(true);
+                }, 1100);
+                return;
+              }
+              render();
+            };
+            return c;
+          }),
+        );
+      };
+      render();
+      const close = this.openModal(title, b, () => {
+        if (!done) res(false);
+      });
+    });
+  }
+
   /** A choice that matters: one button per option; resolves with the index picked (it can't be closed). */
   choice(title: string, text: string, options: string[]): Promise<number> {
     return new Promise((res) => {

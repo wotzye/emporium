@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, bulb, lightCone, woodMaterial, mat, cyl } from '../builders';
 import { t } from '../i18n';
-import { fotoWall, sleep } from './foto_common';
+import { fotoWall, sleep, photoScrap, piecesFound, PIECES } from './foto_common';
 
 /**
  * The archive: a cabinet of forty little drawers of glass plates and negatives, numbered.
@@ -71,9 +71,17 @@ export function createFotoArchivio(g: Game): Location {
   flatKey.add(rbox(0.07, 0.006, 0.012, 0.002, mat(0x9a8a62, { metalness: 1, roughness: 0.35 }), 0, 0, 0));
   flatKey.add(mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), mat(0x9a8a62, { metalness: 1, roughness: 0.35 }), -0.045, 0, 0).rotateX(Math.PI / 2));
   const d31 = drawers.find((d) => d.n === THE_ONE)!;
-  flatKey.position.set(0, 0.03, 0.06);
+  // the key is shut in a little tin with a letter lock: «Chi manca, apre» (who's missing, opens)
+  const tin = new THREE.Group();
+  tin.add(rbox(0.16, 0.05, 0.1, 0.008, mat(0x7a756a, { metalness: 0.7, roughness: 0.45 }), 0, 0, 0));
+  tin.add(rbox(0.04, 0.03, 0.012, 0.004, mat(0x9a8a62, { metalness: 1, roughness: 0.35 }), 0, 0, 0.056));
+  tin.position.set(0, 0.04, 0.05);
+  d31.g.add(tin);
+  const tinOpen = () => !!g.flag('f.tin') || keyTaken();
+  flatKey.position.set(0.0, 0.07, 0.05);
   d31.g.add(flatKey);
-  flatKey.visible = opened.has(THE_ONE) && !keyTaken();
+  flatKey.visible = opened.has(THE_ONE) && tinOpen() && !keyTaken();
+  tin.visible = opened.has(THE_ONE);
   // drawer 17: a radio valve, with a tag in another hand: «Sartori — ECC83 — da restituire»
   const VALVE_DRAWER = 17;
   const valveTaken = () => !!g.flag('rl.valveTaken');
@@ -95,14 +103,41 @@ export function createFotoArchivio(g: Game): Location {
   neg.rotation.x = -Math.PI / 2;
   neg.position.set(0.95, 0.81, 0.6);
   scene.add(neg);
-  // the door back to the shop
+  // the door back to the shop, and the little door to the retouching room
   scene.add(rbox(0.85, 2.05, 0.05, 0.01, woodDark, 0, 1.025, D / 2 - 0.03));
+  scene.add(rbox(0.7, 1.9, 0.05, 0.01, woodMid, -1.35, 0.95, D / 2 - 0.03));
+  const ritSign = textPlane([t('foto.ritSign')], 0.4, 0.09, { bg: '#d9d3c4', size: 20, px: 64 });
+  ritSign.position.set(-1.35, 2.02, D / 2 - 0.06);
+  ritSign.rotation.y = Math.PI;
+  scene.add(ritSign);
+  // two pieces of a torn photo: up on a shelf between the boxes, and on the floor under the light table
+  const p1 = photoScrap(1);
+  p1.position.set(-W / 2 + 0.2, 1.97, 0.95);
+  p1.rotation.set(-Math.PI / 2, 0, 0.5);
+  const p2 = photoScrap(2);
+  p2.position.set(1.15, 0.006, 0.7);
+  p2.rotation.set(-Math.PI / 2, 0, -0.9);
+  p1.visible = !g.flag('f.p1');
+  p2.visible = !g.flag('f.p2');
+  scene.add(p1, p2);
 
   // ---------------- hotspots ----------------
   const hCab = hitBox(cabW + 0.1, cabH + 0.1, 0.5, 0, cabY + cabH / 2, -D / 2 + 0.3, 'cabinet');
   const hLight = hitBox(0.9, 0.2, 0.6, 1.0, 0.85, 0.6, 'lightbox');
   const hDoor = hitBox(1.0, 2.1, 0.2, 0, 1.05, D / 2 - 0.1, 'door');
-  scene.add(hCab, hLight, hDoor);
+  const hRit = hitBox(0.8, 2.0, 0.2, -1.35, 1.0, D / 2 - 0.1, 'ritocco');
+  const hP1 = hitBox(0.3, 0.2, 0.3, -W / 2 + 0.2, 2.0, 0.95, 'piece1');
+  const hP2 = hitBox(0.3, 0.12, 0.3, 1.15, 0.05, 0.7, 'piece2');
+  const hTin = hitBox(0.2, 0.1, 0.16, 0, 0.06, 0.05, 'tin');
+  d31.g.add(hTin);
+  scene.add(hCab, hLight, hDoor, hRit, hP1, hP2);
+  const findPiece = async (i: number, obj: THREE.Object3D) => {
+    g.set('f.p' + i);
+    obj.visible = false;
+    g.audio.sfx('paper');
+    g.note('note.foto.pieces');
+    await g.say([{ who: 'diego', key: 'foto.pieceFound', vars: { n: piecesFound(g), tot: PIECES } }]);
+  };
   const say = (k: string) => g.say(k);
   const saveOpened = () => g.set('f.opened', [...opened].join(','));
   // what's in the other drawers: plates of the villagers, by year
@@ -151,6 +186,7 @@ export function createFotoArchivio(g: Game): Location {
           g.audio.sfx('pickup');
           return say('foto.valveTaken');
         }
+        if (d.n === THE_ONE && !tinOpen()) return hotspots.find((h) => h.id === 'tin')!.tap(null);
         if (d.n === THE_ONE && flatKey.visible) {
           flatKey.visible = false;
           g.set('f.key');
@@ -167,6 +203,30 @@ export function createFotoArchivio(g: Game): Location {
         }
       },
     })),
+    { id: 'tin', obj: hTin, when: () => g.viewName === 'cabinet' && opened.has(THE_ONE) && !tinOpen(), tap: async (item) => {
+      if (item) return g.nope();
+      await say(g.flag('f.collage') ? 'foto.tinKnow' : 'foto.tin');
+      const ok = await g.ui.letterLock(t('foto.tinTitle'), 5, (w) => w.toUpperCase() === 'BRUNO', () => g.audio.sfx('click'));
+      if (!ok) return;
+      g.set('f.tin');
+      g.audio.sfx('unlock');
+      flatKey.visible = true;
+      return g.say([{ who: 'diego', key: 'foto.tinOpen1' }, { who: 'diego', key: 'foto.tinOpen2' }]);
+    } },
+    { id: 'piece1', obj: hP1, lowPriority: true, when: () => !g.flag('f.p1'), tap: async (item) => {
+      if (item) return g.nope();
+      return findPiece(1, p1);
+    } },
+    { id: 'piece2', obj: hP2, lowPriority: true, when: () => !g.flag('f.p2'), tap: async (item) => {
+      if (item) return g.nope();
+      return findPiece(2, p2);
+    } },
+    { id: 'ritocco', obj: hRit, lowPriority: true, tap: async (item) => {
+      if (item) return g.nope();
+      g.audio.sfx('creak');
+      g.audio.steps(2, 0.45, false);
+      return g.go('foto_ritocco');
+    } },
     { id: 'lightbox', obj: hLight, tap: async (item) => {
       if (item) return g.nope();
       return say('foto.lightbox');
@@ -181,7 +241,7 @@ export function createFotoArchivio(g: Game): Location {
   return {
     id: 'foto_archivio',
     nameKey: 'place.fotoArchivio',
-    next: ['foto_negozio'],
+    next: ['foto_negozio', 'foto_ritocco'],
     scene,
     drone: 'emporio',
     startView: 'main',
@@ -203,7 +263,10 @@ export function createFotoArchivio(g: Game): Location {
       if (g.flag('placedCamera') && g.flag('rl.ticket') && !g.has('valve') && !g.flag('rl.valveIn')) return 'hint.foto.valve';
       if (keyTaken()) return 'hint.foto.stairs';
       if (!g.flag('f.print')) return 'hint.foto.archiveWhich';
-      return 'hint.foto.drawer';
+      if (!opened.has(THE_ONE)) return 'hint.foto.drawer';
+      if (tinOpen()) return 'hint.foto.takeKey';
+      if (g.flag('f.collage')) return 'hint.foto.tin';
+      return piecesFound(g) < PIECES ? 'hint.foto.pieces' : 'hint.foto.collage';
     },
     debug: { drawers },
   };

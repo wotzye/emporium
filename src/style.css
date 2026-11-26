@@ -282,3 +282,6 @@ button:active { background: rgba(255,255,255,0.08); }
 .choice { display: flex; flex-direction: column; gap: 12px; }
 .choice .opt { min-height: 48px; padding: 10px 16px; font: inherit; font-size: 17px; color: #efe9dc; background: #1c1a17; border: 1px solid #8a8070; border-radius: 6px; text-align: left; }
 .choice .opt:active { background: #3a352d; }
+.collage .strips { display: flex; gap: 4px; justify-content: center; margin-top: 12px; }
+#app .collage canvas.strip { position: static; inset: auto; touch-action: auto; display: block; width: calc(min(560px, 80vw) / 5 - 4px); height: auto; max-height: 50vh; object-fit: contain; box-shadow: 0 2px 6px rgba(0,0,0,0.6); border: 2px solid transparent; cursor: pointer; transition: transform 0.25s; }
+#app .collage canvas.strip.sel { border-color: #f2ead8; transform: translateY(-8px) !important; }

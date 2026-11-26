@@ -218,7 +218,7 @@ export function createFotoNegozio(g: Game): Location {
       if (!g.save.notebook.includes('note.lastra')) return 'hint.foto.register';
       if (!g.flag('f.dark')) return 'hint.foto.studio';
       if (!g.flag('f.print')) return 'hint.foto.darkroom';
-      if (!g.flag('f.key') && !stairsOpen()) return 'hint.foto.archive';
+      if (!g.flag('f.key') && !stairsOpen()) return g.flag('f.opened') && String(g.flag('f.opened')).split(',').includes('31') ? (g.flag('f.collage') ? 'hint.foto.tin' : 'hint.foto.pieces') : 'hint.foto.archive';
       if (!stairsOpen()) return 'hint.foto.stairs';
       if (!g.flag('f.flashbulb')) return 'hint.foto.upstairs';
       return 'hint.foto.portrait';

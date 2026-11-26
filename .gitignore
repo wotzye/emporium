@@ -3,3 +3,4 @@ dist/
 dist-single/
 *.zip
 .DS_Store
+emporium-update.bundle
