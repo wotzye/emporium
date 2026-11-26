@@ -3,6 +3,7 @@ import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, woodMaterial, mat, cyl, uvInk } from '../builders';
 import { t } from '../i18n';
 import { stoneWall, stoneFloor, pew, candle, sleep, churchHint } from './chiesa_common';
+import { prop } from '../models';
 
 /**
  * San Michele — the nave. Pews, the altar, the hymn board (today: 24), the hymn books on the
@@ -47,8 +48,30 @@ export function createChiesaNavata(g: Game): Location {
   scene.add(rbox(4.2, 0.2, 2.2, 0.02, stoneFloor(), 0, 0.1, -4.4));
   scene.add(rbox(2.0, 1.0, 0.8, 0.02, mat(0xb8b2a6, { roughness: 0.6 }), 0, 0.7, -4.6));
   scene.add(rbox(2.1, 0.03, 0.9, 0.01, mat(0xe8e4da, { roughness: 1 }), 0, 1.215, -4.6));
-  scene.add(rbox(0.12, 2.6, 0.12, 0.01, woodDark, 0, 3.0, -D / 2 + 0.15));
-  scene.add(rbox(1.3, 0.12, 0.12, 0.01, woodDark, 0, 3.7, -D / 2 + 0.15));
+  // the carved retable behind the altar, the crucifix above it
+  const retable = prop('altarM', { width: 2.6, grey: 0.9 });
+  if (retable) {
+    retable.position.set(0, 0.2, -D / 2 + 0.35);
+    scene.add(retable);
+  }
+  const crucifix = prop('crossM', { height: 1.9 });
+  if (crucifix) {
+    crucifix.position.set(0, retable ? 3.3 : 2.2, -D / 2 + 0.1);
+    scene.add(crucifix);
+  } else {
+    scene.add(rbox(0.12, 2.6, 0.12, 0.01, woodDark, 0, 3.0, -D / 2 + 0.15));
+    scene.add(rbox(1.3, 0.12, 0.12, 0.01, woodDark, 0, 3.7, -D / 2 + 0.15));
+  }
+  // two tall iron candle stands either side of the altar
+  for (const x of [-1.6, 1.6]) {
+    const st = prop('candelabra2', { height: 1.9 });
+    if (!st) continue;
+    st.position.set(x, 0.2, -4.2);
+    scene.add(st);
+    const l = new THREE.PointLight(0xffd9a0, 0.5, 4, 1.8);
+    l.position.set(x, 2.15, -4.2);
+    scene.add(l);
+  }
   const candles = [-0.7, 0.7].map((x) => {
     const c = candle(0.45);
     c.group.position.set(x, 1.23, -4.6);
@@ -63,15 +86,19 @@ export function createChiesaNavata(g: Game): Location {
 
   // ---------------- the confessional (left wall) ----------------
   const conf = new THREE.Group();
-  conf.add(rbox(1.6, 2.4, 0.9, 0.03, woodDark, 0, 1.2, 0));
-  for (const x of [-0.5, 0.5]) conf.add(mesh(new THREE.PlaneGeometry(0.5, 1.6), mat(0x1a0c0c, { roughness: 1 }), x, 1.0, 0.46, false));
-  conf.add(mesh(new THREE.PlaneGeometry(0.3, 0.3), mat(0x0a0a0a), 0, 1.4, 0.46, false));
+  const realConf = prop('confessional', { width: 1.7, grey: 0.8 });
+  if (realConf) conf.add(realConf);
+  else {
+    conf.add(rbox(1.6, 2.4, 0.9, 0.03, woodDark, 0, 1.2, 0));
+    for (const x of [-0.5, 0.5]) conf.add(mesh(new THREE.PlaneGeometry(0.5, 1.6), mat(0x1a0c0c, { roughness: 1 }), x, 1.0, 0.46, false));
+    conf.add(mesh(new THREE.PlaneGeometry(0.3, 0.3), mat(0x0a0a0a), 0, 1.4, 0.46, false));
+  }
   conf.position.set(-W / 2 + 0.5, 0, -0.6);
   conf.rotation.y = Math.PI / 2;
   scene.add(conf);
   // in the confessional, in invisible ink: someone else came here to confess
   const confInk = uvInk([t('ch.uvConf1'), t('ch.uvConf2')], 0.9, 0.36);
-  confInk.position.set(-W / 2 + 0.015, 1.9, -0.6);
+  confInk.position.set(-W / 2 + 0.015, 2.75, -0.6);
   confInk.rotation.y = Math.PI / 2;
   scene.add(confInk);
 

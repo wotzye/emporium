@@ -4,6 +4,7 @@ import { room, rbox, mesh, dust, hitBox, mat } from '../builders';
 import { t } from '../i18n';
 import { photoImage, photoOr } from '../photos';
 import { stoneWall, stoneFloor, candle, sleep, churchHint } from './chiesa_common';
+import { prop } from '../models';
 
 /**
  * The crypt. Niches, old bones, one candle that somebody keeps lit. On the stone table, Lisa's
@@ -26,10 +27,27 @@ export function createChiesaCripta(g: Game): Location {
   for (const s of [-1, 1]) for (let i = 0; i < 4; i++) for (const y of [0.6, 1.5]) {
     const z = -1.8 + i * 1.1;
     scene.add(mesh(new THREE.PlaneGeometry(0.8, 0.6), mat(0x0a0a0a), s * (W / 2 - 0.012), y + 0.3, z, false).rotateY(-s * Math.PI / 2));
-    for (let k = 0; k < 3; k++) scene.add(mesh(new THREE.SphereGeometry(0.07, 8, 6), bone, s * (W / 2 - 0.12), y + 0.1, z - 0.2 + k * 0.2));
+    const pile = prop('skulls', { width: 0.7, turn: s * Math.PI / 2 + (i + y) * 0.7, grey: 0.9 });
+    if (pile) {
+      pile.position.set(s * (W / 2 - 0.2), y, z);
+      scene.add(pile);
+    } else for (let k = 0; k < 3; k++) scene.add(mesh(new THREE.SphereGeometry(0.07, 8, 6), bone, s * (W / 2 - 0.12), y + 0.1, z - 0.2 + k * 0.2));
+  }
+  // loose bones along the walls; at the back, a stone tomb with a carved corpse on its lid
+  for (const [x, z, r] of [[-1.5, 0.6, 0.4], [1.4, -0.4, 2.1], [-1.2, 1.8, 1.2]] as const) {
+    const b = prop('bones', { width: 0.55, turn: r, rot: [Math.PI / 2, 0, 0], grey: 0.9 });
+    if (b) {
+      b.position.set(x, 0, z);
+      scene.add(b);
+    }
+  }
+  const tomb = prop('tomb', { width: 1.7, grey: 0.55 });
+  if (tomb) {
+    tomb.position.set(-0.2, 0, -D / 2 + 0.3);
+    scene.add(tomb);
   }
   // the stone table, the candle, the diary
-  const tZ = -1.6;
+  const tZ = -1.35;
   scene.add(rbox(1.2, 0.85, 0.7, 0.02, mat(0x6a665e, { roughness: 1 }), 0, 0.425, tZ));
   const cnd = candle(0.25);
   cnd.group.position.set(-0.4, 0.85, tZ - 0.1);

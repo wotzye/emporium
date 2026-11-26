@@ -20,6 +20,9 @@ export function stoneWall() {
 export const stoneFloor = () => tileMaterial({ a: '#8a857b', b: '#6a665e', n: 6, repeat: [4, 6], grime: 0.8 });
 
 /** the bells, as they're called up in the tower */
+/** how the pew model must be turned to face the altar */
+export const PEW_TURN = 0;
+
 export const BELLS = ['G', 'M', 'P'] as const;
 /** «a morto»: the order the hymn book gives on page 24 */
 export const BELL_ORDER = 'GPPM';
@@ -27,6 +30,19 @@ export const BELL_ORDER = 'GPPM';
 export const KNOCK = 'LSSL';
 
 export function pew(len = 2.4) {
+  // the real pew, if the model is in (faces the altar: backrest towards +z)
+  const real = prop('pewM', { width: len, turn: PEW_TURN });
+  if (real) {
+    // its own texture is a flat grey: dark old wood instead
+    const w = woodMaterial({ base: '#3a2a1c' });
+    real.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) m.material = w;
+    });
+    const g = new THREE.Group();
+    g.add(real);
+    return g;
+  }
   const g = new THREE.Group();
   const w = woodMaterial({ base: '#3a2a1c' });
   g.add(rbox(len, 0.06, 0.42, 0.01, w, 0, 0.45, 0));

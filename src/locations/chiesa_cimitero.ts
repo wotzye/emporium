@@ -74,8 +74,12 @@ export function createChiesaCimitero(g: Game): Location {
   scene.add(mesh(new THREE.BoxGeometry(0.8, 0.12, 1.5), mat(0x2a241e, { roughness: 1 }), lX, 0.06, lZ + 0.6));
   const cross = new THREE.Group();
   const wd = woodMaterial({ base: '#4a3a2a' });
-  cross.add(rbox(0.06, 1.0, 0.05, 0.005, wd, 0, 0.5, 0));
-  cross.add(rbox(0.45, 0.06, 0.05, 0.005, wd, 0, 0.72, 0));
+  const realCross = prop('crossM', { height: 1.0 });
+  if (realCross) cross.add(realCross);
+  else {
+    cross.add(rbox(0.06, 1.0, 0.05, 0.005, wd, 0, 0.5, 0));
+    cross.add(rbox(0.45, 0.06, 0.05, 0.005, wd, 0, 0.72, 0));
+  }
   cross.position.set(lX, 0, lZ);
   scene.add(cross);
   // a few wild flowers, fresh

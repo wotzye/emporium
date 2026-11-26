@@ -75,6 +75,17 @@ const FILES = {
   grinder: 'models/grinder.glb',
   cleaver: 'models/cleaver.glb',
   corpse: 'models/corpse.glb',
+  // the church, refurnished (CC-BY 4.0)
+  pewM: 'models/pew.glb',
+  confessional: 'models/confessional.glb',
+  altarM: 'models/altar.glb',
+  candelabra: 'models/candelabra.glb',
+  candelabra2: 'models/candelabra2.glb',
+  crossM: 'models/cross.glb',
+  skulls: 'models/skulls.glb',
+  bones: 'models/bones.glb',
+  reliquary: 'models/reliquary.glb',
+  tomb: 'models/tomb.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;

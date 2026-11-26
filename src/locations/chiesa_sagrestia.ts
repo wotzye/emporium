@@ -5,6 +5,7 @@ import { t } from '../i18n';
 import { oldPhoto } from '../photos';
 import { motionNeedsTap, askMotion } from '../sensors';
 import { stoneWall, stoneFloor, candle, sleep, churchHint } from './chiesa_common';
+import { prop } from '../models';
 
 /**
  * The sacristy. Don Pietro's portrait, the register of the dead (the 24th of October 1974: Lisa),
@@ -62,6 +63,19 @@ export function createChiesaSagrestia(g: Game): Location {
   key.visible = mazeDone() && !g.flag('ch.cemkey');
   scene.add(key);
 
+  // the old gilt reliquary that stands on the table: the puzzle box sits in front of it
+  const relic = prop('reliquary', { height: 0.34 });
+  if (relic) {
+    relic.position.set(0.58, tY + 0.025, tZ - 0.25);
+    relic.traverse((o) => (o.userData.noPick = true));
+    scene.add(relic);
+  }
+  // a three-branched candlestick on the wardrobe
+  const cstick = prop('candelabra', { height: 0.45 });
+  if (cstick) {
+    cstick.position.set(W / 2 - 0.6, 2.2, -0.9);
+    scene.add(cstick);
+  }
   // ---------------- the register of the dead, on the lectern ----------------
   scene.add(rbox(0.4, 1.1, 0.35, 0.01, woodDark, -1.5, 0.55, -1.2));
   const reg = rbox(0.42, 0.04, 0.3, 0.008, mat(0x2a1a12, { roughness: 0.7 }), -1.5, 1.14, -1.2);
