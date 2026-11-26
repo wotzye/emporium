@@ -182,12 +182,22 @@ export function groupPhoto(): HTMLCanvasElement {
 }
 
 /** a scrap of the torn photo, lying somewhere (small, pale, easy to miss) */
-export function photoScrap(i: number) {
+export function photoScrap(i: number, plain = false) {
   const tex = new THREE.CanvasTexture(groupPhoto());
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.repeat.set(1 / PIECES, 1);
   tex.offset.set((i - 1) / PIECES, 0);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.11), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, side: THREE.DoubleSide }));
+  // big enough to see from across the room, and a little bright, like glossy paper catching the light
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.11, 0.17),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, side: THREE.DoubleSide, ...(plain ? {} : { emissiveMap: tex, emissive: new THREE.Color(0.45, 0.45, 0.45) }) }),
+  );
   m.castShadow = false;
+  if (!plain) {
+    // the white border of an old print, torn on one side
+    const border = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.19), new THREE.MeshStandardMaterial({ color: 0xf2ede0, emissive: 0x3a3833, roughness: 0.6, side: THREE.DoubleSide }));
+    border.position.z = -0.002;
+    m.add(border);
+  }
   return m;
 }

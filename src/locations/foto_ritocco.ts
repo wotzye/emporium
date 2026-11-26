@@ -111,7 +111,7 @@ export function createFotoRitocco(g: Game): Location {
   const p4 = photoScrap(4);
   p4.position.set(frameX + 0.19, 1.37, frameZ + 0.015);
   p4.rotation.set(0, 0, -0.3);
-  const p5 = photoScrap(5);
+  const p5 = photoScrap(5, true);
   p5.position.set(W / 2 - 0.62, 0.006, -D / 2 + 0.25);
   p5.rotation.set(-Math.PI / 2, 0, 0.7);
   // Lisa's mark on it: it glows in the UV beam (until then it's lost in the dark corner)
@@ -162,12 +162,12 @@ export function createFotoRitocco(g: Game): Location {
       g.note('note.foto.collage');
     } },
     // the pieces you can find here: no marker, they're small and easy to miss
-    { id: 'bin', obj: hBin, lowPriority: true, tap: async (item) => {
+    { id: 'bin', obj: hBin, tap: async (item) => {
       if (item) return g.nope();
       if (!g.flag('f.p3')) return found(3);
       return say('foto.bin');
     } },
-    { id: 'proof', obj: hProof, lowPriority: true, tap: async (item) => {
+    { id: 'proof', obj: hProof, tap: async (item) => {
       if (item) return g.nope();
       if (!g.flag('f.p4')) {
         await say('foto.proofBehind');

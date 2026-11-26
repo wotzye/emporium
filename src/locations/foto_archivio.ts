@@ -34,8 +34,10 @@ export function createFotoArchivio(g: Game): Location {
   // shelves of boxes along the walls
   for (const s of [-1, 1]) {
     for (let r = 0; r < 4; r++) {
-      scene.add(rbox(0.35, 0.03, 2.6, 0.005, woodDark, s * (W / 2 - 0.2), 0.45 + r * 0.5, 0));
-      for (let k = 0; k < 7; k++) scene.add(rbox(0.28, 0.22 + ((k * 7 + r) % 3) * 0.04, 0.3, 0.01, mat(0x8a8070 - ((k + r) % 3) * 0x101010, { roughness: 0.9 }), s * (W / 2 - 0.2), 0.58 + r * 0.5, -1.1 + k * 0.36));
+      // on the left they stop short of the back corner: the retouching door is there
+      const len = s < 0 ? 2.1 : 2.6, cz = s < 0 ? 0.25 : 0, nb = s < 0 ? 6 : 7, z0 = s < 0 ? -0.6 : -1.1;
+      scene.add(rbox(0.35, 0.03, len, 0.005, woodDark, s * (W / 2 - 0.2), 0.45 + r * 0.5, cz));
+      for (let k = 0; k < nb; k++) scene.add(rbox(0.28, 0.22 + ((k * 7 + r) % 3) * 0.04, 0.3, 0.01, mat(0x8a8070 - ((k + r) % 3) * 0x101010, { roughness: 0.9 }), s * (W / 2 - 0.2), 0.58 + r * 0.5, z0 + k * 0.36));
     }
   }
 
@@ -105,22 +107,22 @@ export function createFotoArchivio(g: Game): Location {
   scene.add(neg);
   // the door back to the shop, and the little door to the retouching room
   scene.add(rbox(0.85, 2.05, 0.05, 0.01, woodDark, 0, 1.025, D / 2 - 0.03));
-  // the retouching room's door is on the left wall, where you can see it from where you stand
-  const RX = -W / 2 + 0.03, RZ = 0.1;
-  scene.add(rbox(0.05, 1.9, 0.7, 0.01, woodMid, RX, 0.95, RZ));
-  scene.add(rbox(0.06, 0.05, 0.05, 0.01, mat(0x9a8a62, { metalness: 1, roughness: 0.35 }), RX + 0.04, 0.95, RZ - 0.25));
-  const ritSign = textPlane([t('foto.ritSign')], 0.4, 0.09, { bg: '#d9d3c4', size: 20, px: 64 });
-  ritSign.position.set(RX + 0.03, 2.02, RZ);
-  ritSign.rotation.y = Math.PI / 2;
+  // the retouching room's door: on the back wall, left of the drawers, in plain sight from the door
+  const RX = -1.45, RZ = -D / 2 + 0.03;
+  scene.add(rbox(0.7, 1.9, 0.05, 0.01, woodMid, RX, 0.95, RZ));
+  scene.add(rbox(0.05, 0.05, 0.06, 0.01, mat(0x9a8a62, { metalness: 1, roughness: 0.35 }), RX + 0.25, 0.95, RZ + 0.04));
+  const ritSign = textPlane([t('foto.ritSign')], 0.5, 0.11, { bg: '#d9d3c4', size: 22, px: 64 });
+  ritSign.position.set(RX, 2.02, RZ + 0.03);
   scene.add(ritSign);
   // two pieces of a torn photo: up on a shelf between the boxes, and on the floor under the light table
   // (in plain sight if you look: on top of the drawer cabinet, and on the floor by the light table)
   const p1 = photoScrap(1);
-  p1.scale.setScalar(1.4);
-  p1.position.set(0.65, cabY + cabH + 0.1, -D / 2 + 0.3);
-  p1.rotation.set(-Math.PI / 2 + 0.25, 0, 0.5);
+  p1.scale.setScalar(1.2);
+  // leaning against the wall on top of the drawers, facing the room
+  p1.position.set(0.65, cabY + cabH + 0.17, -D / 2 + 0.1);
+  p1.rotation.set(-0.12, 0, 0.18);
   const p2 = photoScrap(2);
-  p2.scale.setScalar(1.4);
+  p2.scale.setScalar(1.2);
   p2.position.set(0.5, 0.006, -0.75);
   p2.rotation.set(-Math.PI / 2, 0, -0.9);
   p1.visible = !g.flag('f.p1');
@@ -131,7 +133,7 @@ export function createFotoArchivio(g: Game): Location {
   const hCab = hitBox(cabW + 0.1, cabH + 0.1, 0.5, 0, cabY + cabH / 2, -D / 2 + 0.3, 'cabinet');
   const hLight = hitBox(0.9, 0.2, 0.6, 1.0, 0.85, 0.6, 'lightbox');
   const hDoor = hitBox(1.0, 2.1, 0.2, 0, 1.05, D / 2 - 0.1, 'door');
-  const hRit = hitBox(0.2, 2.0, 0.8, RX + 0.08, 1.0, RZ, 'ritocco');
+  const hRit = hitBox(0.8, 2.0, 0.2, RX, 1.0, RZ + 0.08, 'ritocco');
   const hP1 = hitBox(0.3, 0.2, 0.3, 0.65, cabY + cabH + 0.12, -D / 2 + 0.3, 'piece1');
   const hP2 = hitBox(0.35, 0.12, 0.35, 0.5, 0.05, -0.75, 'piece2');
   const hTin = hitBox(0.2, 0.1, 0.16, 0, 0.06, 0.05, 'tin');
@@ -256,7 +258,7 @@ export function createFotoArchivio(g: Game): Location {
     startView: 'main',
     exitTo: 'foto_negozio',
     views: {
-      main: { pos: [-0.6, 1.6, 1.3], look: [0.2, 1.1, -1.4], yaw: 60, pitch: 18 },
+      main: { pos: [-0.6, 1.6, 1.3], look: [-0.15, 1.1, -1.4], yaw: 60, pitch: 18 },
       cabinet: { pos: [0, 1.25, -D / 2 + 1.75], look: [0, cabY + cabH / 2, -D / 2], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
     },
     hotspots,
