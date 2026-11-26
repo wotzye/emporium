@@ -1221,5 +1221,7 @@
   "hint.ch.grave": "The cross with no name, at the back on the right. Try the UV light.",
   "hint.ch.knock": "The crypt chapel: knock the way Paolo's note says. One, pause, three quick, pause, one.",
   "hint.ch.crypt": "Lisa's diary, on the crypt table.",
-  "hint.ch.leave": "You have the key to the Dream Suitcase. Lisa is waiting."
+  "hint.ch.leave": "You have the key to the Dream Suitcase. Lisa is waiting.",
+  "ui.credits": "Credits",
+  "ui.creditsText": "3D: Quaternius (Universal Base Characters, CC0) · Poly Haven (CC0)\n«Victorian gentleman 3d model» — abauerenator (CC-BY 4.0)\n«Scales \"Tyumen\" USSR» — Gonya (CC-BY 4.0)\n«Severed Fingers – Horror Game Asset» — Farkas Interactive (CC-BY 4.0)\n«Severed Hands Low Poly» — Ray (CC-BY 4.0)\n«Human Brain» — 3DRT STUDIOS (CC-BY 4.0)\nSketchfab.com\n\nAudio: Freesound.org (CC0 / CC-BY), Sonniss GDC Game Audio Bundle"
 }

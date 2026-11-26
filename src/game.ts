@@ -932,6 +932,7 @@ export class Game {
       { label: t('ui.noFlash'), value: '', options: yesNo(s.noFlash, (v) => { s.noFlash = v; if (v) this.engine.flickerAmt = 0; }) },
       { label: t('ui.color'), value: '', options: yesNo(s.color, (v) => (s.color = v)) },
       { label: t('ui.unlimitedHints'), value: '', options: yesNo(s.unlimitedHints, (v) => (s.unlimitedHints = v)) },
+      { label: t('ui.credits'), value: '›', action: () => { void this.ui.doc(t('ui.credits'), t('ui.creditsText'), false); } },
       {
         label: t('ui.restart'),
         value: this.restartArmed ? t('ui.restartConfirm') : t('ui.restartBtn'),
