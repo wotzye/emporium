@@ -1377,8 +1377,8 @@
   "mem.bruno.1": "1955. Dad marries Mum, at St Michael's. He with his moustache freshly trimmed, she in the veil Ada sewed for her.",
   "mem.bruno.2": "1958. The Premiata Macelleria: Dad behind the counter, with his shop boys. The prize hangs in the window.",
   "mem.bruno.3": "Sundays in the country, Lisa and me with Mum and Dad. He pulls faces to make us laugh.",
-  "mem.bruno.4": "Mum. The last winter, before she fell ill. In 1973 she was gone, and Dad stopped talking.",
-  "mem.bruno.5": "October 1974. Dad in front of a new shop window: «Cose Preziose». Inside, the man in black smiles at him.",
+  "mem.bruno.4": "Mum. The last winter, before she fell ill.",
+  "mem.bruno.5": "1973. Mum is gone. Dad spends his nights in the curing room, alone, among the hams. He doesn't talk any more.",
   "diary.memBruno.title": "Memory: Bruno, my father",
   "diary.memBruno.text": "1955: Dad marries Mum.\n1958: the Premiata Macelleria.\nSundays in the country, with Lisa and me.\n1973: Mum dies, and Dad goes out like a light.\nOctober 1974: the Emporium window, the man in black, the deal, the deliveries «downstairs».\nOn the 24th of October it wasn't him holding the cleaver.\nI called him, and he went in peace. He left me the Suitcase Maker's card.",
   "item.m2key": "Curing room key",
@@ -1613,8 +1613,10 @@
   "hint.sew.glasses": "The glasses are on the floor, under the dress form.",
   "hint.ada.sewDoor": "The trunk key opens the sewing room, the door on the right in the living room.",
   "hint.ada.sew": "Go into Ada's sewing room.",
-  "mem.bruno.6": "And now I remember this too: Dad taking us to see the train. «One day we'll all get on it, Diego.»",
+  "mem.bruno.6": "October 1974. A new shop window under ours: «Cose Preziose». Dad stands in front of it for hours.",
   "m2.boys": "Dad with his shop boys, behind the counter. He's laughing. I remember him laughing like that.",
   "title.presents": "presents",
-  "intro.title": "October 1974"
+  "intro.title": "October 1974",
+  "mem.bruno.7": "One evening the man in black goes down to the cellar and sits waiting for him. Dad goes down. When he comes back up, he's laughing.",
+  "mem.bruno.8": "And now I remember this too: Dad holding me on his shoulders in front of the sign. «It's yours too, Diego.»"
 }

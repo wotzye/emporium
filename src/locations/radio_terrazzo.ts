@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { rbox, mesh, textPlane, hitBox, woodMaterial, plasterMaterial, mat, cyl, cursedMat, liveCanvas, handwheel } from '../builders';
-import { createBarberGhost } from '../characters';
+import { figureGhost } from '../characters';
 import { t } from '../i18n';
 import { radioHint } from './radio_negozio';
 import { valveRadio, ether, beacon, sleep, FREQ_OK, FREQ_START, SK } from './radio_common';
@@ -170,7 +170,7 @@ export function createRadioTerrazzo(g: Game): Location {
   scene.add(rbox(0.42, 0.05, 0.42, 0.01, woodDark, cX, 0.45, cZ));
   for (const [x, z] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) scene.add(rbox(0.035, 0.45, 0.035, 0.005, woodDark, cX + x, 0.225, cZ + z));
   scene.add(rbox(0.04, 0.5, 0.42, 0.01, woodDark, cX + 0.2, 0.72, cZ));
-  const nello = createBarberGhost(false);
+  const nello = figureGhost('nello_figura', 1.7);
   nello.group.position.set(sX + 0.62, 0, sZ - 0.25);
   nello.group.rotation.y = -Math.PI / 2 - 0.3;
   nello.group.traverse((o) => (o.userData.noPick = true));

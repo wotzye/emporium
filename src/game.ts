@@ -748,7 +748,7 @@ export class Game {
   private scareChar(kind: 'barber' | 'bruno' | 'ada' | 'clara') {
     let c = this.scareChars[kind];
     if (!c) {
-      c = kind === 'barber' ? createBarberGhost(true) : kind === 'bruno' ? createBruno() : kind === 'clara' ? createClara() : createAdaGhost();
+      c = kind === 'barber' ? createBarberGhost(true) : kind === 'bruno' ? createBruno() : kind === 'clara' ? createClara() : createAdaGhost(true);
       c.group.traverse((o) => {
         o.userData.noPick = true;
         // the scare version of the face: black holes, veins, a mouth hanging open

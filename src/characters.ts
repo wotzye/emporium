@@ -662,7 +662,52 @@ export function createLisa(floorY = 0): Character & { setOpacity: (v: number) =>
 // ======================================================================
 // The old barber (seen only in the mirror)
 // ======================================================================
+/**
+ * A ghost from a real photograph: a cut-out figure (figures/<key>.png) on a plane that always
+ * turns to face you, pale and faintly see-through, breathing a little. Used for the townspeople.
+ */
+export function figureGhost(key: string, height: number): Character & { setOpacity: (v: number) => void } {
+  const g = new THREE.Group();
+  const base = import.meta.env.MODE === 'single' ? './' : import.meta.env.BASE_URL;
+  const geo = new THREE.PlaneGeometry(1, 1);
+  geo.translate(0, 0.5, 0);
+  const tex = new THREE.TextureLoader().load(`${base}figures/${key}.png`, (t) => {
+    const im = t.image as HTMLImageElement;
+    plane.scale.set(height * (im.width / im.height), height, 1);
+  });
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, color: 0xdfe3e6 });
+  const plane = new THREE.Mesh(geo, m);
+  plane.scale.set(height * 0.35, height, 1);
+  plane.renderOrder = 4;
+  g.add(plane);
+  const head = new THREE.Object3D();
+  head.position.y = height * 0.93;
+  g.add(head);
+  let op = 0;
+  const camLocal = new THREE.Vector3();
+  return {
+    group: g,
+    head,
+    setEyes: () => {},
+    setOpacity: (v: number) => {
+      op = v;
+      m.opacity = v;
+      g.visible = v > 0.01;
+    },
+    update: (_dt, t, camera) => {
+      // turn towards the camera (around the vertical only), breathe, waver
+      camLocal.copy(camera.getWorldPosition(new THREE.Vector3()));
+      g.worldToLocal(camLocal);
+      plane.rotation.y = Math.atan2(camLocal.x, camLocal.z);
+      plane.position.y = Math.sin(t * 1.3) * 0.008;
+      m.opacity = op * (0.88 + Math.sin(t * 7.1) * 0.06 + Math.sin(t * 17.3) * 0.04);
+    },
+  };
+}
+
 export function createBarberGhost(scare = false): Character & { setOpacity: (v: number) => void } {
+  if (!scare) return figureGhost('aldo_figura', 1.72);
   if (realCharacters()) return realBarberGhost(scare);
   const g = new THREE.Group();
   const coatTex = canvasTex(256, 256, (c, w, h) => {
@@ -731,7 +776,8 @@ export function createBarberGhost(scare = false): Character & { setOpacity: (v: 
 }
 
 /** Ada's ghost (falls back to a pale ghost figure if the models aren't there). */
-export function createAdaGhost(): Character & { setOpacity: (v: number) => void } {
+export function createAdaGhost(scare = false): Character & { setOpacity: (v: number) => void } {
+  if (!scare) return figureGhost('ada_figura', 1.58);
   if (realCharacters()) return realAdaGhost();
   const c = createLisa(0);
   c.group.scale.setScalar(1.15);

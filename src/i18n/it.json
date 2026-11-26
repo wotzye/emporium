@@ -1377,8 +1377,8 @@
   "mem.bruno.1": "1955. Papà sposa la mamma, a San Michele. Lui coi baffi appena fatti, lei col velo che le aveva cucito Ada.",
   "mem.bruno.2": "1958. La Premiata Macelleria: papà dietro il bancone, coi suoi garzoni. Il premio è appeso in vetrina.",
   "mem.bruno.3": "La domenica in campagna, io e Lisa con mamma e papà. Lui fa le facce per farci ridere.",
-  "mem.bruno.4": "La mamma. L'ultimo inverno, prima che si ammalasse. Nel 1973 se n'è andata, e papà ha smesso di parlare.",
-  "mem.bruno.5": "Ottobre 1974. Papà davanti a una vetrina nuova: «Cose Preziose». Dentro, l'uomo in nero gli sorride.",
+  "mem.bruno.4": "La mamma. L'ultimo inverno, prima che si ammalasse.",
+  "mem.bruno.5": "1973. La mamma non c'è più. Papà passa le notti nel laboratorio, da solo, tra i prosciutti. Non parla più.",
   "diary.memBruno.title": "Ricordo: Bruno, mio padre",
   "diary.memBruno.text": "1955: papà sposa la mamma.\n1958: la Premiata Macelleria.\nLe domeniche in campagna, con me e Lisa.\n1973: muore la mamma, e papà si spegne.\nOttobre 1974: la vetrina dell'Emporio, l'uomo in nero, il patto, le consegne «sotto».\nIl 24 ottobre non era lui a tenere la mannaia.\nL'ho chiamato, e se n'è andato in pace. Mi ha lasciato il biglietto del Valigiaio.",
   "item.m2key": "Chiave del laboratorio",
@@ -1613,8 +1613,10 @@
   "hint.sew.glasses": "Gli occhiali sono sul pavimento, sotto il manichino.",
   "hint.ada.sewDoor": "La chiave del baule apre la stanza da cucito, la porta a destra in soggiorno.",
   "hint.ada.sew": "Vai nella stanza da cucito di Ada.",
-  "mem.bruno.6": "E adesso ricordo anche questo: papà che ci porta a vedere il treno. «Un giorno ci saliamo tutti, Diego.»",
+  "mem.bruno.6": "Ottobre 1974. Una vetrina nuova sotto la bottega: «Cose Preziose». Papà ci resta davanti per ore.",
   "m2.boys": "Papà coi suoi garzoni, dietro il bancone. Ride. Me lo ricordo che rideva così.",
   "title.presents": "presenta",
-  "intro.title": "Ottobre 1974"
+  "intro.title": "Ottobre 1974",
+  "mem.bruno.7": "Una sera l'uomo in nero scende in cantina e si siede ad aspettarlo. Papà scende. Quando risale, ride.",
+  "mem.bruno.8": "E adesso ricordo anche questo: papà che mi tiene sulle spalle davanti all'insegna. «È anche tua, Diego.»"
 }

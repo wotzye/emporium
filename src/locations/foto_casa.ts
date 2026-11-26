@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, woodMaterial, mat, cyl, lathe, framed } from '../builders';
 import { prop } from '../models';
-import { createBarberGhost } from '../characters';
+import { figureGhost } from '../characters';
 import { t } from '../i18n';
 import { oldPhoto } from '../photos';
 import { wallpaper } from './ada_common';
@@ -56,7 +56,7 @@ export function createFotoCasa(g: Game): Location {
     chair.rotation.y = Math.PI;
     scene.add(chair);
   }
-  const giulio = createBarberGhost(false);
+  const giulio = figureGhost('giulio_figura', 1.74);
   giulio.group.position.set(tX, 0, tZ + 0.5);
   giulio.group.rotation.y = Math.PI;
   giulio.group.traverse((o) => (o.userData.noPick = true));
