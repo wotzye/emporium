@@ -93,6 +93,13 @@ const FILES = {
   suitD: 'models/suitD.glb',
   trunkA: 'models/trunkA.glb',
   trunkB: 'models/trunkB.glb',
+  // Ada the seamstress, and the cursed things on the Emporium shelf (CC-BY 4.0)
+  dressForm: 'models/dressForm.glb',
+  sewing: 'models/sewing.glb',
+  gramophone: 'models/gramophone.glb',
+  barberPole: 'models/barberPole.glb',
+  pocketWatch: 'models/pocketWatch.glb',
+  bellowsCam: 'models/bellowsCam.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;

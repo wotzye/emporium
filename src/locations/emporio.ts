@@ -382,9 +382,15 @@ export function createEmporio(g: Game): Location {
   // Ottavio's pocket watch on its pedestal (hidden until placed)
   const watchOnShelf = new THREE.Group();
   {
-    const wc = wallClock(0.05, { roman: true, depth: 0.015 });
-    wc.group.rotation.x = -1.2;
-    watchOnShelf.add(cursify(wc.group));
+    const real = prop('pocketWatch', { height: 0.11, rot: [-0.35, 0, 0] });
+    if (real) {
+      real.position.y = -0.11;
+      watchOnShelf.add(cursify(real));
+    } else {
+      const wc = wallClock(0.05, { roman: true, depth: 0.015 });
+      wc.group.rotation.x = -1.2;
+      watchOnShelf.add(cursify(wc.group));
+    }
   }
   watchOnShelf.position.set(caseX, lowY + 0.13, lowZ[1]);
   watchOnShelf.rotation.y = -Math.PI / 2;
@@ -393,11 +399,15 @@ export function createEmporio(g: Game): Location {
   // Giulio Ferri's bellows camera on its pedestal (hidden until placed)
   const cameraOnShelf = new THREE.Group();
   {
-    const cb = new THREE.Group();
-    cb.add(box(0.12, 0.12, 0.08, cm, 0, 0.06, 0));
-    cb.add(box(0.1, 0.1, 0.1, cm, 0, 0.06, -0.08));
-    cb.add(cyl(0.03, 0.03, 0.05, cm, 0, 0.06, -0.15, 12).rotateX(Math.PI / 2));
-    cameraOnShelf.add(cb);
+    const real = prop('bellowsCam', { width: 0.2, turn: Math.PI / 2 });
+    if (real) cameraOnShelf.add(cursify(real));
+    else {
+      const cb = new THREE.Group();
+      cb.add(box(0.12, 0.12, 0.08, cm, 0, 0.06, 0));
+      cb.add(box(0.1, 0.1, 0.1, cm, 0, 0.06, -0.08));
+      cb.add(cyl(0.03, 0.03, 0.05, cm, 0, 0.06, -0.15, 12).rotateX(Math.PI / 2));
+      cameraOnShelf.add(cb);
+    }
   }
   cameraOnShelf.position.set(caseX, lowY + 0.02, lowZ[2]);
   cameraOnShelf.rotation.y = Math.PI / 2;

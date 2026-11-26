@@ -169,7 +169,7 @@ export function createMacCantina(g: Game): Location {
       c.fillRect(w * 0.3, h * 0.5, w * 0.12, h * 0.08);
     }
   };
-  const panels = [0, 1, 2, 3, 4].map((i) => ({ text: t('mem.bruno.' + (i + 1)), draw: photoOr('mem_bruno_' + (i + 1), draw(i)) }));
+  const panels = [0, 1, 2, 3, 4, 5].map((i) => ({ text: t('mem.bruno.' + (i + 1)), draw: photoOr('mem_bruno_' + (i + 1), draw(Math.min(i, 4))) }));
 
   /** he's here: the circle holds him */
   const manifest = async () => {

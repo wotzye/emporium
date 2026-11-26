@@ -83,7 +83,9 @@ export function createAdaSoffitta(g: Game): Location {
   const glow = new THREE.PointLight(0xff2a2a, 0, 1.4, 2);
   glow.position.set(trunkPos.x, 0.6, trunkPos.z + 0.1);
   scene.add(glow);
-  glasses.visible = trunkOpen() && !g.flag('glasses');
+  // new route: the glasses are sewn into Ettore's jacket downstairs; the trunk only keeps the key
+  const sewRoute = () => !!g.flag('a.sewRoute');
+  glasses.visible = trunkOpen() && !g.flag('glasses') && !sewRoute();
 
   // ---------------- crates in the way ----------------
   type Crate = { o: THREE.Object3D; start: THREE.Vector3 };
@@ -193,12 +195,13 @@ export function createAdaSoffitta(g: Game): Location {
           setLid(i / 25);
           await sleep(30);
         }
-        glasses.visible = true;
-        glow.intensity = 0.8;
+        g.set('a.sewRoute');
         g.audio.sfx('whisper');
-        return say('ada.trunkOpen');
+        g.give('sewkey');
+        return g.say([{ who: 'diego', key: 'ada.trunkOpenSew1' }, { who: 'diego', key: 'ada.trunkOpenSew2' }]);
       }
       if (glasses.visible) return takeGlasses();
+      if (sewRoute() && !g.flag('glasses')) return say('ada.trunkSew');
       return say('ada.trunkEmpty');
     } },
     { id: 'dummy', obj: hDummy, view: 'dummy', tap: async (item) => {
@@ -281,6 +284,7 @@ export function createAdaSoffitta(g: Game): Location {
       if (g.flag('glasses')) return 'hint.ada.leave';
       if (!clear()) return 'hint.ada.crates';
       if (!trunkOpen()) return 'hint.ada.code';
+      if (sewRoute()) return 'hint.ada.sewDoor';
       return 'hint.ada.take';
     },
     debug: { crates, clear, trunkPos },

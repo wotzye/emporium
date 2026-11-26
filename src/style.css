@@ -285,3 +285,17 @@ button:active { background: rgba(255,255,255,0.08); }
 .collage .strips { display: flex; gap: 4px; justify-content: center; margin-top: 12px; }
 #app .collage canvas.strip { position: static; inset: auto; touch-action: auto; display: block; width: calc(min(560px, 80vw) / 5 - 4px); height: auto; max-height: 50vh; object-fit: contain; box-shadow: 0 2px 6px rgba(0,0,0,0.6); border: 2px solid transparent; cursor: pointer; transition: transform 0.25s; }
 #app .collage canvas.strip.sel { border-color: #f2ead8; transform: translateY(-8px) !important; }
+#splash { position: fixed; inset: 0; z-index: 200; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; transition: opacity 0.7s; }
+#splash img { width: min(42vh, 46vw); border-radius: 6px; box-shadow: 0 0 60px rgba(232,196,104,0.25); opacity: 0; animation: logoIn 3.4s ease forwards; }
+#splash .pres { color: #d9c486; letter-spacing: 0.5em; text-transform: uppercase; font-size: 13px; opacity: 0; animation: presIn 3.4s ease forwards; }
+#splash.out { opacity: 0; }
+@keyframes logoIn { 0% { opacity: 0; transform: scale(0.94); filter: blur(6px) brightness(0.4); } 35% { opacity: 1; filter: blur(0) brightness(1); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1.02); } }
+@keyframes presIn { 0%, 40% { opacity: 0; } 70%, 100% { opacity: 0.9; } }
+#title .tbg { position: absolute; inset: -4%; background: #000 center/cover no-repeat; opacity: 0.32; filter: grayscale(1) contrast(1.2) blur(1px); animation: kenburnsT 40s ease-in-out infinite alternate; pointer-events: none; }
+#title .tvig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.75) 60%, #000 100%); }
+#title > *:not(.tbg):not(.tvig):not(.grain):not(.ver):not(.warn) { position: relative; }
+#title .tlogo { width: min(14vh, 90px); border-radius: 4px; opacity: 0.9; }
+#title .ver { position: absolute; top: calc(10px + var(--safe-t, 0px)); right: 14px; font-size: 11px; color: #6f6b63; letter-spacing: 0.15em; }
+#title h1.flicker { text-shadow: 0 0 18px rgba(255,255,255,0.25); animation: flickerT 6s infinite; }
+@keyframes kenburnsT { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.12) translate(-2%, 1%); } }
+@keyframes flickerT { 0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; } 20% { opacity: 0.35; } 63% { opacity: 0.6; } }

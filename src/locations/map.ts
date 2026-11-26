@@ -20,6 +20,7 @@ interface Building {
 }
 
 export function createMap(g: Game): Location {
+  const spinners: THREE.Object3D[] = [];
   const roofMat = (() => {
     const cv = document.createElement('canvas');
     cv.width = cv.height = 256;
@@ -303,6 +304,15 @@ export function createMap(g: Game): Location {
     door.add(sphere(0.035, mat(0x777777, { metalness: 0.8, roughness: 0.4 }), 0.3, 1.0, 0.09, 10));
     door.position.set(b.id === 'macelleria' ? -1 : 0, 0, b.d / 2 + 0.01);
     grp.add(door);
+    // the barber's pole by his door, turning (grey: the only red in the world is cursed)
+    if (b.id === 'barbiere') {
+      const pole = prop('barberPole', { height: 1.6, grey: 1.1 });
+      if (pole) {
+        pole.position.set(0.85, 0.9, b.d / 2 + 0.12);
+        spinners.push(pole.children[0]);
+        grp.add(pole);
+      }
+    }
     if (b.id !== 'chiesa') {
       const wins: [number, number, number, number][] = [[b.w / 2 - 0.95, 1.5, 1.1, 1.0], [-b.w / 2 + 0.85, b.h - 1.3, 0.75, 1.05], [b.w / 2 - 0.85, b.h - 1.3, 0.75, 1.05]];
       if (b.h > 5) wins.push([0, b.h - 1.3, 0.75, 1.05]);
@@ -541,6 +551,7 @@ export function createMap(g: Game): Location {
     },
     hotspots,
     update: (dt, time) => {
+      for (const o of spinners) o.rotation.y += dt * 1.6;
       declutterT += dt;
       if (declutterT > 0.1) {
         declutterT = 0;

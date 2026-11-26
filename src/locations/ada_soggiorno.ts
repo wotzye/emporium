@@ -414,6 +414,16 @@ export function createAdaSoggiorno(g: Game): Location {
   const hKitchen = hitBox(0.2, 2.1, 1.0, -W / 2 + 0.1, 1.05, doorZ, 'kitchen');
   const hRack = hitBox(0.5, 1.8, 0.5, 1.95, 0.9, 1.95, 'rack');
   const hFront = hitBox(1.0, 2.1, 0.2, -0.9, 1.05, D / 2 - 0.1, 'frontdoor');
+  // the sewing room door (right wall): Ada la sarta's workroom, locked
+  const sewZ = 0.25;
+  scene.add(rbox(0.06, 2.05, 0.85, 0.01, woodMaterial({ base: '#3a2c20', repeat: [1, 2] }), W / 2 - 0.03, 1.025, sewZ));
+  const sewSign = textPlane([t('sew.sign')], 0.4, 0.09, { bg: '#d9d3c4', size: 20, px: 64 });
+  sewSign.position.set(W / 2 - 0.07, 2.15, sewZ);
+  sewSign.rotation.y = -Math.PI / 2;
+  scene.add(sewSign);
+  const hSew = hitBox(0.2, 2.1, 0.95, W / 2 - 0.1, 1.05, sewZ, 'sewdoor');
+  scene.add(hSew);
+  const sewOpen = () => !!g.flag('a.sewOpen');
   scene.add(hTv, hSofa, hGuide, hRocker, hWheel, hPhoto, hHatch, hKitchen, hRack, hFront);
 
   const say = (k: string) => g.say(k);
@@ -509,6 +519,23 @@ export function createAdaSoggiorno(g: Game): Location {
       if (item) return g.nope();
       return say('ada.rack');
     } },
+    { id: 'sewdoor', obj: hSew, exit: () => sewOpen(), tap: async (item) => {
+      if (sewOpen()) {
+        if (item) return g.nope();
+        g.audio.steps(2, 0.45, false);
+        return g.go('ada_cucito');
+      }
+      if (item === 'sewkey') {
+        g.deselect();
+        g.take('sewkey');
+        g.set('a.sewOpen');
+        g.audio.sfx('unlock');
+        g.audio.sfx('creak');
+        return say('sew.doorOpen');
+      }
+      if (item) return g.nope();
+      return say(g.flag('a.sewRoute') ? 'sew.doorLocked' : 'sew.doorLockedEarly');
+    } },
     { id: 'frontdoor', obj: hFront, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
       return g.back();
@@ -548,7 +575,7 @@ export function createAdaSoggiorno(g: Game): Location {
   return {
     id: 'ada_soggiorno',
     nameKey: 'place.adaSoggiorno',
-    next: ['ada_cucina', 'ada_soffitta'],
+    next: ['ada_cucina', 'ada_soffitta', 'ada_cucito'],
     scene,
     drone: 'emporio',
     startView: 'main',
@@ -606,6 +633,7 @@ export function createAdaSoggiorno(g: Game): Location {
       if (!g.flag('a.tv')) return g.flag('a.tvSeen') ? 'hint.ada.channel' : 'hint.ada.tv';
       if (!g.has('crutch') && !hatchOpen()) return g.flag('a.shedKey') ? 'hint.ada.garden' : 'hint.ada.kitchen';
       if (!hatchOpen()) return 'hint.ada.hatch';
+      if (g.flag('a.sewRoute')) return g.flag('a.sewOpen') ? 'hint.ada.sew' : 'hint.ada.sewDoor';
       return 'hint.ada.attic';
     },
     debug: { knob, getChannel: () => channel, setChannel: (c: number) => (channel = c) },

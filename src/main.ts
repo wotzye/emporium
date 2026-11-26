@@ -14,6 +14,7 @@ import { createBarbiereCortile } from './locations/barbiere_cortile';
 import { createBarbiereAlloggio } from './locations/barbiere_alloggio';
 import { createAdaGiardino } from './locations/ada_giardino';
 import { createAdaCamera } from './locations/ada_camera';
+import { createAdaCucito } from './locations/ada_cucito';
 import { askMotion, motionNeedsTap } from './sensors';
 import { createFotoNegozio } from './locations/foto_negozio';
 import { createFotoStudio } from './locations/foto_studio';
@@ -36,6 +37,7 @@ import { createOraLaboratorio } from './locations/ora_laboratorio';
 import { createOraCamera } from './locations/ora_camera';
 import { createOraTorre } from './locations/ora_torre';
 import { preloadModels } from './models';
+import { photoOr } from './photos';
 import { createBarbiereCantina } from './locations/barbiere_cantina';
 import { createMacRetro } from './locations/mac_retro';
 import { createMacCella } from './locations/mac_cella';
@@ -63,6 +65,7 @@ game.register('barbiere_cortile', createBarbiereCortile);
 game.register('barbiere_alloggio', createBarbiereAlloggio);
 game.register('ada_giardino', createAdaGiardino);
 game.register('ada_camera', createAdaCamera);
+game.register('ada_cucito', createAdaCucito);
 game.register('foto_negozio', createFotoNegozio);
 game.register('foto_studio', createFotoStudio);
 game.register('foto_oscura', createFotoOscura);
@@ -100,14 +103,116 @@ game.engine.renderer.domElement.addEventListener('webglcontextlost', (e) => {
   setTimeout(() => location.reload(), 1200);
 });
 
+/** shown in a corner of the title screen, so you can tell which version the phone is running */
+const VERSION = 'v0.22';
+
+/** EmporiumEscape presents: the logo out of the dark, a bell, then the title */
+function splash(): Promise<void> {
+  return new Promise((res) => {
+    const d = document.createElement('div');
+    d.id = 'splash';
+    d.innerHTML = `<img src="${import.meta.env.MODE === 'single' ? './' : import.meta.env.BASE_URL}logo.jpg" alt="EmporiumEscape"><div class="pres">${t('title.presents')}</div>`;
+    document.body.append(d);
+    let done = false;
+    const end = () => {
+      if (done) return;
+      done = true;
+      d.classList.add('out');
+      setTimeout(() => {
+        d.remove();
+        res();
+      }, 700);
+    };
+    d.onclick = end;
+    setTimeout(end, 3600);
+  });
+}
+
+/** the opening, told in pictures: the letter, the station, the village in the fog */
+function introFilm() {
+  const paper = (lines: number, title?: string) => (c: CanvasRenderingContext2D, w: number, h: number) => {
+    c.fillStyle = '#0d0c0b';
+    c.fillRect(0, 0, w, h);
+    c.save();
+    c.translate(w / 2, h / 2);
+    c.rotate(-0.04);
+    c.fillStyle = '#d9d0bc';
+    c.fillRect(-w * 0.3, -h * 0.42, w * 0.6, h * 0.84);
+    c.fillStyle = '#2a2420';
+    c.font = 'italic 34px Georgia, serif';
+    if (title) c.fillText(title, -w * 0.25, -h * 0.3);
+    c.strokeStyle = 'rgba(40,34,30,0.75)';
+    c.lineWidth = 2;
+    for (let i = 0; i < lines; i++) {
+      c.beginPath();
+      const y = -h * 0.2 + i * 30;
+      c.moveTo(-w * 0.25, y);
+      for (let x = -w * 0.25; x < w * 0.22 - (i % 3) * 40; x += 12) c.lineTo(x, y + Math.sin(x * 0.3 + i) * 3);
+      c.stroke();
+    }
+    c.restore();
+  };
+  const station = (c: CanvasRenderingContext2D, w: number, h: number) => {
+    const gr = c.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#6a6862');
+    gr.addColorStop(1, '#1a1918');
+    c.fillStyle = gr;
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = '#121110';
+    c.fillRect(w * 0.1, h * 0.35, w * 0.45, h * 0.4);
+    c.fillRect(w * 0.08, h * 0.3, w * 0.5, h * 0.06);
+    c.fillStyle = '#d9d2c4';
+    c.font = 'bold 28px Georgia, serif';
+    c.fillText('ROCCA DEL CASTELLO', w * 0.14, h * 0.34);
+    c.strokeStyle = '#2a2826';
+    c.lineWidth = 6;
+    for (const k of [0.82, 0.92]) {
+      c.beginPath();
+      c.moveTo(0, h * k);
+      c.lineTo(w, h * (k - 0.06));
+      c.stroke();
+    }
+    // a lone figure with a suitcase
+    c.fillStyle = '#0a0a0a';
+    c.fillRect(w * 0.72, h * 0.5, 22, 90);
+    c.beginPath();
+    c.arc(w * 0.72 + 11, h * 0.48, 13, 0, Math.PI * 2);
+    c.fill();
+    c.fillRect(w * 0.72 + 26, h * 0.62, 30, 22);
+  };
+  const village = (c: CanvasRenderingContext2D, w: number, h: number) => {
+    c.fillStyle = '#4a4844';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = '#1a1918';
+    for (let i = 0; i < 9; i++) c.fillRect(i * w * 0.11, h * (0.4 + (i % 3) * 0.05), w * 0.1, h);
+    c.fillRect(w * 0.47, h * 0.12, w * 0.06, h);
+    const fog = c.createLinearGradient(0, h * 0.5, 0, h);
+    fog.addColorStop(0, 'rgba(200,200,196,0)');
+    fog.addColorStop(1, 'rgba(200,200,196,0.75)');
+    c.fillStyle = fog;
+    c.fillRect(0, 0, w, h);
+  };
+  game.audio.rec('bell', { gain: 0.5, delay: 0.4 });
+  return game.ui.memory(t('intro.title'), [
+    { text: t('intro.1'), draw: photoOr('intro_1', paper(9)) },
+    { text: t('intro.2'), draw: photoOr('intro_2', paper(12, 'Diego,')) },
+    { text: t('intro.3'), draw: photoOr('intro_3', station) },
+    { text: t('intro.4'), draw: photoOr('intro_4', village) },
+  ]);
+}
+
 function title() {
   const el = game.ui.title;
   const hasSave = game.hasSave();
   el.innerHTML = `
+    <div class="tbg" style="background-image:url(${import.meta.env.MODE === 'single' ? './' : import.meta.env.BASE_URL}title_bg.jpg)"></div>
+    <div class="tvig"></div>
     <div class="grain"></div>
+    <img class="tlogo" src="${import.meta.env.MODE === 'single' ? './' : import.meta.env.BASE_URL}logo.jpg" alt="EmporiumEscape">
     <div class="sub">${t('title.pre')}</div>
-    <h1>${t('title.name')}</h1>
+    <h1 class="flicker">${t('title.name')}</h1>
     <div class="sub">${t('title.sub')}</div>
+    <div class="ver">${VERSION}</div>
     <div class="menu">
       ${hasSave ? `<button data-a="continue">${t('title.continue')}</button>` : ''}
       <button data-a="new">${t('title.new')}</button>
@@ -140,14 +245,14 @@ function title() {
       } else {
         await game.newGame();
         game.audio.drone('map');
-        await Promise.all([game.ui.cards(['intro.1', 'intro.2', 'intro.3', 'intro.4']), models]);
+        await Promise.all([introFilm(), models]);
         await game.go('map');
       }
     };
   });
 }
 
-title();
+splash().then(title);
 
 // iPhone: ask for the motion sensors at the first tap (it can only be asked from a tap),
 // so that shaking the phone works when the game needs it

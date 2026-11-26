@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Game, Location, Hotspot, Interaction } from '../game';
-import { room, rbox, cyl, mesh, mat, hitBox, dust, lathe, uvInk, woodMaterial, canvasTex, noise, sphere } from '../builders';
+import { room, rbox, cyl, mesh, mat, hitBox, dust, lathe, uvInk, woodMaterial, canvasTex, noise, sphere, framed } from '../builders';
+import { oldPhoto } from '../photos';
 import { createBruno } from '../characters';
 import { prop } from '../models';
 import { t } from '../i18n';
@@ -164,6 +165,16 @@ export function createMacRetro(g: Game): Location {
   showTrap();
   scene.add(smear(1.2, 1.4, -0.4, 0.4, 0.8, 5));
 
+  // Dad and his shop boys, framed on the left wall
+  const boys = framed(0.42, 0.6, oldPhoto('mac_garzoni', 420, 600, (c, w, h) => {
+    c.fillStyle = '#8a857c';
+    c.fillRect(0, 0, w, h);
+  }, { tone: 'grey', age: 0.5 }), woodMaterial({ base: '#2a1f16' }));
+  boys.position.set(-W / 2 + 0.02, 1.7, 0.6);
+  boys.rotation.y = Math.PI / 2;
+  scene.add(boys);
+  const hBoys = hitBox(0.1, 0.65, 0.5, -W / 2 + 0.06, 1.7, 0.6, 'boys');
+  scene.add(hBoys);
   // the door back to the shop (in the front wall)
   const doorG = new THREE.Group();
   doorG.add(rbox(0.95, 2.1, 0.06, 0.02, woodMaterial({ base: '#3a2c20', repeat: [1, 2] }), 0, 1.05, 0));
@@ -314,6 +325,10 @@ export function createMacRetro(g: Game): Location {
       if (g.flag('m2.grinderUv')) return say('m2.wallRead');
       return say(g.uvOn && g.engine.torchOn ? 'm2.wallUv' : 'm2.wall');
     } },
+    { id: 'boys', obj: hBoys, view: 'boys', tap: async (item) => {
+      if (item) return g.nope();
+      return say('m2.boys');
+    } },
     { id: 'hams', obj: hHams, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
       return say('m2.hams');
@@ -372,6 +387,7 @@ export function createMacRetro(g: Game): Location {
       salt: { pos: [0.9, 1.5, -0.6], look: [W / 2 - 0.45, 0.5, -1.2], parent: 'main', yaw: 20, pitch: 12 },
       trap: { pos: [tdX, 1.55, tdZ + 1.0], look: [tdX, 0.0, tdZ], parent: 'main', yaw: 20, pitch: 12 },
       wall: { pos: [bx, 1.72, bz + 1.1], look: [bx, 1.75, -D / 2], parent: 'main', yaw: 25, pitch: 14, fov: 55 },
+      boys: { pos: [-0.6, 1.65, 0.6], look: [-W / 2, 1.7, 0.6], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
       hide: { pos: [1.7, 1.0, -1.7], look: [-0.6, 1.2, 1.0], yaw: 5, pitch: 5 },
     },
     hotspots,

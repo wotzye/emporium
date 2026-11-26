@@ -160,6 +160,18 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'blackcard',
     svg: s('<rect x="6" y="11" width="28" height="18" rx="1" fill="currentColor" fill-opacity="0.85"/><path d="M11 17 h12 M11 22 h8"/>'),
   },
+  sewkey: {
+    id: 'sewkey',
+    svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v4 M27 20 v3"/><path d="M8 13 q3 -4 6 0"/>'),
+  },
+  thread: {
+    id: 'thread',
+    svg: s('<rect x="13" y="8" width="14" height="4" rx="1"/><rect x="13" y="28" width="14" height="4" rx="1"/><path d="M15 12 V28 M25 12 V28 M15 15 L25 18 M15 19 L25 22 M15 23 L25 26"/><path d="M27 30 q6 2 4 6"/>'),
+  },
+  ripper: {
+    id: 'ripper',
+    svg: s('<path d="M8 32 L22 18"/><rect x="5" y="30" width="8" height="5" rx="2" transform="rotate(-45 9 32)"/><path d="M22 18 L30 10 M26 14 q4 -6 8 -6 q-2 4 -6 8"/>'),
+  },
 };
 
 export const ICONS = {
