@@ -460,6 +460,35 @@ export class UI {
     });
   }
 
+  /** The end titles: the logo, the name, then everyone who made it, rolling up. Tap to end early. */
+  rollCredits(logo: string, title: string, text: string): Promise<void> {
+    return new Promise((res) => {
+      const d = el('div', 'credits');
+      const roll = el('div', 'roll');
+      const img = document.createElement('img');
+      img.src = logo;
+      const h = el('h1');
+      h.textContent = title;
+      const body = el('div', 'body');
+      body.textContent = text;
+      roll.append(img, h, body);
+      d.append(roll);
+      this.card.parentElement!.append(d);
+      let done = false;
+      const end = () => {
+        if (done) return;
+        done = true;
+        d.classList.add('out');
+        setTimeout(() => {
+          d.remove();
+          res();
+        }, 900);
+      };
+      d.onclick = end;
+      roll.addEventListener('animationend', end);
+    });
+  }
+
   /** A choice that matters: one button per option; resolves with the index picked (it can't be closed). */
   choice(title: string, text: string, options: string[]): Promise<number> {
     return new Promise((res) => {

@@ -284,6 +284,8 @@ export function createValigiaSogno(g: Game): Location {
     g.rebuild('emporio');
     await g.ui.fadeOut(1500);
     await g.ui.cards(['fin.end1', 'fin.end2', 'fin.end3', 'fin.end4', 'fin.end5']);
+    g.audio.musicBox({ gain: 0.35, bars: 24 });
+    await g.ui.rollCredits(`${import.meta.env.MODE === 'single' ? './' : import.meta.env.BASE_URL}logo.jpg`, t('title.name'), t('fin.creditsHead') + '\n\n' + t('ui.creditsText') + '\n\n' + t('fin.creditsTail'));
     await g.go('map', false);
   };
 

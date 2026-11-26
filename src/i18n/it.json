@@ -1556,7 +1556,7 @@
   "foto.cornerEmpty": "Solo polvere, adesso.",
   "foto.cupboard": "Un armadietto di flaconi: sviluppo, fissaggio, colori per ritocco.",
   "foto.line": "Negativi stesi ad asciugare. Facce che non hanno più nessuno.",
-  "hint.foto.pieces": "C'è una foto strappata in cinque pezzi: due nell'archivio (in alto su uno scaffale, a terra sotto il tavolo luminoso), tre nella stanza dei ritocchi. Uno si vede solo con la luce viola.",
+  "hint.foto.pieces": "C'è una foto strappata in cinque pezzi: due nell'archivio (sopra il mobile dei cassetti, e a terra vicino al tavolo luminoso), tre nella stanza dei ritocchi (nel cestino, dietro la cornice storta, nell'angolo buio: quello si vede solo con la luce viola).",
   "hint.foto.collage": "Hai tutti i pezzi: rimettili insieme sul tavolo luminoso della stanza dei ritocchi.",
   "hint.foto.tin": "«Chi manca, apre»: nella foto della festa manca solo il nome di papà. Il lucchetto nel cassetto 31.",
   "hint.foto.takeKey": "La scatoletta è aperta: prendi la chiave nel cassetto 31.",
@@ -1618,5 +1618,7 @@
   "title.presents": "presenta",
   "intro.title": "Ottobre 1974",
   "mem.bruno.7": "Una sera l'uomo in nero scende in cantina e si siede ad aspettarlo. Papà scende. Quando risale, ride.",
-  "mem.bruno.8": "E adesso ricordo anche questo: papà che mi tiene sulle spalle davanti all'insegna. «È anche tua, Diego.»"
+  "mem.bruno.8": "E adesso ricordo anche questo: papà che mi tiene sulle spalle davanti all'insegna. «È anche tua, Diego.»",
+  "fin.creditsHead": "Un gioco di EmporiumEscape\nispirato all'escape room Emporium di Novate Milanese\n\nStoria, enigmi e immagini\nAlessandro Pozzoni\n\nProgrammazione e scrittura\nAlessandro con Claude",
+  "fin.creditsTail": "Grazie per aver giocato.\nE ricordati di loro."
 }

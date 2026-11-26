@@ -301,3 +301,10 @@ button:active { background: rgba(255,255,255,0.08); }
 @keyframes flickerT { 0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; } 20% { opacity: 0.35; } 63% { opacity: 0.6; } }
 #scare canvas.memflash { animation: memflash 0.7s ease-out forwards; }
 @keyframes memflash { 0% { opacity: 0; filter: brightness(3); } 12% { opacity: 1; filter: brightness(1.6); } 60% { opacity: 0.9; filter: brightness(1); transform: scale(1.03); } 100% { opacity: 0; filter: brightness(0.6); transform: scale(1.06); } }
+.credits { position: absolute; inset: 0; z-index: 90; background: #000; overflow: hidden; transition: opacity 0.9s; }
+.credits.out { opacity: 0; }
+.credits .roll { position: absolute; left: 50%; width: min(640px, 86vw); transform: translate(-50%, 100vh); text-align: center; color: #cfc8b8; animation: roll 60s linear forwards; }
+.credits img { width: min(26vh, 160px); border-radius: 6px; box-shadow: 0 0 40px rgba(232,196,104,0.25); }
+.credits h1 { font-weight: normal; letter-spacing: 0.3em; margin: 24px 0 40px; }
+.credits .body { white-space: pre-line; line-height: 1.9; font-size: 14px; }
+@keyframes roll { to { transform: translate(-50%, -100%); } }

@@ -111,11 +111,14 @@ export function createFotoArchivio(g: Game): Location {
   ritSign.rotation.y = Math.PI;
   scene.add(ritSign);
   // two pieces of a torn photo: up on a shelf between the boxes, and on the floor under the light table
+  // (in plain sight if you look: on top of the drawer cabinet, and on the floor by the light table)
   const p1 = photoScrap(1);
-  p1.position.set(-W / 2 + 0.2, 1.97, 0.95);
-  p1.rotation.set(-Math.PI / 2, 0, 0.5);
+  p1.scale.setScalar(1.4);
+  p1.position.set(0.65, cabY + cabH + 0.1, -D / 2 + 0.3);
+  p1.rotation.set(-Math.PI / 2 + 0.25, 0, 0.5);
   const p2 = photoScrap(2);
-  p2.position.set(1.15, 0.006, 0.7);
+  p2.scale.setScalar(1.4);
+  p2.position.set(0.5, 0.006, -0.75);
   p2.rotation.set(-Math.PI / 2, 0, -0.9);
   p1.visible = !g.flag('f.p1');
   p2.visible = !g.flag('f.p2');
@@ -126,8 +129,8 @@ export function createFotoArchivio(g: Game): Location {
   const hLight = hitBox(0.9, 0.2, 0.6, 1.0, 0.85, 0.6, 'lightbox');
   const hDoor = hitBox(1.0, 2.1, 0.2, 0, 1.05, D / 2 - 0.1, 'door');
   const hRit = hitBox(0.8, 2.0, 0.2, -1.35, 1.0, D / 2 - 0.1, 'ritocco');
-  const hP1 = hitBox(0.3, 0.2, 0.3, -W / 2 + 0.2, 2.0, 0.95, 'piece1');
-  const hP2 = hitBox(0.3, 0.12, 0.3, 1.15, 0.05, 0.7, 'piece2');
+  const hP1 = hitBox(0.3, 0.2, 0.3, 0.65, cabY + cabH + 0.12, -D / 2 + 0.3, 'piece1');
+  const hP2 = hitBox(0.35, 0.12, 0.35, 0.5, 0.05, -0.75, 'piece2');
   const hTin = hitBox(0.2, 0.1, 0.16, 0, 0.06, 0.05, 'tin');
   d31.g.add(hTin);
   scene.add(hCab, hLight, hDoor, hRit, hP1, hP2);
@@ -164,9 +167,12 @@ export function createFotoArchivio(g: Game): Location {
             await sleep(20);
           }
           if (d.n === THE_ONE) {
-            flatKey.visible = !keyTaken();
+            tin.visible = true;
+            flatKey.visible = tinOpen() && !keyTaken();
             g.audio.sfx('whisper');
-            return g.say([{ who: 'diego', key: 'foto.d31a' }, { who: 'diego', key: 'foto.d31b' }]);
+            await g.say([{ who: 'diego', key: 'foto.d31a' }, { who: 'diego', key: 'foto.d31b' }]);
+            if (!tinOpen()) return hotspots.find((h) => h.id === 'tin')!.tap(null);
+            return;
           }
           if (d.n === VALVE_DRAWER && !valveTaken()) {
             valveObj.visible = true;

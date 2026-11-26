@@ -1556,7 +1556,7 @@
   "foto.cornerEmpty": "Only dust, now.",
   "foto.cupboard": "A cupboard of bottles: developer, fixer, retouching dyes.",
   "foto.line": "Negatives hung up to dry. Faces nobody has any more.",
-  "hint.foto.pieces": "There's a photo torn into five pieces: two in the archive (up on a shelf, on the floor under the light table), three in the retouching room. One only shows in violet light.",
+  "hint.foto.pieces": "There's a photo torn into five pieces: two in the archive (on top of the drawer cabinet, and on the floor by the light table), three in the retouching room (in the bin, behind the crooked frame, in the dark corner: that one only shows in violet light).",
   "hint.foto.collage": "You have all the pieces: put them together on the light table in the retouching room.",
   "hint.foto.tin": "«Who's missing, opens»: in the feast photo only Dad's name is missing. The lock in drawer 31.",
   "hint.foto.takeKey": "The tin is open: take the key from drawer 31.",
@@ -1618,5 +1618,7 @@
   "title.presents": "presents",
   "intro.title": "October 1974",
   "mem.bruno.7": "One evening the man in black goes down to the cellar and sits waiting for him. Dad goes down. When he comes back up, he's laughing.",
-  "mem.bruno.8": "And now I remember this too: Dad holding me on his shoulders in front of the sign. «It's yours too, Diego.»"
+  "mem.bruno.8": "And now I remember this too: Dad holding me on his shoulders in front of the sign. «It's yours too, Diego.»",
+  "fin.creditsHead": "A game by EmporiumEscape\ninspired by the Emporium escape room in Novate Milanese\n\nStory, puzzles and pictures\nAlessandro Pozzoni\n\nProgramming and writing\nAlessandro with Claude",
+  "fin.creditsTail": "Thank you for playing.\nAnd remember them."
 }

@@ -96,10 +96,10 @@ export function createFotoRitocco(g: Game): Location {
     scene.add(ball);
   }
   // a proof print, framed and hung crooked: something sticks out from behind it
-  const frameX = -W / 2 + 0.02, frameZ = -0.3;
+  const frameX = -1.15, frameZ = -D / 2 + 0.02;
   const proof = textPlane([t('foto.proof')], 0.42, 0.32, { bg: '#cfc8b8', size: 20, px: 128, border: '#2a1f16' });
-  proof.position.set(frameX + 0.01, 1.55, frameZ);
-  proof.rotation.set(0, Math.PI / 2, 0.06);
+  proof.position.set(frameX, 1.55, frameZ + 0.01);
+  proof.rotation.set(0, 0, 0.06);
   scene.add(proof);
   // a cupboard in the far right corner; the floor behind it only Lisa's ink can show
   scene.add(rbox(0.5, 1.6, 0.45, 0.01, woodDark, W / 2 - 0.3, 0.8, -D / 2 + 0.3));
@@ -109,8 +109,8 @@ export function createFotoRitocco(g: Game): Location {
   p3.position.set(binX + 0.02, 0.43, binZ - 0.02);
   p3.rotation.set(-1.2, 0.4, 0.2);
   const p4 = photoScrap(4);
-  p4.position.set(frameX + 0.015, 1.36, frameZ + 0.19);
-  p4.rotation.set(0, Math.PI / 2, -0.3);
+  p4.position.set(frameX + 0.19, 1.37, frameZ + 0.015);
+  p4.rotation.set(0, 0, -0.3);
   const p5 = photoScrap(5);
   p5.position.set(W / 2 - 0.62, 0.006, -D / 2 + 0.25);
   p5.rotation.set(-Math.PI / 2, 0, 0.7);
@@ -129,7 +129,7 @@ export function createFotoRitocco(g: Game): Location {
   // ---------------- hotspots ----------------
   const hTable = hitBox(1.0, 0.4, 0.7, tX, tY + 0.15, tZ, 'table');
   const hBin = hitBox(0.4, 0.55, 0.4, binX, 0.28, binZ, 'bin');
-  const hProof = hitBox(0.1, 0.5, 0.6, frameX + 0.05, 1.5, frameZ, 'proof');
+  const hProof = hitBox(0.6, 0.5, 0.1, frameX, 1.5, frameZ + 0.05, 'proof');
   const hCorner = hitBox(0.5, 0.2, 0.5, W / 2 - 0.62, 0.08, -D / 2 + 0.3, 'corner');
   const hCup = hitBox(0.55, 1.65, 0.5, W / 2 - 0.3, 0.82, -D / 2 + 0.3, 'cupboard');
   const hDoor = hitBox(1.0, 2.1, 0.2, -0.6, 1.05, D / 2 - 0.1, 'door');
