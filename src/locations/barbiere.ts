@@ -631,7 +631,7 @@ export function createBarbiere(g: Game): Location {
     // behind you, scissors snipping at nothing
     g.audio.rec('scissors', { gain: 1.0 });
     await g.say([{ who: 'narr', key: 'bar.ghost1' }]);
-    await g.scare('barber', 650, 'scare_barbiere');
+    await g.glimpse('aldo_figura');
     setLights(0);
     ghost = 0;
     barberC.setOpacity(0);

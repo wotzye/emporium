@@ -275,7 +275,7 @@ export function createBarbiereAlloggio(g: Game): Location {
           await sleep(30);
         }
         await sleep(500);
-        await g.scare('barber', 650);
+        await g.glimpse('aldo_figura');
         await say('aldo.mirror');
       }
     } },

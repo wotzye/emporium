@@ -174,7 +174,7 @@ export function createAdaSoffitta(g: Game): Location {
     ada.group.lookAt(new THREE.Vector3(-0.35, 0, -1.6));
     await g.view('behind', 0.5);
     g.audio.rec('possessed', { gain: 0.7, dur: 3 });
-    await g.scare('ada', 650, 'scare_donna2');
+    await g.shock();
     ada.setOpacity(0);
     g.engine.torchFlicker = 0;
     await g.view('main');

@@ -299,3 +299,5 @@ button:active { background: rgba(255,255,255,0.08); }
 #title h1.flicker { text-shadow: 0 0 18px rgba(255,255,255,0.25); animation: flickerT 6s infinite; }
 @keyframes kenburnsT { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.12) translate(-2%, 1%); } }
 @keyframes flickerT { 0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; } 20% { opacity: 0.35; } 63% { opacity: 0.6; } }
+#scare canvas.memflash { animation: memflash 0.7s ease-out forwards; }
+@keyframes memflash { 0% { opacity: 0; filter: brightness(3); } 12% { opacity: 1; filter: brightness(1.6); } 60% { opacity: 0.9; filter: brightness(1); transform: scale(1.03); } 100% { opacity: 0; filter: brightness(0.6); transform: scale(1.06); } }

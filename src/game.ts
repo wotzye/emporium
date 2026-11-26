@@ -5,7 +5,7 @@ import { Audio, DroneKind } from './audio';
 import { t, setLang, getLang, Lang } from './i18n';
 import { Save, newSave, loadSave, writeSave, clearSave, loadPrefs, Settings } from './state';
 import { drawScareFace } from './builders';
-import { createBarberGhost, createBruno, createAdaGhost, createClara, Character } from './characters';
+import { createBarberGhost, createBruno, createAdaGhost, createClara, figureGhost, Character } from './characters';
 import { realCharacters } from './characters_real';
 import { photoImage, preloadPhotos } from './photos';
 
@@ -61,7 +61,7 @@ export type LocationFactory = (g: Game) => Location;
 const HINTS_PER_LOCATION = 2;
 
 /** close-up photos for the jumpscares (photos/<key>.jpg) */
-preloadPhotos(['scare_barbiere', 'scare_macellaio2', 'scare_donna', 'scare_donna2', 'scare_spettro']);
+preloadPhotos(['macelleria_famiglia', 'mem_bruno_3']);
 
 export class Game {
   engine: Engine;
@@ -736,6 +736,101 @@ export class Game {
     const cv = document.createElement('canvas');
     drawScareFace(cv, kind);
     await this.ui.showScare(cv, ms);
+  }
+
+  // ---------------- the quieter kinds of fear ----------------
+  /**
+   * Out of the corner of your eye: one of the townspeople (a photo figure) standing a little way
+   * off to one side, for a moment. A whisper, the light stutters, the torch dies, and they're gone.
+   */
+  async glimpse(figure: string, o: { side?: number; dist?: number; ms?: number } = {}) {
+    const scene = this.engine.scene;
+    const cam = this.engine.camera;
+    const reduced = !!this.settings.reducedScares;
+    this.audio.hush(3);
+    if (reduced) {
+      this.audio.rec('ghostwhisper', { gain: 0.5, dur: 2 });
+      return new Promise((r) => setTimeout(r, 900));
+    }
+    const pos = cam.getWorldPosition(new THREE.Vector3());
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
+    fwd.y = 0;
+    fwd.normalize();
+    const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+    const side = o.side ?? (Math.random() < 0.5 ? -1 : 1);
+    const f = figureGhost(figure, 1.7);
+    // stand them in the room, never inside a wall: as far as 1.5 m, short of whatever is in the way
+    const dir = fwd.clone().multiplyScalar(2).addScaledVector(right, side).normalize();
+    const ray = new THREE.Raycaster(new THREE.Vector3(pos.x, 1.0, pos.z), dir, 0.1, 4);
+    const hit = ray.intersectObjects(scene.children, true).find((h) => (h.object as THREE.Mesh).isMesh && h.object.visible && !h.object.userData.hit && !h.object.userData.noPick);
+    const d = Math.max(0.6, Math.min(o.dist ?? 1.5, (hit?.distance ?? 4) - 0.35));
+    f.group.position.set(pos.x, 0, pos.z).addScaledVector(dir, d);
+    f.group.position.y = 0;
+    f.group.traverse((x) => (x.userData.noPick = true));
+    scene.add(f.group);
+    const stop = this.engine.addUpdater((dt, t) => f.update(dt, t, cam));
+    this.audio.rec('ghostwhisper', { gain: 0.65, dur: 2.2 });
+    this.audio.sfx('breath');
+    this.setFlicker(true, 0.7);
+    for (let i = 0; i <= 8; i++) {
+      f.setOpacity((i / 8) * 0.8);
+      await new Promise((r) => setTimeout(r, 35));
+    }
+    await new Promise((r) => setTimeout(r, o.ms ?? 900));
+    // the torch dies for a beat; when it comes back, there's nobody
+    this.engine.torchFlicker = 1;
+    this.audio.sfx('heart');
+    this.engine.shake(0.03, 0.4);
+    await new Promise((r) => setTimeout(r, 260));
+    f.setOpacity(0);
+    scene.remove(f.group);
+    stop();
+    await new Promise((r) => setTimeout(r, 300));
+    this.engine.torchFlicker = 0;
+    this.setFlicker(false);
+  }
+
+  /**
+   * A memory coming back, too fast: for an instant the screen is an old photo, burnt white,
+   * a ringing in the ears, a heartbeat. Then the room again.
+   */
+  async memoryFlash(photo: string, ms = 700) {
+    this.audio.sfx('whistle');
+    this.audio.sfx('heart');
+    if (this.settings.reducedScares || this.settings.noFlash) return new Promise((r) => setTimeout(r, 500));
+    const shot = photoImage(photo);
+    const cv = document.createElement('canvas');
+    cv.width = 1024;
+    cv.height = 576;
+    const c = cv.getContext('2d')!;
+    c.fillStyle = '#f4f1ea';
+    c.fillRect(0, 0, cv.width, cv.height);
+    if (shot) {
+      const k = Math.max(cv.width / shot.width, cv.height / shot.height);
+      c.filter = 'blur(2.5px) grayscale(1) contrast(1.4) brightness(1.45)';
+      c.drawImage(shot, (cv.width - shot.width * k) / 2, (cv.height - shot.height * k) / 2, shot.width * k, shot.height * k);
+      c.filter = 'none';
+    }
+    // burnt at the edges, like film caught in the projector
+    const burn = c.createRadialGradient(cv.width / 2, cv.height / 2, cv.height * 0.25, cv.width / 2, cv.height / 2, cv.width * 0.62);
+    burn.addColorStop(0, 'rgba(255,255,255,0)');
+    burn.addColorStop(0.7, 'rgba(60,40,30,0.35)');
+    burn.addColorStop(1, 'rgba(0,0,0,0.95)');
+    c.fillStyle = burn;
+    c.fillRect(0, 0, cv.width, cv.height);
+    cv.className = 'memflash';
+    await this.ui.showScare(cv, ms);
+  }
+
+  /** No picture at all: the light dies, something slams, your heart. For when the ghost is already there. */
+  async shock() {
+    this.audio.stinger();
+    this.engine.shake(0.06, 0.5);
+    this.engine.torchFlicker = 1;
+    this.setFlicker(true, 1);
+    await new Promise((r) => setTimeout(r, 450));
+    this.engine.torchFlicker = 0;
+    this.setFlicker(false);
   }
 
   /** A clue you act out with the phone: blow, shout, shake. */

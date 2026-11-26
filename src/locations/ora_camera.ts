@@ -175,7 +175,7 @@ export function createOraCamera(g: Game): Location {
       g.audio.hush(3);
       await sleep(900);
       g.audio.rec('possessed', { gain: 0.4, dur: 2 });
-      await g.scare('clara', 700);
+      await g.glimpse('clara_figura');
       await g.say([
         { who: 'clara', key: 'ora.clara1' },
         { who: 'clara', key: 'ora.clara2' },

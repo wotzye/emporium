@@ -255,7 +255,7 @@ export function createRadioTerrazzo(g: Game): Location {
     g.audio.rec('bell', { gain: 0.7 });
     await sleep(900);
     g.audio.sfx('hiss');
-    await g.scare('barber', 600);
+    await g.glimpse('nello_figura');
     nello.group.visible = true;
     nello.setOpacity(0.35);
     await g.view('station');

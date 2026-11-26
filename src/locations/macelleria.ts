@@ -582,13 +582,13 @@ export function createMacelleria(g: Game): Location {
     brunoC.setEyes(true);
     g.audio.rec('growl', { gain: 1.1, rate: 0.85 });
     await g.say([{ who: 'bruno', key: 'mac.bruno1' }]);
-    await g.scare('bruno', 650, 'scare_macellaio2');
+    await g.scare('bruno', 650);
     g.audio.sfx('heart');
     const ok = await g.ui.quick(t('ui.run'), 3200);
     if (!ok) {
       bruno.position.z = -0.4;
       g.audio.rec('smash', { gain: 1.2 });
-      await g.scare('bruno', 450, 'scare_macellaio2#close');
+      await g.memoryFlash('macelleria_famiglia');
       await g.say([{ who: 'narr', key: 'mac.caught' }]);
     }
     g.setFlicker(false);

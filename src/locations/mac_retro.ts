@@ -255,7 +255,7 @@ export function createMacRetro(g: Game): Location {
     } else {
       brunoC.setEyes(true);
       g.audio.rec('smash', { gain: 1.1 });
-      await g.scare('bruno', 600, 'scare_macellaio2#close');
+      await g.scare('bruno', 600);
       bruno.visible = false;
       await g.say([{ who: 'narr', key: 'm2.hideFail' }, { who: 'diego', key: 'm2.hideFail2' }]);
     }

@@ -338,7 +338,7 @@ export function createBarbiereCortile(g: Game): Location {
           // something comes up with it
           g.audio.rec('ghostmove', { gain: 0.6, dur: 2.5 });
           await sleep(700);
-          await g.scare('barber', 600);
+          await g.glimpse('aldo_figura');
           await sleep(300);
           await g.view('well');
           await say('yard.bucketUp');

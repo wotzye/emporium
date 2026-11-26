@@ -159,7 +159,7 @@ export function createAdaCucito(g: Game): Location {
     await g.say([{ who: 'ada', key: 'sew.ada1' }]);
     ada.setOpacity(0.8);
     g.audio.rec('possessed', { gain: 0.6, dur: 3 });
-    await g.scare('ada', 650, 'scare_donna#close');
+    await g.shock();
     ada.setOpacity(0);
     await g.say([{ who: 'diego', key: 'sew.after1' }, { who: 'diego', key: 'sew.after2' }]);
   };

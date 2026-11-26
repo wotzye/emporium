@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, hitBox, mat } from '../builders';
 import { t } from '../i18n';
-import { photoImage, photoOr } from '../photos';
+import { photoOr } from '../photos';
 import { stoneWall, stoneFloor, candle, sleep, churchHint } from './chiesa_common';
 import { prop } from '../models';
 
@@ -100,18 +100,8 @@ export function createChiesaCripta(g: Game): Location {
       g.diaryPage('memDiego');
       await g.ui.fadeIn(600);
       // she's here
-      const shot = photoImage('scare_lisa');
-      if (shot && !g.settings.reducedScares) {
-        const cv = document.createElement('canvas');
-        cv.width = 1024;
-        cv.height = 576;
-        const c = cv.getContext('2d')!;
-        const k = Math.max(cv.width / shot.width, cv.height / shot.height);
-        c.drawImage(shot, (cv.width - shot.width * k) / 2, (cv.height - shot.height * k) / 2, shot.width * k, shot.height * k);
-        g.audio.stinger();
-        g.audio.rec('ghostwail', { gain: 0.6, dur: 2 });
-        await g.ui.showScare(cv, 900);
-      }
+      // she's here: a flash of her, as she was
+      await g.memoryFlash('mem_bruno_3', 900);
       await g.say([{ who: 'lisa', key: 'ch.lisa1' }, { who: 'diego', key: 'ch.lisa2' }, { who: 'lisa', key: 'ch.lisa3' }]);
       g.set('ch.done');
       g.give('suitcasekey');
