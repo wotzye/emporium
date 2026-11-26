@@ -36,12 +36,18 @@ import { createOraCamera } from './locations/ora_camera';
 import { createOraTorre } from './locations/ora_torre';
 import { preloadModels } from './models';
 import { createBarbiereCantina } from './locations/barbiere_cantina';
+import { createMacRetro } from './locations/mac_retro';
+import { createMacCella } from './locations/mac_cella';
+import { createMacCantina } from './locations/mac_cantina';
 
 const root = document.getElementById('app')!;
 const game = new Game(root);
 game.register('map', createMap);
 game.register('emporio', createEmporio);
 game.register('macelleria', createMacelleria);
+game.register('mac_retro', createMacRetro);
+game.register('mac_cella', createMacCella);
+game.register('mac_cantina', createMacCantina);
 game.register('barbiere', createBarbiere);
 game.register('barbiere_retro', createBarbiereRetro);
 game.register('barbiere_cantina', createBarbiereCantina);
@@ -124,7 +130,7 @@ function title() {
       el.classList.remove('on');
       if (b.dataset.a === 'continue' && game.continueGame()) {
         game.ui.refreshStatic();
-        await game.go(game.save.location === 'macelleria' && game.flag('fledButcher') ? 'map' : game.save.location || 'map');
+        await game.go(game.save.location === 'macelleria' && game.flag('fledButcher') && !game.flag('ch.done') ? 'map' : game.save.location || 'map');
       } else {
         await game.newGame();
         game.audio.drone('map');

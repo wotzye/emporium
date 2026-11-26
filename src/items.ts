@@ -136,6 +136,30 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'page',
     svg: s('<path d="M10 5 H26 L31 10 V35 H10 Z"/><path d="M26 5 V10 H31"/><path d="M14 16 H27 M14 21 H27 M14 26 H23"/>'),
   },
+  m2key: {
+    id: 'm2key',
+    svg: s('<circle cx="11" cy="20" r="6"/><path d="M17 20 H34 M30 20 v5 M25 20 v3"/><path d="M6 14 l-2 -4"/>'),
+  },
+  cellarkey: {
+    id: 'cellarkey',
+    svg: s('<circle cx="10" cy="20" r="7"/><circle cx="10" cy="20" r="3"/><path d="M17 20 H35 M31 20 v7 M27 20 v4"/>'),
+  },
+  salt: {
+    id: 'salt',
+    svg: s('<path d="M11 14 Q20 8 29 14 L31 33 H9 Z"/><path d="M14 14 Q20 11 26 14"/><path d="M14 24 h12 M15 28 h10"/>'),
+  },
+  matches: {
+    id: 'matches',
+    svg: s('<rect x="7" y="14" width="26" height="14" rx="1"/><path d="M7 18 H33"/><path d="M14 14 V6 M20 14 V5 M26 14 V7"/><circle cx="20" cy="5" r="1.6"/>'),
+  },
+  ribbon: {
+    id: 'ribbon',
+    svg: s('<path d="M20 20 Q10 10 7 16 Q6 24 20 20 Q30 10 33 16 Q34 24 20 20"/><path d="M19 21 L14 35 M21 21 L26 35"/>'),
+  },
+  blackcard: {
+    id: 'blackcard',
+    svg: s('<rect x="6" y="11" width="28" height="18" rx="1" fill="currentColor" fill-opacity="0.85"/><path d="M11 17 h12 M11 22 h8"/>'),
+  },
 };
 
 export const ICONS = {

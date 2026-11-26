@@ -37,3 +37,4 @@ Ogni push su `main` pubblica il gioco su GitHub Pages tramite `.github/workflows
 ### Modelli Sketchfab (CC-BY 4.0)
 - "3D Antique Doll" di nektar.green — https://sketchfab.com/3d-models/3d-antique-doll-a0a494a8c3db4cc4ad10cb433125fe78
 - "3D Photogrammetry 1950's vintage Leopard Shoe" di gabriellarosabertin — https://sketchfab.com/3d-models/3d-photogrammetry-1950s-vintage-leopard-shoe-2209078ed08e4eaf811abd202ef0aa6d
+- Macelleria, seconda parte: «06 Torso» di Osama Elhadidi, «Meat Grinder» di kanistra, «Cleaver – Butcher's Best Friend» di 3dsofsan, «Corpse» di Tamal De Quezo (tutti CC-BY 4.0, Sketchfab)

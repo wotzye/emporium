@@ -70,6 +70,11 @@ const FILES = {
   tvB: 'models/tvB.glb',
   tvC: 'models/tvC.glb',
   meatHook: 'models/meatHook.glb',
+  // the butcher's, second time round (CC-BY 4.0)
+  torso: 'models/torso.glb',
+  grinder: 'models/grinder.glb',
+  cleaver: 'models/cleaver.glb',
+  corpse: 'models/corpse.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;

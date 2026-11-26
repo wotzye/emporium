@@ -5,10 +5,13 @@ import { createBruno, createLisa } from '../characters';
 import { prop } from '../models';
 import { t } from '../i18n';
 import { oldPhoto } from '../photos';
+import { act2, mac2Hint, smear, hangingTorso, SCALE_CODE } from './mac2_common';
 /** where Bruno's face is in the real family photo (fractions of the picture), to scratch it out */
 const BRUNO_FACE = [0.59, 0.41]; // third from the left, the one with the moustache
 
 export function createMacelleria(g: Game): Location {
+  /** part two: after the crypt, the shop is not the same */
+  const A2 = act2(g);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
   scene.fog = new THREE.Fog(0x000000, 4, 11);
@@ -79,7 +82,7 @@ export function createMacelleria(g: Game): Location {
   neon.castShadow = true;
   neon.shadow.mapSize.set(1024, 1024);
   scene.add(neon, neon.target);
-  let neonOn = 1;
+  let neonOn = A2 ? 0.22 : 1;
   const motes = dust([-3.2, 0.2, -2.8], [3.2, 2.8, 2.8], 200);
   scene.add(motes.points);
 
@@ -281,6 +284,16 @@ export function createMacelleria(g: Game): Location {
       realHook.position.set(x, 2.22, -2.6);
       scene.add(realHook);
     } else scene.add(hook);
+    // part two: what hangs on the second hook is not a pig any more
+    if (A2 && x === -1.9) {
+      const torso = hangingTorso(0.9);
+      if (torso) {
+        torso.position.set(x, 1.12, -2.6);
+        torso.userData.sway = Math.random() * 6;
+        scene.add(torso);
+        continue;
+      }
+    }
     // on one hook, not a pig: an arm, hanging by the wrist
     if (x === -1.1) {
       const arm = prop('hand', { height: 0.75, rot: [0, 0, Math.PI / 2], grey: 1.7 });
@@ -390,6 +403,16 @@ export function createMacelleria(g: Game): Location {
     scene.add(c);
   }
 
+  if (A2) {
+    // the cold room stands open; something was dragged out of it, and back
+    doorPivot.rotation.y = 1.15;
+    coldLight.intensity = 2.5;
+    scene.add(smear(1.0, 2.6, 1.7, -1.6, 0.15, 3), smear(0.8, 1.6, -2.6, -1.6, 1.2, 7), smear(1.2, 1.2, 0.4, 0.6, 0.6, 11));
+    const writing = textPlane(['DIEGO'], 0.9, 0.3, { bg: 'transparent', fg: '#2a1412', size: 70, px: 96, font: "'Bradley Hand', 'Segoe Print', cursive" });
+    writing.position.set(-1.2, 1.75, -D / 2 + 0.012);
+    writing.userData.noPick = true;
+    scene.add(writing);
+  }
   // Bruno
   const brunoC = createBruno();
   const bruno = brunoC.group;
@@ -622,6 +645,67 @@ export function createMacelleria(g: Game): Location {
     } },
   ];
 
+  // ---------------- part two ----------------
+  const unlockLab = async () => {
+    g.deselect();
+    g.take('m2key');
+    g.set('m2.labOpen');
+    g.audio.sfx('unlock');
+    await sleep(300);
+    g.audio.sfx('creak');
+    await g.say('m2.labOpened');
+  };
+  const hotspots2: Hotspot[] = [
+    { id: 'counter', obj: hCounter, view: 'counter', tap: async (item) => {
+      if (item) return g.nope();
+      return g.say([{ who: 'diego', key: 'm2.counter1' }, { who: 'diego', key: 'm2.counter2' }]);
+    } },
+    { id: 'book', obj: hBook, view: 'book', tap: async (item) => {
+      if (item) return g.nope();
+      g.audio.sfx('paper');
+      const read = await g.readDoc('mac.ledgerTitle', 'm2.ledger');
+      if (read && !g.flag('m2.ledgerUv')) {
+        g.set('m2.ledgerUv');
+        g.note('note.m2.ledger');
+        await g.say('m2.ledgerRead');
+      }
+    } },
+    { id: 'scale', obj: hScale, view: 'counter', tap: async (item) => {
+      if (item) return g.nope();
+      if (g.flag('m2.key')) return g.say('m2.scaleEmpty');
+      if (!g.flag('m2.ledgerUv')) return g.say('m2.scale');
+      const ok = await g.ui.keypad(t('m2.scaleTitle'), 2, (c) => c === SCALE_CODE, () => g.audio.sfx('tick'));
+      if (!ok) return;
+      g.audio.sfx('drawer');
+      g.set('m2.key');
+      g.give('m2key');
+      await g.say('m2.scaleOpen');
+    } },
+    { id: 'photo', obj: hPhoto, view: 'photo', tap: async (item) => {
+      if (item) return g.nope();
+      return g.say([{ who: 'diego', key: 'm2.photo1' }, { who: 'diego', key: 'm2.photo2' }]);
+    } },
+    { id: 'cella', obj: hCella, view: 'cella', tap: async (item) => {
+      if (item) return g.nope();
+      g.audio.steps(3, 0.5, false);
+      return g.go('mac_cella');
+    } },
+    { id: 'hooks', obj: hHooks, tap: async (item) => {
+      if (item) return g.nope();
+      return g.say('m2.hooks');
+    } },
+    { id: 'stairs', obj: hStairs, tap: async (item) => {
+      if (g.flag('m2.labOpen')) {
+        if (item) return g.nope();
+        g.audio.steps(3, 0.5, false);
+        return g.go('mac_retro');
+      }
+      if (item === 'm2key') return unlockLab();
+      if (item) return g.nope();
+      return g.say('m2.labLocked');
+    } },
+  ];
+
   const rat = prop('rat', { width: 0.32, turn: -Math.PI / 2 });
   let ratT = -1, ratNext = 6 + Math.random() * 8;
   if (rat) {
@@ -635,6 +719,7 @@ export function createMacelleria(g: Game): Location {
     scene,
     drone: 'macelleria',
     startView: 'main',
+    next: A2 ? ['mac_retro', 'mac_cella'] : [],
     views: {
       main: { pos: [0, 1.6, 2.4], look: [-0.4, 1.2, -3], yaw: 40, pitch: 14 },
       counter: { pos: [-0.8, 1.75, 0.55], look: [-0.8, 0.85, -0.85], parent: 'main', yaw: 30, pitch: 10 },
@@ -643,7 +728,7 @@ export function createMacelleria(g: Game): Location {
       cella: { pos: [1.0, 1.6, 0.6], look: [1.9, 1.25, -3], parent: 'main', yaw: 15, pitch: 8 },
       lisa: { pos: [-1.0, 1.5, 0.6], look: [-2.75, 1.25, -1.75], parent: 'main', yaw: 10, pitch: 6 },
     },
-    hotspots,
+    hotspots: A2 ? hotspots2 : hotspots,
     canLeave: () => !g.busy,
     update: (dt, time) => {
       if (rat) {
@@ -678,6 +763,19 @@ export function createMacelleria(g: Game): Location {
     },
     enter: async () => {
       g.audio.buzz(true);
+      if (A2) {
+        if (!g.flag('m2.entered')) {
+          g.set('m2.entered');
+          await sleep(500);
+          await g.say([
+            { who: 'diego', key: 'm2.enter1' },
+            { who: 'diego', key: 'm2.enter2' },
+            { who: 'narr', key: 'm2.enter3' },
+            { who: 'diego', key: 'm2.enter4' },
+          ]);
+        }
+        return;
+      }
       if (g.flag('metLisa') && !g.flag('fledButcher')) {
         // reloaded in the middle of the escape: Bruno is still coming
         await sleep(600);
@@ -697,7 +795,7 @@ export function createMacelleria(g: Game): Location {
       }
     },
     leave: () => g.audio.buzz(false),
-    hint: () => 'hint.macelleria',
+    hint: () => (A2 ? mac2Hint(g) : 'hint.macelleria'),
     dark: () => true,
     debug: { bruno: brunoC, lisa: lisaC, door: doorPivot, coldLight, setLisa: (v: number) => (lisaTarget = v) },
   };

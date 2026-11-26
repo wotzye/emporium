@@ -104,6 +104,9 @@ export class Game {
     this.examiners.pnote = async () => {
       if (await this.readDoc('ch.tubeTitle', 'ch.tubeNote')) this.note('note.knock');
     };
+    this.examiners.blackcard = async () => {
+      await this.readDoc('m2.cardTitle', 'm2.card');
+    };
     this.engine.addUpdater(() => this.updateUvInk());
   }
 
@@ -715,7 +718,7 @@ export class Game {
   }
   /** Build the jumpscare figure for this place and compile it with the room's lights, so it can strike without a stall. */
   private async prepScare(id: string) {
-    const kind = id.startsWith('barbiere') || id === 'radio_terrazzo' ? 'barber' : id === 'macelleria' ? 'bruno' : id.startsWith('ada') ? 'ada' : id.startsWith('ora') ? 'clara' : null;
+    const kind = id.startsWith('barbiere') || id === 'radio_terrazzo' ? 'barber' : id.startsWith('mac') ? 'bruno' : id.startsWith('ada') ? 'ada' : id.startsWith('ora') ? 'clara' : null;
     if (!kind || !realCharacters() || this.settings.reducedScares) return;
     const c = this.scareChar(kind);
     const scene = this.engine.scene;

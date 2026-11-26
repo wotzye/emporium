@@ -470,6 +470,10 @@ export function createEmporio(g: Game): Location {
         await g.say([{ who: 'mercante', key: 'emp.haveRadio' }]);
       } else if (g.has('watch')) {
         await g.say([{ who: 'mercante', key: 'emp.haveWatch' }]);
+      } else if (g.flag('m2.done')) {
+        await g.say([{ who: 'mercante', key: 'emp.afterBruno1' }, { who: 'diego', key: 'emp.afterBruno2' }, { who: 'mercante', key: 'emp.afterBruno3' }]);
+      } else if (g.flag('ch.done')) {
+        await g.say([{ who: 'mercante', key: 'emp.afterCrypt1' }, { who: 'mercante', key: 'emp.afterCrypt2' }]);
       } else if (g.flag('placedGlasses')) {
         await g.say([{ who: 'mercante', key: 'emp.afterAda1' }, { who: 'mercante', key: 'emp.afterAda2' }]);
       } else if (g.flag('placedRazor')) {

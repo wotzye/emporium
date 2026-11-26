@@ -269,7 +269,7 @@ export function createMap(g: Game): Location {
   };
   const isOpen: Record<string, boolean> = {
     emporio: true,
-    macelleria: !!g.flag('metMerchant') && !g.flag('fledButcher'),
+    macelleria: (!!g.flag('metMerchant') && !g.flag('fledButcher')) || (!!g.flag('ch.done') && !g.flag('m2.done')),
     barbiere: !!g.flag('fledButcher') && (!g.flag('placedRazor') || stillNeeded.barbiere),
     ada: !!g.flag('fledButcher') && (!g.flag('placedGlasses') || stillNeeded.ada),
     orologeria: !!g.flag('fledButcher') && (!g.flag('placedWatch') || stillNeeded.orologeria),
@@ -384,7 +384,8 @@ export function createMap(g: Game): Location {
         obj: mh,
         tap: async () => {
           if (!g.flag('metMerchant')) return g.say('map.notYet');
-          if (g.flag('fledButcher')) return g.say('map.butcherClosed');
+          if (g.flag('m2.done')) return g.say('map.butcherDone');
+          if (g.flag('fledButcher') && !g.flag('ch.done')) return g.say('map.butcherClosed');
           return g.go('macelleria');
         },
       });
@@ -456,7 +457,7 @@ export function createMap(g: Game): Location {
   label(t('label.stazione'), 0, 4.6, 17, false, 'stazione');
   const vh = hitBox(2, 3, 3, 12.5, 1.5, -2.5, 'valigia');
   scene.add(vh);
-  hotspots.push({ id: 'valigia', obj: vh, tap: () => g.say('map.alley') });
+  hotspots.push({ id: 'valigia', obj: vh, tap: () => g.say(g.flag('m2.done') ? 'map.alleyCard' : g.flag('ch.done') ? 'map.alleyFather' : 'map.alley') });
 
   // station at the edge
   scene.add(box(6, 0.4, 2, mat(0x4d4a45), 0, 0.2, 17));
@@ -561,7 +562,15 @@ export function createMap(g: Game): Location {
       }
       if (nPlaced >= 5 && !g.flag('demoEnd')) {
         g.set('demoEnd');
-        await g.ui.cards(['end.1', 'end.2', 'end.3']);
+        await g.ui.cards(['end.1', 'end.2']);
+      }
+      if (g.flag('ch.done') && !g.flag('m2.call')) {
+        g.set('m2.call');
+        await g.ui.cards(['m2card.1', 'm2card.2']);
+      }
+      if (g.flag('m2.done') && !g.flag('demoEnd2')) {
+        g.set('demoEnd2');
+        await g.ui.cards(['end2.1', 'end2.2', 'end.3']);
       }
     },
     hint: () => {
@@ -585,6 +594,8 @@ export function createMap(g: Game): Location {
       if (!g.flag('placedRadio')) return 'hint.map.radio';
       if (g.has('uvlens') && ['radio', 'barbiere', 'ada', 'ora', 'foto'].some((k) => !g.flag('uv.' + k))) return 'hint.map.lisaUv';
       if (churchOpen(g) && !g.flag('ch.done')) return 'hint.map.church';
+      if (g.flag('ch.done') && !g.flag('m2.done')) return 'hint.map.butcher2';
+      if (g.flag('m2.done')) return 'hint.map.valigia';
       return 'hint.map.done';
     },
   };

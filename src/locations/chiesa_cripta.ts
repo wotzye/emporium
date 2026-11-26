@@ -100,6 +100,8 @@ export function createChiesaCripta(g: Game): Location {
       g.audio.sfx('pickup');
       await say('ch.keyTaken');
       g.rebuild('map');
+      // the butcher's is not the same place any more
+      g.rebuild('macelleria');
     } },
     { id: 'niches', obj: hNiches, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
