@@ -401,6 +401,12 @@ export function createAdaSoggiorno(g: Game): Location {
   // ---------------- hotspots ----------------
   const hTv = hitBox(0.8, 0.7, 0.6, tvX, 0.95, tvZ + 0.1, 'tv');
   const hSofa = hitBox(1.6, 0.75, 0.8, -0.6, 0.38, 0.6, 'sofa');
+  const hGuide = hitBox(0.3, 0.1, 0.34, -0.1, 0.5, 0.5, 'guide');
+  const readGuide = async () => {
+    g.audio.sfx('paper');
+    await g.ui.doc(t('ada.guideTitle'), [t('ada.guide1'), t('ada.guide2'), t('ada.guide3'), t('ada.guide4'), t('ada.guide5')].join('\n'));
+    g.note('note.channel');
+  };
   const hRocker = hitBox(0.8, 1.1, 0.9, -1.85, 0.55, -0.55, 'rocker');
   const hWheel = hitBox(0.8, 1.0, 0.8, 1.85, 0.5, -1.55, 'wheelchair');
   const hPhoto = hitBox(0.5, 0.65, 0.15, 1.0, 1.6, -D / 2 + 0.08, 'photo');
@@ -408,7 +414,7 @@ export function createAdaSoggiorno(g: Game): Location {
   const hKitchen = hitBox(0.2, 2.1, 1.0, -W / 2 + 0.1, 1.05, doorZ, 'kitchen');
   const hRack = hitBox(0.5, 1.8, 0.5, 1.95, 0.9, 1.95, 'rack');
   const hFront = hitBox(1.0, 2.1, 0.2, -0.9, 1.05, D / 2 - 0.1, 'frontdoor');
-  scene.add(hTv, hSofa, hRocker, hWheel, hPhoto, hHatch, hKitchen, hRack, hFront);
+  scene.add(hTv, hSofa, hGuide, hRocker, hWheel, hPhoto, hHatch, hKitchen, hRack, hFront);
 
   const say = (k: string) => g.say(k);
   const ettore = async () => {
@@ -445,11 +451,14 @@ export function createAdaSoggiorno(g: Game): Location {
       if (g.flag('a.tv')) return say('ada.tvAfter');
       return say('ada.tvSnow');
     } },
+    // the TV guide on the sofa has its own marker (the sofa itself only catches stray taps)
+    { id: 'guide', obj: hGuide, view: 'sofa', when: () => g.viewName !== 'rocker', tap: async (item) => {
+      if (item) return g.nope();
+      await readGuide();
+    } },
     { id: 'sofa', obj: hSofa, view: 'sofa', lowPriority: true, when: () => g.viewName !== 'rocker', tap: async (item) => {
       if (item) return g.nope();
-      g.audio.sfx('paper');
-      await g.ui.doc(t('ada.guideTitle'), [t('ada.guide1'), t('ada.guide2'), t('ada.guide3'), t('ada.guide4'), t('ada.guide5')].join('\n'));
-      g.note('note.channel');
+      await readGuide();
     } },
     { id: 'rocker', obj: hRocker, view: 'rocker', tap: async (item) => {
       if (item) return g.nope();

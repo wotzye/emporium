@@ -116,7 +116,8 @@ export function createMap(g: Game): Location {
   // benches
   for (const [x, z, r] of [[3.6, 2.6, -0.6], [-3.6, 2.6, 0.6], [0, -3.8, 0]] as const) {
     const bench = new THREE.Group();
-    const wood = woodMaterial({ base: '#4a3a2a' });
+    // weathered, pale wood: dark slats seen from up here read as black blotches
+    const wood = woodMaterial({ base: '#9a8c76' });
     for (let k = 0; k < 3; k++) bench.add(rbox(1.6, 0.04, 0.12, 0.01, wood, 0, 0.45, -0.15 + k * 0.15));
     for (let k = 0; k < 2; k++) bench.add(rbox(1.6, 0.1, 0.03, 0.01, wood, 0, 0.62 + k * 0.14, -0.26).rotateX(-0.15));
     for (const sx of [-0.7, 0.7]) bench.add(rbox(0.05, 0.45, 0.5, 0.01, mat(0x1a1a1a, { metalness: 0.6, roughness: 0.5 }), sx, 0.25, -0.05));
@@ -163,24 +164,39 @@ export function createMap(g: Game): Location {
   const allLabels: { sp: THREE.Sprite; base: THREE.Vector3; open: boolean; dy: number }[] = [];
   const label = (text: string, x: number, y: number, z: number, open: boolean, target?: string) => {
     const font = "bold 58px 'American Typewriter', 'Courier New', monospace";
+    // what the place IS, under its name: Lisa says «the barber», the sign says «Silver Mirror»
+    const subKey = target ? `labelSub.${target}` : '';
+    const sub = subKey && t(subKey) !== subKey ? t(subKey) : '';
+    const subFont = "italic bold 46px Georgia, 'Times New Roman', serif";
     const probe = document.createElement('canvas').getContext('2d')!;
     probe.font = font;
-    const cw = Math.ceil(probe.measureText(text).width + 60);
-    const tex = canvasTex(cw, 96, (c, w, h) => {
+    let cw = Math.ceil(probe.measureText(text).width + 60);
+    probe.font = subFont;
+    if (sub) cw = Math.max(cw, Math.ceil(probe.measureText(sub).width + 60));
+    const ch = sub ? 156 : 96;
+    const tex = canvasTex(cw, ch, (c, w) => {
       c.font = font;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.lineWidth = 8;
       c.strokeStyle = 'rgba(0,0,0,0.75)';
-      c.strokeText(text, w / 2, h / 2);
+      c.strokeText(text, w / 2, 48);
       c.shadowColor = 'rgba(0,0,0,0.9)';
       c.shadowBlur = 16;
       c.fillStyle = open ? '#ffffff' : 'rgba(215,210,200,0.85)';
-      c.fillText(text, w / 2, h / 2);
+      c.fillText(text, w / 2, 48);
+      if (sub) {
+        c.font = subFont;
+        c.shadowBlur = 10;
+        c.lineWidth = 6;
+        c.strokeText(sub, w / 2, 120);
+        c.fillStyle = open ? 'rgba(235,230,220,0.95)' : 'rgba(200,195,185,0.75)';
+        c.fillText(sub, w / 2, 120);
+      }
     });
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
     const k = (open ? 1.4 : 1.15) * [1.0, 1.4, 1.75][g.save.settings.textSize ?? 1];
-    sp.scale.set((cw / 96) * k, k, 1);
+    sp.scale.set((cw / 96) * k, (ch / 96) * k, 1);
     sp.position.set(x, y, z);
     sp.renderOrder = 10;
     sp.layers.set(LAYER_FX);
@@ -465,7 +481,17 @@ export function createMap(g: Game): Location {
     const realLamp = prop('streetLamp', { height: 3.4 });
     if (realLamp) {
       realLamp.position.set(x, 0, z);
-      realLamp.traverse((o) => (o.userData.noPick = true));
+      realLamp.traverse((o) => {
+        o.userData.noPick = true;
+        // dark iron seen from above reads as black flags in the fog: weather it pale
+        const m = o as THREE.Mesh;
+        if (m.isMesh) {
+          const mt = (m.material as THREE.MeshStandardMaterial).clone();
+          mt.color.setScalar(2.4);
+          mt.metalness = 0.2;
+          m.material = mt;
+        }
+      });
       scene.add(realLamp);
     } else scene.add(lathe([[0, 0], [0.18, 0], [0.16, 0.12], [0.08, 0.2], [0.06, 0.5], [0.045, 2.9], [0.07, 3.0], [0, 3.0]], iron, x, 0, z, 12));
     const lampOn = progress >= 1;

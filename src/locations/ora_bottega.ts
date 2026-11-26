@@ -57,6 +57,8 @@ export function createOraBottega(g: Game): Location {
     for (let i = 0; i < 6; i++) {
       const x = -2.0 + i * 0.75 + (row % 2) * 0.3;
       if (x > 2.1) continue;
+      // leave the shop's sign clear, up in the middle
+      if (row === 2 && Math.abs(x) < 1.25) continue;
       placeClock(x, 1.3 + row * 0.55, -D / 2 + 0.03, 0, 0.12 + ((i + row) % 3) * 0.04, k++);
     }
   for (let row = 0; row < 3; row++)

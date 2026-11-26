@@ -54,7 +54,7 @@ export class UI {
     this.hud.id = 'hud';
     const top = el('div', 'top');
     const btns = el('div', 'btns');
-    this.btnDiary.innerHTML = ICONS.diary;
+    this.btnDiary.innerHTML = ICONS.diary + '<span class="newdot"></span>';
     this.btnNotebook.innerHTML = ICONS.notebook;
     this.btnLisa.innerHTML = ICONS.lisa + '<span class="badge"></span>';
     this.btnSettings.innerHTML = ICONS.settings;
@@ -129,6 +129,11 @@ export class UI {
     const b = this.btnLisa.querySelector('.badge') as HTMLElement;
     b.textContent = n === null ? '∞' : String(n);
     this.btnLisa.style.opacity = n === 0 ? '0.4' : '1';
+  }
+
+  /** a dot on the diary while there's a page you haven't read yet */
+  setUnread(btn: 'diary' | 'notebook', on: boolean) {
+    (btn === 'diary' ? this.btnDiary : this.btnNotebook).classList.toggle('unread', on);
   }
 
   flash(btn: 'diary' | 'notebook') {

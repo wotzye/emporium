@@ -20,7 +20,10 @@ export function lisaInk(g: Game, id: LisaUv, w = 0.95, h = 0.36) {
       g.note(`note.uv.${id}`);
       g.audio.sfx('whisper');
       const n = lisaUvFound(g);
+      g.note('note.uvGoal');
       await g.say([{ who: 'diego', key: n === 1 ? 'uv.first' : n === LISA_UV.length ? 'uv.all' : 'uv.more' }]);
+      // say plainly how many are left, and what they're for
+      if (n < LISA_UV.length) await g.say([{ who: 'diego', key: 'uv.left', vars: { n: LISA_UV.length - n } }]);
       if (n === LISA_UV.length && g.has('towerkey')) await g.say('uv.allChurch');
       if (n === LISA_UV.length) g.diaryPage('lisaUv');
     },

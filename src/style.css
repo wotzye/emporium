@@ -45,6 +45,9 @@ button:active { background: rgba(255,255,255,0.08); }
 #hud .btns { display: flex; gap: 6px; pointer-events: auto; }
 #hud .btns button { width: 44px; height: 40px; padding: 0; background: rgba(0,0,0,0.55); display: grid; place-items: center; position: relative; }
 #hud .btns button svg { width: 22px; height: 22px; stroke: var(--ink); fill: none; stroke-width: 1.4; }
+#hud .btns button .newdot { display: none; position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: #e8e2d4; box-shadow: 0 0 6px rgba(255,255,255,0.8); }
+#hud .btns button.unread .newdot { display: block; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
 #hud .btns button .badge { position: absolute; top: 2px; right: 3px; font-size: calc(10px * var(--fs, 1.3)); color: var(--ink-dim); }
 #hud .btns button.on { background: rgba(255,244,224,0.85); }
 #hud .btns button.on svg { stroke: #000; }
@@ -82,10 +85,13 @@ button:active { background: rgba(255,255,255,0.08); }
 #inv .tog b { position: absolute; top: 2px; right: 0; font-size: 11px; color: var(--ink); }
 #inv.closed { padding: 6px 8px; left: auto; right: calc(10px + var(--safe-r)); transform: none; border-radius: 8px; }
 #inv.closed .tog { width: 40px; height: 36px; }
-#inv .label {
+#inv .label,
+#hud > .label {
   position: absolute; bottom: calc(70px + var(--safe-b)); left: 50%; transform: translateX(-50%);
   white-space: nowrap; font-size: calc(12px * var(--fs, 1.3)); color: var(--ink-dim); text-shadow: 0 1px 3px #000;
+  pointer-events: none; max-width: 86vw; overflow: hidden; text-overflow: ellipsis; z-index: 6;
 }
+#hud > .label:empty { display: none; }
 
 /* ---------- Dialog ---------- */
 #dialog { position: absolute; inset: 0; z-index: 30; display: none; }
@@ -165,6 +171,16 @@ button:active { background: rgba(255,255,255,0.08); }
 #scare { position: absolute; inset: 0; z-index: 60; display: none; background: #000; }
 #scare.on { display: block; }
 #scare canvas { width: 100%; height: 100%; object-fit: cover; animation: lunge 0.7s cubic-bezier(.2,.9,.3,1) forwards; }
+/* the faces of the dead must not look sharper than the world: soften them, mist and vignette over */
+#scare canvas.photo { filter: blur(1.6px) contrast(1.12) brightness(0.82) grayscale(1); }
+#scare::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.9) 100%),
+    radial-gradient(ellipse at 30% 80%, rgba(200,200,195,0.16), rgba(200,200,195,0) 55%),
+    radial-gradient(ellipse at 75% 20%, rgba(200,200,195,0.12), rgba(200,200,195,0) 50%);
+  mix-blend-mode: normal;
+}
 @keyframes lunge { 0% { transform: scale(0.85) translateY(4%); filter: brightness(0.4); } 12% { transform: scale(1.18); filter: brightness(1.4); } 18% { transform: scale(1.12) translateX(-1.5%); } 24% { transform: scale(1.16) translateX(1.5%); } 100% { transform: scale(1.22); filter: brightness(1); } }
 
 /* ---------- Big action (QTE) ---------- */

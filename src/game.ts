@@ -85,7 +85,13 @@ export class Game {
     this.engine.drag = this.dragHandler();
     this.ui.onBack = () => this.back();
     this.ui.onItemTap = (id) => this.itemTap(id);
-    this.ui.onDiary = () => this.openDiary();
+    this.ui.onDiary = () => {
+      this.save.flags.diaryUnread = false;
+      this.ui.setUnread('diary', false);
+      this.persist();
+      this.openDiary();
+    };
+    this.ui.setUnread('diary', !!this.save.flags.diaryUnread);
     this.ui.onNotebook = () => this.openNotebook();
     this.ui.onLisa = () => this.askLisa();
     this.ui.onSettings = () => this.openSettings();
@@ -122,6 +128,35 @@ export class Game {
     this.ui.toast(t(on ? 'ui.uvOn' : 'ui.uvOff'));
     this.persist();
   }
+  /**
+   * Every piece of invisible writing becomes a hotspot (with its marker) while it glows:
+   * tap it to read it properly; reading it counts as finding it (notes, Lisa's tally...).
+   */
+  private uvHotspots(L: Location) {
+    if (L.scene.userData.uvHs) return;
+    L.scene.userData.uvHs = true;
+    const inks: THREE.Mesh[] = [];
+    L.scene.traverse((o) => {
+      if (o.userData.uvInk) inks.push(o as THREE.Mesh);
+    });
+    inks.forEach((m, i) =>
+      L.hotspots.push({
+        id: 'uvink' + i,
+        obj: m,
+        when: () => this.uvOn && this.engine.torchOn && (m.material as THREE.MeshBasicMaterial).opacity > 0.3,
+        tap: async (item) => {
+          if (item) return this.nope();
+          this.audio.sfx('paper');
+          await this.ui.doc(t('uv.inkTitle'), '⟦' + (m.userData.uvLines as string[]).join('\n') + '⟧', true, true);
+          if (!m.userData.uvSeen) {
+            m.userData.uvSeen = true;
+            await (m.userData.onReveal as (() => Promise<void> | void) | undefined)?.();
+          }
+        },
+      }),
+    );
+  }
+
   /** writing in invisible ink: it shows only in the UV torch beam (and may tell you once it's been read) */
   private updateUvInk() {
     const L = this.loc;
@@ -186,6 +221,8 @@ export class Game {
     if (this.save.diary.includes(id)) return;
     this.save.diary.push(id);
     this.ui.flash('diary');
+    this.save.flags.diaryUnread = true;
+    this.ui.setUnread('diary', true);
     this.persist();
   }
   persist() {
@@ -307,6 +344,7 @@ export class Game {
     this.currentView = L.startView;
     await this.engine.goTo(L.views[L.startView], true);
     this.removeUpdater = L.update ? this.engine.addUpdater(L.update) : null;
+    this.uvHotspots(L);
     this.removeMarkers?.();
     this.removeMarkers = this.engine.addUpdater(this.markers(L));
     this.ui.setPlace(t(L.nameKey));
@@ -632,6 +670,17 @@ export class Game {
       const k = Math.max(cv.width / shot.width, cv.height / shot.height) * 1.08;
       const w = shot.width * k, h = shot.height * k;
       c.drawImage(shot, (cv.width - w) / 2, (cv.height - h) / 2 - h * 0.04, w, h);
+      // film grain, like the rest of the world
+      const img = c.getImageData(0, 0, cv.width, cv.height);
+      const px = img.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const n = (Math.random() - 0.5) * 38;
+        px[i] += n;
+        px[i + 1] += n;
+        px[i + 2] += n;
+      }
+      c.putImageData(img, 0, 0);
+      cv.className = 'photo';
       this.audio.rec(Math.random() < 0.5 ? 'demonlaugh' : 'evillaugh', { gain: 0.7, dur: 1.6 });
       await this.ui.showScare(cv, ms);
       return;

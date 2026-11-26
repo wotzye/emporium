@@ -186,7 +186,7 @@ export function createBarbiereRetro(g: Game): Location {
     towelGeo.computeVertexNormals();
   }
   const towel = mesh(towelGeo, new THREE.MeshStandardMaterial({ color: 0xbdb7ab, roughness: 1, side: THREE.DoubleSide }), -0.4, 1.12, -1.72);
-  towel.visible = !g.flag('r.cloth');
+  towel.visible = true;
   scene.add(towel);
 
   // ---------------- boiler, sooty plate, three valves, gauge ----------------
@@ -370,7 +370,8 @@ export function createBarbiereRetro(g: Game): Location {
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
-    { id: 'towel', obj: hTowel, view: 'sink', when: () => !g.flag('r.cloth'), tap: async (item) => {
+    // the cloth can be put down (it goes back on the rack) and picked up again
+    { id: 'towel', obj: hTowel, view: 'sink', when: () => g.held !== 'cloth' && !g.flag('r.plate'), tap: async (item) => {
       if (item) return g.nope();
       towel.visible = false;
       g.set('r.cloth');
@@ -458,7 +459,7 @@ export function createBarbiereRetro(g: Game): Location {
       g.audio.sfx('wrong');
       return say('retro.yardLocked');
     } },
-    { id: 'helmet', obj: hHelmet, tap: async (item) => {
+    { id: 'helmet', obj: hHelmet, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
       await say('retro.helmet');
     } },
@@ -622,6 +623,7 @@ export function createBarbiereRetro(g: Game): Location {
     hotspots,
     interactions,
     update: (dt, time) => {
+      towel.visible = g.held !== 'cloth';
       motes.update(dt, time);
       // the first time you get close to the boiler, Diego notices the sooty plate
       if (g.viewName === 'boiler' && !g.flag('r.plate') && !g.flag('r.boilerSeen') && !g.busy) {
@@ -638,7 +640,7 @@ export function createBarbiereRetro(g: Game): Location {
       }
     },
     hint: () => {
-      if (!g.flag('r.cloth')) return 'hint.retro.cloth';
+      if (!g.flag('r.cloth') || (g.held !== 'cloth' && !g.flag('r.plate'))) return 'hint.retro.cloth';
       if (!allPlaced()) return 'hint.retro.bottles';
       if (!g.has('crank') && !g.flag('r.crankIn')) {
         if (!legacyCrank() && !g.flag('r.yardKey')) return 'hint.retro.drawer';

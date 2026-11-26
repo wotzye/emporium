@@ -798,7 +798,7 @@ export function createBarbiere(g: Game): Location {
     } },
     { id: 'steamer', obj: hSteamer, view: 'steamer', tap: async (item) => {
       if (item) return g.nope();
-      if (!lit()) return g.say('bar.noPower');
+      if (!lit()) return g.say('bar.noPowerSteamer');
       if (!g.flag('b.steam')) return runSteam();
       await g.say('bar.steamDone');
     } },
@@ -826,7 +826,7 @@ export function createBarbiere(g: Game): Location {
     { id: 'till', obj: hTill, view: 'till', tap: async (item) => {
       if (item) return g.nope();
       if (g.flag('b.till')) return g.say('bar.tillEmpty');
-      if (!lit()) return g.say('bar.noPower');
+      if (!lit()) return g.say('bar.noPowerTill');
       const ok = await g.ui.keypad(t('bar.tillTitle'), 3, (c) => c === '850', () => g.audio.sfx('click'));
       if (!ok) return;
       g.audio.sfx('bell');
@@ -877,7 +877,7 @@ export function createBarbiere(g: Game): Location {
       lowPriority: true,
       tap: async (item: string | null) => {
         if (item) return g.nope();
-        if (!lit()) return g.say('bar.noPower');
+        if (!lit()) return g.say('bar.noPowerChair');
         await chairTap(i);
       },
     })),

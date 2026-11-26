@@ -139,7 +139,8 @@ export function createRadioLaboratorio(g: Game): Location {
       g.set('rl.lens');
       g.give('uvlens');
       g.audio.sfx('pickup');
-      await g.say([{ who: 'diego', key: 'radio.lens1' }, { who: 'diego', key: 'radio.lens2' }]);
+      await g.say([{ who: 'diego', key: 'radio.lens1' }, { who: 'diego', key: 'radio.lens2' }, { who: 'diego', key: 'radio.lens3' }]);
+      g.note('note.uvGoal');
       g.ui.toast(t('radio.lensHow'));
       g.rebuild('map');
     } },

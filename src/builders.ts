@@ -899,7 +899,9 @@ export function uvInk(lines: string[], w: number, h: number, o: { size?: number;
   });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
   m.userData.uvInk = true;
-  m.userData.noPick = true;
+  // tappable once it shows (the game gives it a hotspot), see-through for taps otherwise
+  m.userData.hit = true;
+  m.userData.uvLines = lines;
   m.userData.onReveal = o.onReveal;
   m.renderOrder = 3;
   return m;
