@@ -106,7 +106,7 @@ export function createFotoCasa(g: Game): Location {
       if (item) return g.nope();
       if (!g.flag('f.talked')) {
         g.set('f.talked');
-        await g.scare('barber', 550);
+        await g.scare('barber', 550, 'scare_spettro');
         await g.say([
           { who: 'giulio', key: 'foto.giulio1' },
           { who: 'giulio', key: 'foto.giulio2' },

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prop } from '../models';
 import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, bulb, woodMaterial, tileMaterial, plasterMaterial, mat, framed, cyl, canvasTex } from '../builders';
 import { t } from '../i18n';
@@ -46,8 +47,10 @@ export function createRadioNegozio(g: Game): Location {
     scene.add(rbox(3.2, 0.04, 0.35, 0.01, woodDark, -0.2, 0.9 + r * 0.6, -D / 2 + 0.2));
     for (let i = 0; i < 4; i++) {
       const s = 0.85 + ((i * 7 + r * 3) % 4) * 0.08;
-      const rad = valveRadio(0.5 * s, 0.3 * s, 0.22);
-      rad.position.set(-1.45 + i * 0.8, 0.92 + r * 0.6, -D / 2 + 0.2);
+      // real sets when the models are in (two makes, alternating), the drawn ones otherwise
+      const real = (i + r) % 3 === 2 ? null : prop((i + r) % 2 ? 'radioA' : 'radioB', { width: 0.5 * s, grey: (i + r) % 2 ? undefined : 0.95 });
+      const rad = real ?? valveRadio(0.5 * s, 0.3 * s, 0.22);
+      rad.position.set(-1.45 + i * 0.8, 0.92 + r * 0.6, -D / 2 + (real ? 0.22 : 0.2));
       rad.rotation.y = ((i + r) % 3 - 1) * 0.06;
       scene.add(rad);
     }
@@ -75,6 +78,14 @@ export function createRadioNegozio(g: Game): Location {
     c.fill();
   }, { border: false, age: 0.6 });
   const snowTex = tvs[2].mat.map;
+  // more dead sets waiting for repair: one on the stack, one on the floor by the counter
+  for (const [id, x, y, z, r, w] of [['tvB', -W / 2 + 0.38, 0.84, 0.3, Math.PI / 2 + 0.1, 0.5], ['tvC', -0.95, 0, -0.75, 0.5, 0.55]] as const) {
+    const tv = prop(id, { width: w });
+    if (!tv) continue;
+    tv.position.set(x, y, z);
+    tv.rotation.y = r;
+    scene.add(tv);
+  }
 
   // ---------------- counter, the ticket spike, the till ----------------
   scene.add(rbox(2.0, 0.95, 0.6, 0.02, woodMid, 0.5, 0.475, -0.5));

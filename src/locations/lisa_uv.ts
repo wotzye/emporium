@@ -21,6 +21,7 @@ export function lisaInk(g: Game, id: LisaUv, w = 0.95, h = 0.36) {
       g.audio.sfx('whisper');
       const n = lisaUvFound(g);
       await g.say([{ who: 'diego', key: n === 1 ? 'uv.first' : n === LISA_UV.length ? 'uv.all' : 'uv.more' }]);
+      if (n === LISA_UV.length && g.has('towerkey')) await g.say('uv.allChurch');
       if (n === LISA_UV.length) g.diaryPage('lisaUv');
     },
   });

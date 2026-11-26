@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { prop } from '../models';
 import { Game, Location, Hotspot } from '../game';
 import { rbox, mesh, textPlane, hitBox, mat, plasterMaterial, uvInk, woodMaterial } from '../builders';
 import { t } from '../i18n';
-import { sleep, churchHint, KNOCK } from './chiesa_common';
+import { sleep, churchHint, KNOCK, pigeon, tickPigeons } from './chiesa_common';
 
 /**
  * The little cemetery behind San Michele. An iron gate (the key was in the reliquary), the graves
@@ -103,7 +104,31 @@ export function createChiesaCimitero(g: Game): Location {
   roofC.rotation.y = Math.PI / 4;
   scene.add(roofC);
   const cryptDoor = rbox(0.8, 1.7, 0.06, 0.01, woodMaterial({ base: '#2a2018' }), cX, 0.85, cZ + 0.82);
-  scene.add(cryptDoor);
+  // the real old door, peeling, if the model is in
+  const oldDoor = prop('greenDoor', { height: 1.75, grey: 0.75 });
+  if (oldDoor) {
+    oldDoor.position.set(cX, 0, cZ + 0.81);
+    scene.add(oldDoor);
+  } else scene.add(cryptDoor);
+
+  // ---------------- more of the dead, at the back; pigeons on the wall ----------------
+  for (const [x, z, r, sc] of [[0.6, -5.3, 0.1, 1.0], [4.4, -5.3, -0.15, 1.1], [4.6, -3.0, -1.2, 0.95], [-5.0, -2.2, 1.3, 1.0]] as const) {
+    const gv = prop('graves', { width: 1.3 * sc, turn: r, grey: 0.9 });
+    if (!gv) break;
+    gv.position.set(x, 0, z);
+    scene.add(gv);
+  }
+  const fence = prop('graveFence', { width: 1.6, grey: 0.7 });
+  if (fence) {
+    fence.position.set(0.6, 0, -4.75);
+    scene.add(fence);
+  }
+  for (const [x, z, r] of [[-1.2, -5.85, 0.3], [3.9, -5.85, -2.6]] as const) {
+    const pg = pigeon(false);
+    pg.position.set(x, 1.6, z);
+    pg.rotation.y = r;
+    scene.add(pg);
+  }
   scene.add(textPlane([t('ch.cryptSign')], 0.6, 0.12, { bg: '#8a857a', fg: '#1a1814', size: 26, px: 64 }).translateX(cX).translateY(2.0).translateZ(cZ + 0.81));
 
   // ---------------- hotspots ----------------
@@ -186,6 +211,7 @@ export function createChiesaCimitero(g: Game): Location {
     next: ['chiesa_navata', 'chiesa_cripta'],
     scene,
     drone: 'map',
+    update: (dt) => tickPigeons(dt),
     startView: 'main',
     exitTo: 'chiesa_navata',
     exposure: 1.2,
@@ -193,7 +219,7 @@ export function createChiesaCimitero(g: Game): Location {
       main: { pos: [0, 1.7, 3.6], look: [0, 0.9, -3.5], yaw: 65, pitch: 20 },
       gate: { pos: [0, 1.6, 3.4], look: [0, 1.1, gateZ], parent: 'main', yaw: 20, pitch: 12 },
       graves: { pos: [-1.0, 1.6, 1.0], look: [-1.2, 0.5, -2.5], parent: 'main', yaw: 35, pitch: 15 },
-      lisa: { pos: [lX - 0.15, 1.45, lZ + 1.75], look: [lX, 0.3, lZ + 0.25], parent: 'main', yaw: 20, pitch: 15, fov: 55 },
+      lisa: { pos: [lX - 0.15, 1.5, lZ + 1.8], look: [lX, 0.42, lZ + 0.3], parent: 'main', yaw: 20, pitch: 15, fov: 55 },
       chapel: { pos: [cX + 0.6, 1.6, cZ + 2.6], look: [cX, 1.1, cZ + 0.8], parent: 'main', yaw: 20, pitch: 12 },
     },
     hotspots,

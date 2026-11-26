@@ -107,6 +107,10 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'suitcasekey',
     svg: s('<circle cx="12" cy="20" r="5"/><path d="M17 20 H32 M29 20 v4 M26 20 v3"/><path d="M5 9 h10 v6 h-10z"/>'),
   },
+  pnote: {
+    id: 'pnote',
+    svg: s('<path d="M9 13 H31 V29 H9 Z"/><path d="M13 18 H27 M13 22 H24"/><path d="M30 9 l4 -4"/>'),
+  },
   uvlens: {
     id: 'uvlens',
     svg: s('<circle cx="20" cy="20" r="11"/><circle cx="20" cy="20" r="7"/><path d="M12 12 l3 3 M28 12 l-3 3 M12 28 l3 -3 M28 28 l-3 -3"/>'),

@@ -3,7 +3,7 @@ import { useAudioContext } from './sensors';
  * All sound is synthesized with WebAudio: no audio files to load, nothing to license.
  * iOS only starts audio after a user gesture, so init() is called from the title screen tap.
  */
-export type DroneKind = 'map' | 'emporio' | 'macelleria' | 'barbiere' | 'none';
+export type DroneKind = 'map' | 'emporio' | 'macelleria' | 'barbiere' | 'cripta' | 'none';
 
 export class Audio {
   ctx: AudioContext | null = null;
@@ -111,6 +111,7 @@ export class Audio {
       emporio: { f: [49, 49.3, 73.4, 103.8], lp: 380, noise: 0.25, level: 0.06 },
       macelleria: { f: [41.2, 41.6, 61.7, 87.3], lp: 220, noise: 0.35, level: 0.07 },
       barbiere: { f: [46.2, 46.5, 69.3, 98], lp: 300, noise: 0.3, level: 0.06 },
+      cripta: { f: [36.7, 36.9, 55, 77.8], lp: 200, noise: 0.4, level: 0.07 },
     };
     const s = settings[kind];
     const lp = ctx.createBiquadFilter();
@@ -502,7 +503,7 @@ export class Audio {
     if (!this.ctx || this.samplesLoading) return;
     this.samplesLoading = true;
     const ctx = this.ctx;
-    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh']) {
+    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh', 'pigeons', 'pigeoncoo', 'amb_hell', 'spooky', 'synth']) {
       fetch(`sounds/${n}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .then((b) => ctx.decodeAudioData(b))
@@ -523,6 +524,7 @@ export class Audio {
       emporio: [['amb_evil', 0.22], ['clock', 0.28]],
       macelleria: [['amb_fridge', 0.4], ['amb_evil', 0.12]],
       barbiere: [['amb_evil', 0.18], ['clock', 0.12]],
+      cripta: [['amb_hell', 0.3], ['synth', 0.1]],
       none: [],
     };
     const want = beds[kind].filter(([n]) => this.samples[n]);
@@ -600,7 +602,7 @@ export class Audio {
   }
 
   /** named recordings for specific moments (no-op if not loaded) */
-  rec(name: 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
+  rec(name: 'pigeons' | 'pigeoncoo' | 'spooky' | 'synth' | 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
     return this.sample(name, o);
   }
 

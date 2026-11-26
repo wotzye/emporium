@@ -116,8 +116,8 @@ export function createChiesaNavata(g: Game): Location {
       if (item) return g.nope();
       g.audio.sfx('paper');
       if (!g.flag('ch.boardSeen')) await say('ch.hymnalClosed');
-      await g.ui.doc(t('ch.hymnalTitle'), t('ch.hymnal'), true);
-      if (!g.flag('ch.hymn')) {
+      const read = await g.readDoc('ch.hymnalTitle', 'ch.hymnal');
+      if (read && !g.flag('ch.hymn')) {
         g.set('ch.hymn');
         g.note('note.bells');
         await say('ch.hymnalAfter');

@@ -54,7 +54,8 @@ export function createFotoOscura(g: Game): Location {
   // ---------------- the bench, the three trays, the enlarger ----------------
   scene.add(rbox(1.9, 0.05, 0.75, 0.01, woodDark, 0, benchY, benchZ));
   scene.add(rbox(1.85, benchY, 0.7, 0.01, woodDark, 0, benchY / 2, benchZ));
-  const liquid = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.05, metalness: 0.3 });
+  // the baths are clear enough to see the print through them
+  const liquid = new THREE.MeshStandardMaterial({ color: 0x2a2418, roughness: 0.03, metalness: 0.4, transparent: true, opacity: 0.55, depthWrite: false });
   // in the dark (no safelight yet) every label is just a pale smudge: nothing can be read
   const readables: { m: THREE.MeshStandardMaterial; map: THREE.Texture | null }[] = [];
   const smudge = canvasTex(64, 64, (c, w, h) => {
@@ -74,8 +75,12 @@ export function createFotoOscura(g: Game): Location {
     }
   };
   TRAYS.forEach((tr) => {
-    scene.add(rbox(0.42, 0.06, 0.32, 0.01, mat(0xd8d2c6, { roughness: 0.3 }), tr.x, benchY + 0.055, benchZ + 0.05));
-    const l = mesh(new THREE.PlaneGeometry(0.38, 0.28), liquid, tr.x, benchY + 0.08, benchZ + 0.05, false);
+    // a real tray: a floor and four low walls, so the print lies IN the bath
+    const enamel = mat(0xd8d2c6, { roughness: 0.3 });
+    scene.add(rbox(0.42, 0.012, 0.32, 0.004, enamel, tr.x, benchY + 0.031, benchZ + 0.05));
+    for (const [w, d, dx, dz] of [[0.42, 0.012, 0, 0.154], [0.42, 0.012, 0, -0.154], [0.012, 0.32, 0.204, 0], [0.012, 0.32, -0.204, 0]] as const)
+      scene.add(rbox(w, 0.06, d, 0.003, enamel, tr.x + dx, benchY + 0.055, benchZ + 0.05 + dz));
+    const l = mesh(new THREE.PlaneGeometry(0.38, 0.28), liquid, tr.x, benchY + 0.072, benchZ + 0.05, false);
     l.rotation.x = -Math.PI / 2;
     scene.add(l);
     const s = textPlane([tr.sign], 0.08, 0.06, { bg: '#d8d2c6', fg: '#111', size: 40, px: 48 });
@@ -245,7 +250,7 @@ export function createFotoOscura(g: Game): Location {
         paper.position.y = benchY + 0.03;
         const tr = TRAYS.find((q) => Math.abs(paper.position.x - q.x) < 0.2 && Math.abs(paper.position.z - (benchZ + 0.05)) < 0.18);
         if (!tr) return;
-        paper.position.set(tr.x, benchY + 0.075, benchZ + 0.05);
+        paper.position.set(tr.x, benchY + 0.04, benchZ + 0.05);
         g.audio.sfx('water');
         if (tr.id !== ORDER[step]) return restart(step === 0 ? 'foto.wrongFirst' : 'foto.wrongBath');
         if (tr.id === 'dev') {

@@ -319,7 +319,7 @@ export function createAdaCamera(g: Game): Location {
         await sleep(600);
         g.audio.hush(3);
         await sleep(500);
-        await g.scare('ada', 700);
+        await g.scare('ada', 700, 'scare_donna');
         playing = false;
         return g.say([{ who: 'diego', key: 'ac.afterScare' }, { who: 'diego', key: 'ac.drawerOpen' }]);
       },

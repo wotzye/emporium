@@ -3,7 +3,8 @@ import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, textPlane, hitBox, woodMaterial, mat, cyl, lathe, framed } from '../builders';
 import { t } from '../i18n';
 import { oldPhoto } from '../photos';
-import { stoneWall, stoneFloor, pigeon, sleep, churchHint, BELL_ORDER } from './chiesa_common';
+import { stoneWall, stoneFloor, pigeon, tickPigeons, sleep, churchHint, BELL_ORDER } from './chiesa_common';
+import { prop } from '../models';
 
 /**
  * Inside the bell tower. Three ropes come down through the ceiling: the big bell, the middle
@@ -71,6 +72,20 @@ export function createChiesaCampanile(g: Game): Location {
   ph.rotation.y = -Math.PI / 2;
   scene.add(ph);
 
+  // ---------------- the great bell, hanging above the loft ----------------
+  const bellM = prop('bell', { height: 0.95 });
+  if (bellM) {
+    bellM.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.geometry.computeVertexNormals();
+      m.material = new THREE.MeshStandardMaterial({ color: 0x4a3a24, metalness: 0.75, roughness: 0.55 });
+    });
+    bellM.position.set(0.2, loftY + 1.55, -0.6);
+    scene.add(bellM);
+    scene.add(rbox(2.6, 0.14, 0.14, 0.01, mat(0x2a2018, { roughness: 1 }), 0.2, loftY + 2.55, -0.6));
+  }
+
   // ---------------- the pigeons in the loft ----------------
   const birds: { g: THREE.Group; ring: boolean; home: THREE.Vector3 }[] = [];
   const spots: [number, number][] = [[-1.1, -0.9], [-0.6, -1.2], [0.0, -0.95], [0.5, -1.25], [1.1, -0.85], [-0.3, -0.5], [0.8, -0.45]];
@@ -133,7 +148,22 @@ export function createChiesaCampanile(g: Game): Location {
     g.audio.sfx('sheet');
     g.audio.sfx('sheet');
     // the pigeons burst out of the loft
+    g.audio.rec('pigeons', { gain: 1.0 });
+    const flyers = birds.map((b) => {
+      const f = prop('pigeonFly', { width: 0.45 });
+      if (!f) return null;
+      f.position.copy(b.g.position);
+      f.rotation.y = b.g.rotation.y;
+      scene.add(f);
+      b.g.visible = false;
+      return f;
+    });
     for (let i = 0; i <= 30; i++) {
+      flyers.forEach((f, j) => {
+        if (!f) return;
+        f.position.set(birds[j].home.x + Math.sin(j) * i * 0.05, birds[j].home.y + i * 0.09, birds[j].home.z + Math.cos(j) * i * 0.05);
+        f.rotation.z = Math.sin(i * 0.9 + j) * 0.3;
+      });
       birds.forEach((b, j) => {
         b.g.position.set(b.home.x + Math.sin(j) * i * 0.03, b.home.y + i * 0.08, b.home.z + Math.cos(j) * i * 0.03);
         b.g.rotation.y += 0.3;
@@ -141,6 +171,7 @@ export function createChiesaCampanile(g: Game): Location {
       await sleep(30);
     }
     birds.forEach((b) => (b.g.visible = false));
+    flyers.forEach((f) => f && scene.remove(f));
     tube.visible = true;
     return g.say([{ who: 'diego', key: 'ch.bellsDone1' }, { who: 'diego', key: 'ch.bellsDone2' }]);
   };
@@ -194,9 +225,11 @@ export function createChiesaCampanile(g: Game): Location {
       g.set('ch.tube');
       g.audio.sfx('pickup');
       g.audio.sfx('paper');
-      await g.ui.doc(t('ch.tubeTitle'), t('ch.tubeNote'), true);
-      g.note('note.knock');
-      return say('ch.tubeAfter');
+      g.give('pnote');
+      if (await g.readDoc('ch.tubeTitle', 'ch.tubeNote')) {
+        g.note('note.knock');
+        return say('ch.tubeAfter');
+      }
     } },
     { id: 'down', obj: hDown, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
@@ -222,6 +255,9 @@ export function createChiesaCampanile(g: Game): Location {
     },
     hotspots,
     update: (_dt, time) => {
+      tickPigeons(_dt);
+      // the loft coos, now and then, until the bells
+      if (!fled() && Math.random() < _dt / 7) g.audio.rec('pigeoncoo', { gain: 0.5, rate: 0.9 + Math.random() * 0.2 });
       if (fled()) return;
       birds.forEach((b, i) => {
         if (b.g.position.y > b.home.y + 0.01) return;

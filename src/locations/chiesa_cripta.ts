@@ -117,7 +117,7 @@ export function createChiesaCripta(g: Game): Location {
     nameKey: 'place.chCripta',
     next: ['chiesa_cimitero'],
     scene,
-    drone: 'barbiere',
+    drone: 'cripta',
     startView: 'main',
     exitTo: 'chiesa_cimitero',
     dark: () => true,

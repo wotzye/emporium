@@ -59,13 +59,7 @@ export type LocationFactory = (g: Game) => Location;
 const HINTS_PER_LOCATION = 2;
 
 /** close-up photos for the jumpscares (photos/<key>.jpg) */
-const SCARE_PHOTO: Record<'barber' | 'bruno' | 'ada' | 'clara', string[]> = {
-  barber: ['scare_barbiere'],
-  bruno: ['scare_macellaio2'],
-  ada: ['scare_donna'],
-  clara: ['scare_ragazza', 'scare_donna'],
-};
-preloadPhotos(Object.values(SCARE_PHOTO).flat());
+preloadPhotos(['scare_barbiere', 'scare_macellaio2', 'scare_donna', 'scare_donna2', 'scare_spettro']);
 
 export class Game {
   engine: Engine;
@@ -101,6 +95,9 @@ export class Game {
     this.ui.showHud(false);
     // the UV lens: tap it twice in the inventory to slip it on the torch (or off)
     this.examiners.uvlens = () => this.setUV(!this.uvOn);
+    this.examiners.pnote = async () => {
+      if (await this.readDoc('ch.tubeTitle', 'ch.tubeNote')) this.note('note.knock');
+    };
     this.engine.addUpdater(() => this.updateUvInk());
   }
 
@@ -108,6 +105,15 @@ export class Game {
   get uvOn() {
     return !!this.flag('uvOn') && this.has('uvlens');
   }
+  /** Read a document that may hide lines in invisible ink: true if the hidden part was readable (UV on). */
+  async readDoc(titleKey: string, textKey: string, hand = true): Promise<boolean> {
+    const text = t(textKey);
+    const hidden = /⟦/.test(text);
+    await this.ui.doc(t(titleKey), text, hand, this.uvOn);
+    if (hidden && !this.uvOn) await this.say(this.has('uvlens') ? 'uv.docBlankLens' : 'uv.docBlank');
+    return !hidden || this.uvOn;
+  }
+
   setUV(on: boolean) {
     this.set('uvOn', on);
     this.audio.sfx('click');
@@ -133,7 +139,7 @@ export class Game {
       const k = uv ? this.torchOn(m, 5) : 0;
       const mat = m.material as THREE.MeshBasicMaterial;
       mat.opacity += (k * 0.95 - mat.opacity) * 0.2;
-      if (k > 0.7 && !m.userData.uvSeen && !this.busy) {
+      if (k > 0.55 && !m.userData.uvSeen && !this.busy) {
         m.userData.uvSeen = true;
         (m.userData.onReveal as (() => void) | undefined)?.();
       }
@@ -603,7 +609,11 @@ export class Game {
   }
 
   // ---------------- scares ----------------
-  async scare(kind: 'barber' | 'bruno' | 'ada' | 'clara', ms = 650) {
+  /**
+   * photo: the close-up for THIS scare (each one has its own, so none repeats); without one,
+   * the character itself lunges at the camera.
+   */
+  async scare(kind: 'barber' | 'bruno' | 'ada' | 'clara', ms = 650, photo?: string) {
     this.audio.stinger();
     this.engine.shake(0.08, 0.6);
     if (this.settings.reducedScares || this.settings.noFlash) {
@@ -613,7 +623,7 @@ export class Game {
       return;
     }
     // a real close-up photo, when one ships with the game, beats the puppets
-    const shot = SCARE_PHOTO[kind].map((k) => photoImage(k)).find(Boolean);
+    const shot = photo ? photoImage(photo) : null;
     if (shot) {
       const cv = document.createElement('canvas');
       cv.width = 1024;

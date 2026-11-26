@@ -58,13 +58,26 @@ const FILES = {
   hand: 'models/hand.glb',
   brain: 'models/brain.glb',
   shoe: 'models/shoe.glb',
+  // second batch (Sketchfab, CC-BY 4.0 / CC0: see Credits)
+  pigeon: 'models/pigeon.glb',
+  pigeonFly: 'models/pigeonFly.glb',
+  graves: 'models/graves.glb',
+  graveFence: 'models/graveFence.glb',
+  bell: 'models/bell.glb',
+  greenDoor: 'models/greenDoor.glb',
+  radioA: 'models/radioA.glb',
+  radioB: 'models/radioB.glb',
+  tvB: 'models/tvB.glb',
+  tvC: 'models/tvC.glb',
+  meatHook: 'models/meatHook.glb',
+
 } as const;
 export type ModelId = keyof typeof FILES;
 
 const cache: Partial<Record<ModelId, GLTF>> = {};
 let loading: Promise<void> | null = null;
 
-const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns', 'merchant', 'butcherScale', 'fingers', 'hand', 'brain'];
+const CHAR_IDS: ModelId[] = ['male', 'female', 'hairLong', 'hairParted', 'hairBuzzed', 'beard', 'brows', 'hairBuns', 'merchant', 'butcherScale', 'fingers', 'hand', 'brain', 'meatHook'];
 /** Resolves when the characters are in; props keep loading in the background. */
 export function preloadModels(onProgress?: (k: number) => void) {
   if (loading) return loading;
@@ -89,6 +102,8 @@ export function preloadModels(onProgress?: (k: number) => void) {
 }
 
 export const hasModel = (id: ModelId) => !!cache[id];
+/** The clips that came with a model (for the ones that move). */
+export const clips = (id: ModelId) => cache[id]?.animations ?? [];
 
 /** A fresh, independently posable copy. */
 export function instance(id: ModelId): THREE.Object3D | null {

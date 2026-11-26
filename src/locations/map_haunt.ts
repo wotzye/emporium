@@ -9,6 +9,22 @@ import { createLisa, createMerchant } from '../characters';
  * there sliding across the cobbles, a pale girl at the edge of a building who is gone when you
  * look again, crows, fog creeping between the houses, the man in black watching from the church.
  */
+/**
+ * Canvas fog fades to transparent, and the canvas keeps its pixels premultiplied: on upload the
+ * faintest ones come back dark, and with mipmaps they pile up into black blotches (iPhone).
+ * Repaint every pixel in one flat fog colour, keeping only the alpha.
+ */
+function soft(t: THREE.CanvasTexture, color = '#d6d7d5') {
+  const cv = t.image as HTMLCanvasElement;
+  const c = cv.getContext('2d')!;
+  c.globalCompositeOperation = 'source-in';
+  c.fillStyle = color;
+  c.fillRect(0, 0, cv.width, cv.height);
+  c.globalCompositeOperation = 'source-over';
+  t.needsUpdate = true;
+  return t;
+}
+
 export function createHaunts(scene: THREE.Scene, g: Game) {
   const rnd = (a: number, b: number) => a + Math.random() * (b - a);
   const updaters: ((dt: number, t: number) => void)[] = [];
@@ -33,7 +49,8 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
     c.fillStyle = hg;
     c.fillRect(0, 0, w, h * 0.3);
   });
-  const shadows = [0, 1].map(() => {
+  // (off: seen from above, under the fog, they only read as two black blotches)
+  const shadows = ([] as number[]).map(() => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 5.0), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, opacity: 0 }));
     m.rotation.x = -Math.PI / 2;
     m.position.y = 0.04;
@@ -145,7 +162,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
   });
 
   // ---------------- fog creeping between the houses ----------------
-  const fogTex = canvasTex(256, 256, (c, w, h) => {
+  const fogTex = soft(canvasTex(256, 256, (c, w, h) => {
     for (let i = 0; i < 40; i++) {
       const x = rnd(40, w - 40), y = rnd(40, h - 40), r = rnd(25, 60);
       const gr = c.createRadialGradient(x, y, 0, x, y, r);
@@ -154,7 +171,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
       c.fillStyle = gr;
       c.fillRect(0, 0, w, h);
     }
-  });
+  }));
   const fogs = Array.from({ length: 6 }, (_, i) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: fogTex, transparent: true, depthWrite: false, opacity: 0.55 }));
     m.rotation.x = -Math.PI / 2;
@@ -236,7 +253,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
 
   // ---------------- a wall of fog all round the village, always moving ----------------
   // tall soft billboards on a ring beyond the houses: they turn to face you and drift sideways
-  const wallTex = canvasTex(256, 256, (c, w, h) => {
+  const wallTex = soft(canvasTex(256, 256, (c, w, h) => {
     for (let i = 0; i < 70; i++) {
       const x = rnd(20, w - 20), y = rnd(h * 0.25, h - 10), r = rnd(30, 70);
       const gr = c.createRadialGradient(x, y, 0, x, y, r);
@@ -260,7 +277,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
     c.fillStyle = side;
     c.fillRect(0, 0, w, h);
     c.globalCompositeOperation = 'source-over';
-  });
+  }));
   const wall = Array.from({ length: 26 }, (_, i) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(rnd(14, 19), rnd(5, 7.5)), new THREE.MeshBasicMaterial({ map: wallTex, transparent: true, depthWrite: false, opacity: 0, fog: false }));
     fx(m);
@@ -350,7 +367,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
   });
 
   // ---------------- pale figures walking in the fog, at the edge of the village ----------------
-  const figTex = canvasTex(128, 256, (c, w, h) => {
+  const figTex = soft(canvasTex(128, 256, (c, w, h) => {
     const body = c.createRadialGradient(w / 2, h * 0.6, 4, w / 2, h * 0.6, w * 0.5);
     body.addColorStop(0, 'rgba(230,232,235,0.55)');
     body.addColorStop(1, 'rgba(230,232,235,0)');
@@ -367,7 +384,7 @@ export function createHaunts(scene: THREE.Scene, g: Game) {
     head.addColorStop(1, 'rgba(235,236,238,0)');
     c.fillStyle = head;
     c.fillRect(0, 0, w, h * 0.3);
-  });
+  }));
   const walkers = Array.from({ length: 3 }, (_, i) => {
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: figTex, transparent: true, depthWrite: false, opacity: 0, fog: false }));
     sp.scale.set(1.1, 2.2, 1);

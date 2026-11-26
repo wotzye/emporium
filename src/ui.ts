@@ -263,10 +263,20 @@ export class UI {
     this.modal.innerHTML = '';
   }
 
-  doc(title: string, text: string, hand = false): Promise<void> {
+  /**
+   * A document. Parts written in invisible ink are marked ⟦like this⟧: with the UV torch they glow
+   * violet, without it the paper there looks blank (a faint smudge where the ink is).
+   */
+  doc(title: string, text: string, hand = false, uv = false): Promise<void> {
     return new Promise((res) => {
       const b = el('div', 'paper' + (hand ? ' hand' : ''));
-      b.textContent = text;
+      const parts = text.split(/⟦([\s\S]*?)⟧/);
+      parts.forEach((p, i) => {
+        if (i % 2 === 0) return p && b.append(document.createTextNode(p));
+        const sp = el('span', uv ? 'uvink' : 'uvblank');
+        sp.textContent = uv ? p : p.replace(/[^\n]/g, '\u2007');
+        b.append(sp);
+      });
       this.openModal(title, b, res);
     });
   }

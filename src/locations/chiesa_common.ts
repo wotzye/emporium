@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prop, clips } from '../models';
 import { rbox, cyl, mesh, mat, plasterMaterial, woodMaterial, tileMaterial } from '../builders';
 import type { Game } from '../game';
 
@@ -50,7 +51,29 @@ export function candle(h = 0.4) {
 }
 
 /** a pigeon, roosting: body, head, tail; `ring` gives it a little tin tube on one leg */
+const mixers = new Set<THREE.AnimationMixer>();
+/** advance the real pigeons' animations (call from the location's update) */
+export const tickPigeons = (dt: number) => mixers.forEach((m) => m.update(dt));
+
 export function pigeon(ring = false) {
+  // the real bird, if the model is in: it bobs and pecks on its own
+  const real = prop('pigeon', { height: 0.3 });
+  if (real) {
+    const g = new THREE.Group();
+    g.add(real);
+    const cl = clips('pigeon');
+    if (cl.length) {
+      const mx = new THREE.AnimationMixer(real);
+      const a = mx.clipAction(cl[0]);
+      a.time = Math.random() * cl[0].duration;
+      a.timeScale = 0.7 + Math.random() * 0.5;
+      a.play();
+      mixers.add(mx);
+    }
+    if (ring) g.add(cyl(0.008, 0.008, 0.03, mat(0x9a9a98, { metalness: 0.9, roughness: 0.3 }), 0.02, 0.03, 0.0, 8));
+    g.traverse((o) => (o.userData.noPick = true));
+    return g;
+  }
   const g = new THREE.Group();
   const grey = mat(0x6a6a68, { roughness: 0.9 });
   const body = mesh(new THREE.SphereGeometry(0.09, 10, 8), grey, 0, 0.09, 0);
@@ -66,7 +89,9 @@ export function pigeon(ring = false) {
 }
 
 /** the church opens once you have the bell tower key (Nello's radio) */
-export const churchOpen = (g: Game) => !!g.has('towerkey') || !!g.flag('ch.entered');
+export const LISA_SHOPS = ['radio', 'barbiere', 'ada', 'ora', 'foto'];
+/** Paolo's key, and all five of Lisa's messages read: only then does the church let you in. */
+export const churchOpen = (g: Game) => (!!g.has('towerkey') && LISA_SHOPS.every((k) => g.flag('uv.' + k))) || !!g.flag('ch.entered');
 
 /** one hint chain for the whole church */
 export function churchHint(g: Game): string {

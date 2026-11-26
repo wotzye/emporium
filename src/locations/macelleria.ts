@@ -276,7 +276,21 @@ export function createMacelleria(g: Game): Location {
     hook.add(new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.007, 8, 20, Math.PI * 1.3), steel).rotateZ(Math.PI * 0.85));
     hook.add(cyl(0.006, 0.006, 0.16, steel, 0, 0.1, 0, 6));
     hook.position.set(x, 2.4, -2.6);
-    scene.add(hook);
+    const realHook = prop('meatHook', { height: 0.32, grey: 0.6 });
+    if (realHook) {
+      realHook.position.set(x, 2.22, -2.6);
+      scene.add(realHook);
+    } else scene.add(hook);
+    // on one hook, not a pig: an arm, hanging by the wrist
+    if (x === -1.1) {
+      const arm = prop('hand', { height: 0.75, rot: [0, 0, Math.PI / 2], grey: 1.7 });
+      if (arm) {
+        arm.position.set(x, 1.72, -2.6);
+        arm.userData.sway = Math.random() * 6;
+        scene.add(arm);
+        continue;
+      }
+    }
     const carcass = new THREE.Group();
     const body = lathe([[0, -0.55], [0.08, -0.5], [0.16, -0.35], [0.2, -0.1], [0.19, 0.1], [0.12, 0.3], [0.05, 0.42], [0.02, 0.5], [0, 0.52]], meat, 0, 0, 0, 18);
     body.scale.set(1, 1, 0.7);
@@ -545,7 +559,7 @@ export function createMacelleria(g: Game): Location {
     brunoC.setEyes(true);
     g.audio.rec('growl', { gain: 1.1, rate: 0.85 });
     await g.say([{ who: 'bruno', key: 'mac.bruno1' }]);
-    await g.scare('bruno');
+    await g.scare('bruno', 650, 'scare_macellaio2');
     g.audio.sfx('heart');
     const ok = await g.ui.quick(t('ui.run'), 3200);
     if (!ok) {

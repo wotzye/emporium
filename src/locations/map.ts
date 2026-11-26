@@ -307,7 +307,7 @@ export function createMap(g: Game): Location {
         id: 'chiesa',
         obj: hc,
         tap: async () => {
-          if (!churchOpen(g)) return g.say('map.churchLocked');
+          if (!churchOpen(g)) return g.say(g.has('towerkey') ? 'map.churchSealed' : 'map.churchLocked');
           if (g.flag('ch.done')) return g.say('map.churchDone');
           return g.go('chiesa_navata');
         },

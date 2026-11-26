@@ -157,10 +157,14 @@ export function createRadioCamera(g: Game): Location {
     { id: 'notebook', obj: hNb, view: 'desk', tap: async (item) => {
       if (item) return g.nope();
       g.audio.sfx('paper');
-      await g.ui.doc(t('radio.notebookTitle'), t('radio.notebook'), true);
-      if (!g.flag('rl.morse')) {
-        g.set('rl.morse');
+      // the alphabet is in pencil; «fine trasmissione» and the antenna are in Lisa's ink
+      const read = await g.readDoc('radio.notebookTitle', 'radio.notebook');
+      if (!g.flag('rl.alphabet')) {
+        g.set('rl.alphabet');
         g.note('note.morse');
+      }
+      if (read && !g.flag('rl.morse')) {
+        g.set('rl.morse');
         g.note('note.sk');
         await g.say([{ who: 'diego', key: 'radio.notebookAfter' }]);
       }
