@@ -19,7 +19,7 @@ export function createAdaSoffitta(g: Game): Location {
   const boards = woodMaterial({ base: '#3b2e21', repeat: [4, 4], plank: true });
   scene.add(room(W, H, D, { wall: woodMaterial({ base: '#2e241a', repeat: [3, 1.5], plank: true }), floor: boards, ceil: woodMaterial({ base: '#241c14', repeat: [3, 3], plank: true }) }));
   // Lisa's message, in invisible ink (UV torch)
-  scene.add(onWall(lisaInk(g, 'ada'), 'back', W, D, 0.8, 1.55));
+  scene.add(onWall(lisaInk(g, 'ada'), 'back', W, D, 0.6, 1.35));
   const woodDark = woodMaterial({ base: '#2a2016' });
   // rafters
   for (let x = -2; x <= 2; x += 0.8) scene.add(rbox(0.12, 0.16, D, 0.01, woodDark, x, H - 0.08, 0));

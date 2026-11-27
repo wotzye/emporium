@@ -18,6 +18,8 @@ export interface Hotspot {
   when?: () => boolean;
   /** Only chosen if nothing else is tappable behind it (e.g. furniture in front of the counter). */
   lowPriority?: boolean;
+  /** show a marker even though it is low priority, while this says so */
+  marker?: () => boolean;
   tap: (item: string | null) => void | Promise<void>;
   /** a way out (door, stairs, trapdoor): drawn as an arrow, not a dot, while it is open. Guessed from tap when unset. */
   exit?: boolean | (() => boolean);
@@ -170,6 +172,8 @@ export class Game {
         obj: box,
         view: name,
         lowPriority: true,
+        // with the lens in your pocket and the message still unread, the patch of wall is marked
+        marker: () => this.has('uvlens') && !this.flag('uv.' + m.userData.lisaWall),
         tap: async (item) => {
           if (item) return this.nope();
           if (this.flag('uv.' + m.userData.lisaWall)) return this.say('uv.wallSeen');
@@ -917,7 +921,7 @@ export class Game {
       for (const h of L.hotspots) {
         // a way out: an arrow pointing the way in (down for trapdoors, stairs down and crypts)
         const exit = L.id === 'map' ? false : h.exit ?? /\.go\(|\.back\(\)/.test(h.tap.toString());
-        if (h.lowPriority && !exit) continue;
+        if (h.lowPriority && !exit && !h.marker) continue;
         const el = document.createElement('div');
         el.className = 'hsm';
         // only the edge arrows take taps: they lead straight through the door they point at
@@ -945,7 +949,7 @@ export class Game {
       const w = canvas.clientWidth, hh = canvas.clientHeight;
       for (const m of items) {
         const isExit = typeof m.exit === 'function' ? m.exit() : m.exit;
-        let show = on && m.h.obj.visible !== false && (m.h.when ? m.h.when() : true) && (isExit || !m.h.lowPriority);
+        let show = on && (m.h.obj.visible !== false || !!m.h.marker) && (m.h.when ? m.h.when() : true) && (isExit || !m.h.lowPriority || !!m.h.marker?.());
         let edge = 0;
         if (show) {
           m.h.obj.getWorldPosition(v);
