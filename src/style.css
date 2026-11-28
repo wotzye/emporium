@@ -310,3 +310,10 @@ button:active { background: rgba(255,255,255,0.08); }
 .credits h1 { font-weight: normal; letter-spacing: 0.3em; margin: 24px 0 40px; }
 .credits .body { white-space: pre-line; line-height: 1.9; font-size: 14px; }
 @keyframes roll { to { transform: translate(-50%, -100%); } }
+
+/* the heartbeat you hear through the stethoscope, made visible */
+#heartpulse { position: fixed; left: 50%; top: 84px; transform: translateX(-50%) scale(0.8); font-size: 46px; color: #c9c2b4; opacity: 0; pointer-events: none; z-index: 6; text-shadow: 0 0 12px rgba(0,0,0,0.8); }
+#heartpulse.beat { animation: hbeat 0.5s ease-out; }
+#heartpulse.beat.soft { animation-name: hbeatsoft; }
+@keyframes hbeat { 0% { opacity: 0.95; transform: translateX(-50%) scale(1.25); } 100% { opacity: 0; transform: translateX(-50%) scale(0.85); } }
+@keyframes hbeatsoft { 0% { opacity: 0.35; transform: translateX(-50%) scale(1.0); } 100% { opacity: 0; transform: translateX(-50%) scale(0.85); } }

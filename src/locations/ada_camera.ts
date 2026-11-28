@@ -98,10 +98,7 @@ export function createAdaCamera(g: Game): Location {
   for (const s of [-1, 1]) bed.add(rbox(0.55, 0.12, 0.32, 0.06, mat(0xe6e1d6, { roughness: 1 }), s * 0.37, 0.54, -0.78));
   bed.position.set(bedX, 0, bedZ);
   scene.add(bed);
-  // nightstand with the lamp
-  scene.add(rbox(0.45, 0.6, 0.4, 0.02, walnut, 1.35, 0.3, -1.5));
-  scene.add(cyl(0.05, 0.08, 0.3, mat(0xb8b0a0), 1.35, 0.75, -1.5, 12));
-  scene.add(lathe([[0.08, 0], [0.16, 0], [0.12, 0.18], [0.06, 0.18]], new THREE.MeshStandardMaterial({ color: 0xe6dccb, roughness: 1, side: THREE.DoubleSide, emissive: 0x3a2e1e }), 1.35, 0.9, -1.5, 16));
+  // (no nightstand any more: the gramophone stands there)
 
   // ---------------- the dressing table (right wall) with the music box ----------------
   const dtX = W / 2 - 0.3, dtZ = 0.55, dtY = 0.75;
@@ -209,7 +206,7 @@ export function createAdaCamera(g: Game): Location {
   scene.add(rbox(0.55, 0.04, 1.0, 0.01, woodMid, mX, mY, mZ));
   for (const [x, z] of [[-0.22, -0.45], [0.22, -0.45], [-0.22, 0.45], [0.22, 0.45]]) scene.add(rbox(0.04, mY, 0.04, 0.005, walnut, mX + x, mY / 2, mZ + z));
   scene.add(rbox(0.3, 0.03, 0.6, 0.005, mat(0x2a2826, { metalness: 0.6, roughness: 0.5 }), mX - 0.05, 0.12, mZ).rotateZ(-0.2));
-  const machine = prop('sewing', { width: 0.55, grey: 0.9, turn: -Math.PI / 2 });
+  const machine = prop('sewing', { height: 0.3, grey: 0.9, turn: -Math.PI / 2 });
   const mach = machine ?? rbox(0.2, 0.3, 0.45, 0.03, mat(0x1a1a1a), 0, 0.15, 0);
   mach.position.set(mX + 0.02, mY + 0.02, mZ);
   scene.add(mach);
@@ -227,9 +224,9 @@ export function createAdaCamera(g: Game): Location {
   const sewLamp = new THREE.PointLight(0xffdcae, 1.2, 2.2, 1.6);
   sewLamp.position.set(mX - 0.3, 1.5, mZ);
   scene.add(sewLamp);
-  const gX = W / 2 - 0.35, gZ = -0.55;
-  scene.add(rbox(0.55, 0.6, 0.45, 0.02, woodMid, gX, 0.3, gZ));
-  const gram = prop('gramophone', { height: 0.55, turn: -Math.PI / 2, grey: 0.9 });
+  const gX = 1.35, gZ = -1.5;
+  scene.add(rbox(0.5, 0.6, 0.42, 0.02, woodMid, gX, 0.3, gZ));
+  const gram = prop('gramophone', { height: 0.55, turn: 0, grey: 0.9 });
   if (gram) {
     gram.position.set(gX, 0.6, gZ);
     scene.add(gram);
@@ -418,7 +415,7 @@ export function createAdaCamera(g: Game): Location {
       dresser: { pos: [dtX - 0.75, 1.15, dtZ - 0.2], look: [dtX, dtY + 0.08, dtZ - 0.2], parent: 'main', yaw: 15, pitch: 10, fov: 50 },
       wardrobe: { pos: [wX + 0.6, 1.55, wZ + 1.9], look: [wX, 1.2, wZ], parent: 'main', yaw: 20, pitch: 12, fov: 60 },
       machine: { pos: [mX - 0.95, 1.35, mZ + 0.1], look: [mX, mY + 0.1, mZ], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
-      gramophone: { pos: [gX - 1.0, 1.4, gZ - 0.2], look: [gX, 0.8, gZ], parent: 'main', yaw: 20, pitch: 12 },
+      gramophone: { pos: [gX - 0.5, 1.4, gZ + 1.1], look: [gX, 0.8, gZ], parent: 'main', yaw: 20, pitch: 12 },
     },
     hotspots,
     interactions,

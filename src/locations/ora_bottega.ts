@@ -132,9 +132,18 @@ export function createOraBottega(g: Game): Location {
   let swing = 0, lastSide = 0, dragging = false, syncT = 0, solving = false, lastSyncMs = 0;
   // weight low: fast (208); at the top: slow (40)
   const tempo = () => 40 + ((W_TOP - wy) / (W_TOP - W_LOW)) * 168;
-  const hearts = () => {
-    if (clocksGo()) return g.audio.setLoop('heart', 0, { tau: 0.6 });
-    g.audio.setLoop('heart', g.flag('o.stethOn') ? 0.8 : 0.16);
+  // the heart beats at 80 a minute: played beat by beat (so the screen can pulse with it), loud
+  // with the stethoscope on the counter, faint without
+  let beatT = 0;
+  const hearts = () => g.audio.setLoop('heart', 0, { tau: 0.4 });
+  const heartTick = (dt: number) => {
+    if (clocksGo() || solving) return;
+    beatT += dt;
+    if (beatT < 60 / HEART_BPM) return;
+    beatT -= 60 / HEART_BPM;
+    const loud = !!g.flag('o.stethOn');
+    g.audio.rec('heartbeat', { gain: loud ? 1.0 : 0.3 });
+    if (g.viewName === 'metro' || g.viewName === 'counter') g.ui.pulseHeart(loud);
   };
   const solved = async () => {
     solving = true;
@@ -288,7 +297,7 @@ export function createOraBottega(g: Game): Location {
         await g.say([{ who: 'diego', key: 'ora.ticketsAfter1' }, { who: 'diego', key: 'ora.ticketsAfter2' }]);
       }
     } },
-    { id: 'metronome', obj: hMetro, view: 'counter', tap: async (item) => {
+    { id: 'metronome', obj: hMetro, view: 'metro', tap: async (item) => {
       if (item === 'mweight') {
         g.deselect();
         g.take('mweight');
@@ -381,7 +390,7 @@ export function createOraBottega(g: Game): Location {
       kind: 'drag',
       obj: grab,
       plane: new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.72 - 0.02),
-      when: () => g.viewName === 'counter' && hasWeight() && !synced(),
+      when: () => g.viewName === 'metro' && hasWeight() && !synced(),
       onStart: () => {
         dragging = true;
         grabY0 = 0.16;
@@ -423,6 +432,7 @@ export function createOraBottega(g: Game): Location {
     views: {
       main: { pos: [1.4, 1.65, 1.9], look: [-0.6, 1.2, -1.6], yaw: 60, pitch: 18 },
       counter: { pos: [0.3, 1.55, 0.55], look: [0.2, 1.05, -0.6], parent: 'main', yaw: 25, pitch: 12 },
+      metro: { pos: [0.15, 1.28, -0.2], look: [0.15, 1.13, -0.72], parent: 'counter', yaw: 12, pitch: 8, fov: 50 },
       grandfather: { pos: [1.2, 1.6, -0.4], look: [W / 2 - 0.45, 1.5, -D / 2 + 0.35], parent: 'main', yaw: 20, pitch: 12 },
       stairs: { pos: [1.0, 1.6, 0.9], look: [W / 2, 1.2, stairZ], parent: 'main', yaw: 20, pitch: 12 },
     },
@@ -430,6 +440,7 @@ export function createOraBottega(g: Game): Location {
     interactions,
     update: (dt, time) => {
       motes.update(dt, time);
+      heartTick(Math.min(dt, 0.25));
       // the metronome swings (and ticks at each end) until it is stopped
       const target = running() && hasWeight() && !dragging ? 0.42 : 0;
       // in time with the heart (which you can only really hear with the stethoscope) for a few beats

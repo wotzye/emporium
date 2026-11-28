@@ -195,6 +195,21 @@ export class UI {
   }
 
   /** Typewriter dialog. Resolves after the last line is dismissed. */
+  /** a heart that throbs on screen once (with each heartbeat you are listening to) */
+  pulseHeart(strong = true) {
+    let h = document.getElementById('heartpulse');
+    if (!h) {
+      h = document.createElement('div');
+      h.id = 'heartpulse';
+      h.textContent = '\u2665';
+      document.getElementById('app')?.append(h) ?? document.body.append(h);
+    }
+    h.classList.remove('beat', 'soft');
+    void h.offsetWidth;
+    h.classList.add('beat');
+    if (!strong) h.classList.add('soft');
+  }
+
   /** dialogues never overlap: a second one waits for the first (an overwritten one would never end) */
   private sayChain: Promise<void> = Promise.resolve();
   say(lines: Line[]): Promise<void> {

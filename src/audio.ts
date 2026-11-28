@@ -504,7 +504,7 @@ export class Audio {
     if (!this.ctx || this.samplesLoading) return;
     this.samplesLoading = true;
     const ctx = this.ctx;
-    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh', 'pigeons', 'pigeoncoo', 'amb_hell', 'spooky', 'synth', 'sewing', 'gramophone', 'heart', 'heartfast', 'towerclock', 'amb_clocks', 'tictac']) {
+    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh', 'pigeons', 'pigeoncoo', 'amb_hell', 'spooky', 'synth', 'sewing', 'gramophone', 'heart', 'heartfast', 'heartbeat', 'towerclock', 'amb_clocks', 'tictac']) {
       fetch(`sounds/${n}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .then((b) => ctx.decodeAudioData(b))
@@ -646,7 +646,7 @@ export class Audio {
   }
 
   /** named recordings for specific moments (no-op if not loaded) */
-  rec(name: 'pigeons' | 'pigeoncoo' | 'spooky' | 'synth' | 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper' | 'sewing' | 'gramophone' | 'heart' | 'heartfast' | 'towerclock' | 'tictac', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
+  rec(name: 'pigeons' | 'pigeoncoo' | 'spooky' | 'synth' | 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper' | 'sewing' | 'gramophone' | 'heart' | 'heartfast' | 'heartbeat' | 'towerclock' | 'tictac', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
     return this.sample(name, o);
   }
 
