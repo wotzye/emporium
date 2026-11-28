@@ -734,6 +734,34 @@ export class Audio {
     };
   }
 
+  /** a cuckoo clock: «cu-cù», n times */
+  cuckoo(n = 3, delay = 0) {
+    if (!this.ctx) return;
+    let t = this.now + delay;
+    for (let i = 0; i < n; i++) {
+      this.tone(t, 659, 0.12, 0.28, 'sine');
+      this.tone(t + 0.32, 523, 0.12, 0.4, 'sine');
+      t += 0.95;
+    }
+  }
+  /** an alarm clock's bell, rattling for a while */
+  alarm(seconds = 3, delay = 0, pitch = 1) {
+    if (!this.ctx) return;
+    const t0 = this.now + delay;
+    for (let t = 0; t < seconds; t += 0.055) {
+      this.tone(t0 + t, 2100 * pitch, 0.035, 0.05, 'square');
+      this.tone(t0 + t + 0.02, 3150 * pitch, 0.02, 0.04, 'triangle');
+    }
+  }
+  /** a chime striking the hour */
+  chime(n = 4, delay = 0, f = 392) {
+    if (!this.ctx) return;
+    for (let i = 0; i < n; i++) {
+      this.tone(this.now + delay + i * 1.1, f, 0.16, 2.2, 'sine');
+      this.tone(this.now + delay + i * 1.1, f * 2.01, 0.05, 1.2, 'sine');
+    }
+  }
+
   private tone(t: number, f: number, a: number, d: number, type: OscillatorType) {
     const ctx = this.ctx!;
     const o = ctx.createOscillator();

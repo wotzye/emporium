@@ -1672,8 +1672,8 @@
   "ora.metroStart": "Do una spinta all'asta. Tic... tic... tic. Il metronomo riparte.",
   "ora.metroFaint": "Ma il battito si sente appena. Ci vorrebbe qualcosa per ascoltarlo da vicino.",
   "ora.metroSteth": "Appoggio lo stetoscopio al bancone, vicino al metronomo. Tum-tum. Tum-tum. Chiaro, adesso. Calmo e regolare.",
-  "ora.metroSync1": "Tic e tum insieme, una volta, due, tre... a tempo! Dalla base del metronomo scatta un cassettino.",
-  "ora.metroKey": "Dentro c'è una chiave con un cartellino: «Stanza del silenzio».",
+  "ora.metroSync1": "Tic e tum insieme, una volta, due, tre... a tempo! Dietro di me, qualcosa scatta.",
+  "ora.metroKey": "La chiave della pendola, con un cartellino: «Stanza del silenzio».",
   "ora.voiceRest": "Fate silenzio! Smettetela... sto riposando!",
   "ora.mweight": "Il peso del metronomo, avvolto in uno straccio. Sul cartellino: «Troppo rumore. Tolto.»",
   "item.mweight": "Peso del metronomo",
@@ -1700,5 +1700,7 @@
   "note.ada.trunk": "Soffitta di Ada: il baule si apre con 2703 (27 marzo, il ritorno di Ettore).",
   "hint.sew.gramophone": "Ada cuciva sempre con la musica: carica il grammofono, poi la macchina.",
   "hint.ada.sewFirst": "Ada nascondeva le cose nel suo lavoro. In camera, la macchina da cucire: lei ti dirà dove cercare.",
-  "hint.ada.hem": "«Scuci l'orlo»: usa lo scucitore sull'abito da sposa, sul manichino in soffitta."
+  "hint.ada.hem": "«Scuci l'orlo»: usa lo scucitore sull'abito da sposa, sul manichino in soffitta.",
+  "ora.gfOpen": "Lo sportello della pendola si è spalancato. Dentro, appesa al pendolo, c'è una chiave.",
+  "hint.ora.gfKey": "La pendola si è aperta: dentro c'è la chiave della stanza del silenzio."
 }

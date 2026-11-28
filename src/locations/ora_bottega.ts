@@ -85,6 +85,26 @@ export function createOraBottega(g: Game): Location {
   gf.group.position.set(W / 2 - 0.45, 0, -D / 2 + 0.35);
   gf.group.rotation.y = -0.5;
   scene.add(gf.group);
+  // its case door: shut until the metronome beats in time; the key hangs inside, on the pendulum
+  const gfDoor = new THREE.Group();
+  gfDoor.position.set(-0.23, 0.5, 0.155);
+  gfDoor.add(rbox(0.46, 1.1, 0.03, 0.01, woodDark, 0.23, 0.55, 0));
+  gfDoor.add(cyl(0.012, 0.012, 0.03, brass, 0.42, 0.6, 0.025, 8).rotateX(Math.PI / 2));
+  gf.group.add(gfDoor);
+  const gfKey = new THREE.Group();
+  gfKey.add(cyl(0.005, 0.005, 0.08, brass, 0, 0, 0, 6));
+  gfKey.add(mesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), brass, 0, 0.05, 0));
+  gfKey.position.set(0.0, 1.0, 0.17);
+  gfKey.scale.setScalar(2.6);
+  gf.group.add(gfKey);
+  // a glint on it, so you see it in the dark case
+  const gfGlint = new THREE.PointLight(0xffe2b0, 0, 0.8, 2);
+  gfGlint.position.set(0, 1.05, 0.35);
+  gf.group.add(gfGlint);
+  const gfOpen = () => !!g.flag('o.metro');
+  if (gfOpen()) gfDoor.rotation.y = -1.9;
+  gfKey.visible = gfOpen() && !g.has('roomkey') && !g.flag('o.stairs');
+  if (gfKey.visible) gfGlint.intensity = 0.35;
 
   // ---------------- counter and display case ----------------
   scene.add(rbox(2.6, 0.95, 0.6, 0.02, woodMid, -0.3, 0.475, -0.6));
@@ -150,19 +170,35 @@ export function createOraBottega(g: Game): Location {
     g.set('o.metro');
     g.audio.setLoop('heart', 0, { tau: 0.3 });
     g.audio.sfx('clunk');
-    await sleep(500);
+    await sleep(400);
     await g.say([{ who: 'diego', key: 'ora.metroSync1' }]);
-    g.give('roomkey');
-    g.audio.sfx('pickup');
-    await say('ora.metroKey');
-    // and every clock in the shop starts again
-    g.audio.setLoop('amb_clocks', 0.35, { tau: 0.3 });
-    g.audio.rec('towerclock', { gain: 0.5 });
-    g.engine.shake(0.02, 0.6);
-    await sleep(1800);
+    // back out, and look at the grandfather clock: its door swings open
+    await g.view('grandfather');
+    g.audio.sfx('creak');
+    for (let i = 0; i <= 24; i++) {
+      gfDoor.rotation.y = -(i / 24) * 1.9;
+      await sleep(30);
+    }
+    gfKey.visible = true;
+    gfGlint.intensity = 0.35;
+    // and every clock in the shop goes off at once: alarms, cuckoos, chimes, ticking
+    g.audio.setLoop('amb_clocks', 0.45, { tau: 0.2 });
+    g.audio.rec('towerclock', { gain: 0.6 });
+    g.audio.alarm(3.5, 0.2, 1);
+    g.audio.alarm(2.5, 0.9, 0.82);
+    g.audio.alarm(3, 1.6, 1.15);
+    g.audio.cuckoo(4, 0.5);
+    g.audio.cuckoo(3, 1.4);
+    g.audio.chime(4, 0.3, 392);
+    g.audio.chime(3, 1.0, 330);
+    g.engine.shake(0.02, 1.2);
+    await sleep(2500);
+    await say('ora.gfOpen');
+    await sleep(800);
     await g.say([{ who: 'ottavio', key: 'ora.voiceRest' }]);
     solving = false;
   };
+
 
   // repair tickets on a spike
   const spike = new THREE.Group();
@@ -333,6 +369,13 @@ export function createOraBottega(g: Game): Location {
     } },
     { id: 'grandfather', obj: hGf, view: 'grandfather', tap: async (item) => {
       if (item) return g.nope();
+      if (gfKey.visible) {
+        gfKey.visible = false;
+        gfGlint.intensity = 0;
+        g.give('roomkey');
+        g.audio.sfx('pickup');
+        return say('ora.metroKey');
+      }
       return say(g.flag('o.restarted') ? 'ora.gfAfter' : 'ora.gf');
     } },
     { id: 'labdoor', exit: () => !!g.flag('o.labOpen'), obj: hLab, tap: async (item) => {
@@ -494,6 +537,7 @@ export function createOraBottega(g: Game): Location {
       if (!g.flag('o.labOpen')) return g.has('labkey') ? 'hint.ora.labdoor' : 'hint.ora.key';
       if (!g.flag('o.stairs')) {
         if (g.has('roomkey')) return 'hint.ora.stairs';
+        if (g.flag('o.metro')) return 'hint.ora.gfKey';
         if (!hasWeight()) return g.has('mweight') ? 'hint.ora.weight' : 'hint.ora.lab';
         if (!g.flag('o.stethOn')) return g.has('stetho') ? 'hint.ora.stethUse' : 'hint.ora.stethGet';
         return 'hint.ora.metronome';

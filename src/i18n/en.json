@@ -1672,8 +1672,8 @@
   "ora.metroStart": "I give the rod a push. Tick... tick... tick. The metronome starts again.",
   "ora.metroFaint": "But the heartbeat is barely audible. I'd need something to listen to it up close.",
   "ora.metroSteth": "I put the stethoscope to the counter, by the metronome. Thump-thump. Thump-thump. Clear now. Calm and steady.",
-  "ora.metroSync1": "Tick and thump together, once, twice, three times... in time! A little drawer springs from the metronome's base.",
-  "ora.metroKey": "Inside there's a key with a tag: «Silent room».",
+  "ora.metroSync1": "Tick and thump together, once, twice, three times... in time! Behind me, something clicks.",
+  "ora.metroKey": "The key from the grandfather clock, with a tag: «Silent room».",
   "ora.voiceRest": "Be quiet! Stop it... I'm resting!",
   "ora.mweight": "The metronome's weight, wrapped in a rag. On the tag: «Too much noise. Removed.»",
   "item.mweight": "Metronome weight",
@@ -1700,5 +1700,7 @@
   "note.ada.trunk": "Ada's attic: the trunk opens with 2703 (27 March, Ettore's return).",
   "hint.sew.gramophone": "Ada always sewed to music: wind the gramophone, then the machine.",
   "hint.ada.sewFirst": "Ada hid things in her work. In the bedroom, the sewing machine: it will tell you where to look.",
-  "hint.ada.hem": "«Unpick the hem»: use the seam ripper on the wedding dress, on the dummy in the attic."
+  "hint.ada.hem": "«Unpick the hem»: use the seam ripper on the wedding dress, on the dummy in the attic.",
+  "ora.gfOpen": "The grandfather clock's door has swung open. Inside, hanging from the pendulum, there's a key.",
+  "hint.ora.gfKey": "The grandfather clock is open: the key to the silent room is inside."
 }
