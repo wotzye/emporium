@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, rbox, mesh, hitBox, canvasTex, noise, woodMaterial, mat, cyl, lathe, dust } from '../builders';
 import { figureGhost } from '../characters';
+import { realOttavio, realCharacters } from '../characters_real';
 import { prop } from '../models';
 import { t } from '../i18n';
 import { brassMat } from './ora_common';
@@ -173,16 +174,70 @@ export function createOraCamera(g: Game): Location {
   scene.add(frame);
 
   // ---------------- Ottavio: on the bed, as if asleep; once called, on his feet ----------------
-  const ott = figureGhost('ottavio_figura', 1.7);
+  const ott = realCharacters() ? realOttavio() : figureGhost('ottavio_figura', 1.7);
+  const real3d = realCharacters();
   ott.group.traverse((o) => (o.userData.noPick = true));
   scene.add(ott.group);
+  // a heavy wool blanket pulled up to his chest: when he gets up, he throws it off onto the floor
+  const blanketGeo = new THREE.PlaneGeometry(1.0, 1.25, 24, 24);
+  {
+    const p = blanketGeo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i);
+      const body = Math.max(0, 1 - Math.pow(Math.abs(x) / 0.36, 2)); // the body underneath
+      const feet = y < -0.5 ? Math.max(0, 1 - Math.pow((Math.abs(x) - 0.1) / 0.12, 2)) * 0.06 : 0;
+      const edge = Math.abs(x) > 0.42 ? -(Math.abs(x) - 0.42) * 1.4 : 0; // hanging over the sides
+      p.setZ(i, Math.sqrt(body) * 0.25 + feet + edge + Math.sin(x * 20 + y * 7) * 0.008);
+    }
+    blanketGeo.computeVertexNormals();
+  }
+  const blanketTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#4c4842';
+    c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(20,18,16,0.5)';
+    c.lineWidth = 3;
+    for (let k = 24; k < w; k += 48) { c.beginPath(); c.moveTo(k, 0); c.lineTo(k, h); c.stroke(); c.beginPath(); c.moveTo(0, k); c.lineTo(w, k); c.stroke(); }
+    noise(c, w, h, 6000, 0.12);
+  });
+  const blanket = mesh(blanketGeo, new THREE.MeshStandardMaterial({ map: blanketTex, roughness: 1, side: THREE.DoubleSide }), 0, 0, 0);
+  blanket.userData.noPick = true;
+  scene.add(blanket);
+  const blanketOn = () => {
+    blanket.position.set(bedX, 0.62, bedZ + 0.42);
+    blanket.rotation.set(-Math.PI / 2, 0, 0);
+    blanket.scale.set(1, 1, 1);
+  };
+  const blanketOff = () => {
+    blanket.position.set(bedX + 0.55, 0.05, bedZ + 1.05);
+    blanket.rotation.set(-Math.PI / 2, 0, 0.5);
+    blanket.scale.set(0.8, 0.6, 0.6);
+  };
   const lieDown = () => {
-    ott.group.position.set(bedX, 0.6, bedZ + 0.85);
+    blanketOn();
+    ott.group.position.set(bedX, real3d ? 0.66 : 0.6, bedZ + 0.82);
     ott.group.rotation.set(-Math.PI / 2, 0, 0);
+    (ott as { setLying?: (v: boolean) => void }).setLying?.(true);
   };
   const standUp = () => {
+    blanketOff();
+    (ott as { setLying?: (v: boolean) => void }).setLying?.(false);
     ott.group.rotation.set(0, 0, 0);
     ott.group.position.set(bedX + 0.7, 0, bedZ + 0.55);
+  };
+  // he sits up stiffly and swings off the bed, all in one movement
+  const riseUp = async () => {
+    if (!real3d) return standUp();
+    const p0 = ott.group.position.clone();
+    const p1 = new THREE.Vector3(bedX + 0.7, 0, bedZ + 0.55);
+    for (let i = 1; i <= 24; i++) {
+      const k = i / 24, e = k * k * (3 - 2 * k);
+      blanket.position.set(bedX + 0.55 * e, 0.62 - 0.57 * e, bedZ + 0.42 + 0.63 * e);
+      ott.group.rotation.set(-Math.PI / 2 * (1 - e), 0, 0);
+      ott.group.position.set(p0.x + (p1.x - p0.x) * e, p0.y + (p1.y - p0.y) * e + Math.sin(k * Math.PI) * 0.25, p0.z + (p1.z - p0.z) * e);
+      await sleep(30);
+    }
+    standUp();
+    ott.setEyes(true);
   };
   if (called()) standUp();
   else lieDown();
@@ -252,7 +307,7 @@ export function createOraCamera(g: Game): Location {
       g.set('o.called');
       g.audio.setLoop('heartfast', 0.8, { tau: 0.2 });
       await g.shock();
-      standUp();
+      await riseUp();
       await g.say([
         { who: 'ottavio', key: 'ora.ott1' },
         { who: 'ottavio', key: 'ora.ott2' },
@@ -353,8 +408,8 @@ export function createOraCamera(g: Game): Location {
     exitTo: 'ora_bottega',
     views: {
       main: { pos: [0.9, 1.55, 1.4], look: [-0.3, 1.0, -0.6], yaw: 60, pitch: 18 },
-      ott: { pos: [0.4, 1.5, 0.6], look: [bedX + 0.7, 1.2, bedZ + 0.55], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
-      bed: { pos: [bedX + 0.9, 1.6, bedZ + 1.5], look: [bedX, 0.6, bedZ], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
+      ott: { pos: [0.9, 1.6, 1.45], look: [bedX + 0.7, 1.35, bedZ + 0.55], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
+      bed: { pos: [bedX + 0.8, 1.35, bedZ + 0.25], look: [bedX, 0.72, bedZ - 0.65], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
       box: { pos: [chX - 0.05, 1.3, chZ + 0.75], look: [chX, top + 0.08, chZ], parent: 'main', yaw: 15, pitch: 10, fov: 52 },
     },
     hotspots,
@@ -362,7 +417,7 @@ export function createOraCamera(g: Game): Location {
     update: (dt, time) => {
       motes.update(dt, time);
       // standing, he turns to face you; lying down, he doesn't move at all
-      if (ott.group.visible && called()) ott.update(dt, time, g.engine.camera);
+      if (ott.group.visible && (called() || real3d)) ott.update(dt, time, g.engine.camera);
     },
     leave: () => g.audio.setLoop('heartfast', 0),
     enter: async () => {

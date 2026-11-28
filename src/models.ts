@@ -109,6 +109,13 @@ const FILES = {
   clockD: 'models/clockD.glb',
   doorA: 'models/doorA.glb',
   bedC: 'models/bedC.glb',
+  bookcaseA: 'models/bookcaseA.glb',
+  booksA: 'models/booksA.glb',
+  globeA: 'models/globeA.glb',
+  angelA: 'models/angelA.glb',
+  vaseA: 'models/vaseA.glb',
+  ashtrayA: 'models/ashtrayA.glb',
+  dollB: 'models/dollB.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;
@@ -131,7 +138,9 @@ export function preloadModels(onProgress?: (k: number) => void) {
   const url = (id: ModelId) => (import.meta.env.MODE === 'single' ? FILES[id].replace('models/', 'models-json/').replace('.glb', '.json') : FILES[id]);
   // the props one after the other, in the gaps: seventy downloads and decodes at once froze phones
   // (taps lost, text crawling) and filled their memory
-  const rest = all.filter((i) => !CHAR_IDS.includes(i));
+  // the Emporium's furniture first: it is the first room you walk into after the prologue
+  const FIRST: ModelId[] = ['rocking', 'bookcaseA', 'booksA', 'globeA', 'angelA', 'vaseA', 'ashtrayA', 'dollB', 'shoe', 'catStatue', 'doll', 'pocketWatch', 'bellowsCam', 'spectacles'];
+  const rest = [...FIRST.filter((i) => i in FILES), ...all.filter((i) => !CHAR_IDS.includes(i) && !FIRST.includes(i))];
   let lanes = 4;
   const next = () => {
     const id = rest.shift();

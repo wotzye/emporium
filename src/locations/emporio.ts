@@ -214,7 +214,45 @@ export function createEmporio(g: Game): Location {
       }
     }
   };
-  shelfStuff(-3.27, -0.5, true, 4.6);
+  // left wall: an antique bookcase full of books, and next to it an open étagère crowded with old things
+  const bcA = prop('bookcaseA', { height: 2.45, turn: -Math.PI / 2, grey: 0.9 });
+  if (bcA) {
+    const bb = new THREE.Box3().setFromObject(bcA);
+    const depth = bb.max.x - bb.min.x, len = bb.max.z - bb.min.z;
+    bcA.position.set(-W / 2 + depth / 2 + 0.02, 0, -1.55);
+    scene.add(bcA);
+    scene.userData.bookcase = { depth, len };
+    // the étagère
+    const ex = -W / 2 + 0.22, ez0 = -0.38, ez1 = 1.62, ezc = (ez0 + ez1) / 2, elen = ez1 - ez0;
+    scene.add(rbox(0.04, 2.3, elen, 0.01, woodDark, -W / 2 + 0.03, 1.15, ezc));
+    for (const z of [ez0, ez1]) scene.add(rbox(0.4, 2.3, 0.05, 0.01, woodDark, ex, 1.15, z));
+    const SH = [0.42, 0.92, 1.42, 1.92];
+    for (const y of [0.06, ...SH, 2.3]) scene.add(rbox(0.4, 0.04, elen, 0.01, woodMid, ex, y, ezc));
+    const put = (id: Parameters<typeof prop>[0], o: Parameters<typeof prop>[1], y: number, z: number, ry = 0) => {
+      const m = prop(id, { grey: 1, ...o });
+      if (!m) return;
+      m.position.set(ex + 0.02, y + 0.02, z);
+      m.rotation.y = ry;
+      scene.add(m);
+    };
+    const at = (k: number) => ez0 + elen * k;
+    put('vaseA', { height: 0.3 }, 0.08, at(0.2));
+    put('dollB', { height: 0.3, turn: Math.PI / 2 }, 0.08, at(0.55));
+    put('ashtrayA', { width: 0.2 }, 0.08, at(0.85));
+    put('globeA', { height: 0.4 }, SH[0], at(0.25));
+    put('vaseA', { height: 0.24 }, SH[0], at(0.75));
+    put('angelA', { height: 0.44, turn: Math.PI / 2 }, SH[1], at(0.45));
+    put('ashtrayA', { width: 0.16 }, SH[1], at(0.15));
+    put('booksA', { height: 0.2, turn: Math.PI / 2 }, SH[2], at(0.38));
+    put('vaseA', { height: 0.28 }, SH[2], at(0.86));
+    put('vaseA', { height: 0.22 }, SH[3], at(0.15));
+    put('booksA', { height: 0.2, turn: Math.PI / 2 }, SH[3], at(0.62));
+    // a lamp for the shelves
+    const bl = new THREE.SpotLight(0xffd9a0, 3.2, 6, 0.8, 0.7, 1.5);
+    bl.position.set(-1.4, 2.95, 0.3);
+    bl.target.position.set(-W / 2, 1.0, -0.4);
+    scene.add(bl, bl.target);
+  } else shelfStuff(-3.27, -0.5, true, 4.6);
   shelfStuff(1.55, -2.79, false, 1.6);
 
   // grandfather clock, ticking, at the back
@@ -639,7 +677,7 @@ export function createEmporio(g: Game): Location {
       if (item) return g.nope();
       await g.say([{ who: 'diego', key: 'emp.case1' }, { who: 'diego', key: 'emp.case2' }]);
     } },
-    { id: 'shelves', obj: hShelves, tap: async (item) => {
+    { id: 'shelves', obj: hShelves, view: 'books', tap: async (item) => {
       if (item) return g.nope();
       await g.say('emp.shelves');
     } },
@@ -678,6 +716,7 @@ export function createEmporio(g: Game): Location {
     startView: 'main',
     views: {
       main: { pos: [0, 1.6, 2.5], look: [0, 1.25, -2], yaw: 40, pitch: 15 },
+      books: { pos: [-1.2, 1.5, 0.6], look: [-3.5, 1.1, 0.3], parent: 'main', yaw: 25, pitch: 14, fov: 60 },
       counter: { pos: [-0.75, 1.75, 0.3], look: [-0.8, 1.7, -2.1], parent: 'main', yaw: 20, pitch: 10 },
       case: { pos: [1.35, 1.35, -0.4], look: [3.1, 1.05, -0.4], parent: 'main', yaw: 30, pitch: 14, fov: 58 },
     },

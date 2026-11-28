@@ -182,8 +182,8 @@ export function createOraBottega(g: Game): Location {
     gfKey.visible = true;
     gfGlint.intensity = 0.35;
     // and every clock in the shop goes off at once: alarms, cuckoos, chimes, ticking
-    g.audio.setLoop('amb_clocks', 0.45, { tau: 0.2 });
-    g.audio.rec('towerclock', { gain: 0.6 });
+    g.audio.setLoop('amb_clocks', 0.85, { tau: 0.2 });
+    g.audio.rec('towerclock', { gain: 1.0 });
     g.audio.alarm(3.5, 0.2, 1);
     g.audio.alarm(2.5, 0.9, 0.82);
     g.audio.alarm(3, 1.6, 1.15);
@@ -191,11 +191,15 @@ export function createOraBottega(g: Game): Location {
     g.audio.cuckoo(3, 1.4);
     g.audio.chime(4, 0.3, 392);
     g.audio.chime(3, 1.0, 330);
+    g.audio.alarm(2.5, 2.4, 0.9);
+    g.audio.cuckoo(3, 2.6);
+    g.audio.chime(3, 2.2, 262);
     g.engine.shake(0.02, 1.2);
     await sleep(2500);
     await say('ora.gfOpen');
     await sleep(800);
     await g.say([{ who: 'ottavio', key: 'ora.voiceRest' }]);
+    if (g.loc?.id === 'ora_bottega') g.audio.setLoop('amb_clocks', 0.45, { tau: 3 });
     solving = false;
   };
 
@@ -524,7 +528,7 @@ export function createOraBottega(g: Game): Location {
     enter: async () => {
       hearts();
       // once the metronome beats in time, every clock in the shop ticks
-      g.audio.setLoop('amb_clocks', clocksGo() ? 0.3 : 0);
+      g.audio.setLoop('amb_clocks', clocksGo() ? 0.45 : 0);
       if (!g.flag('o.entered')) {
         g.set('o.entered');
         await sleep(300);

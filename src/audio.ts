@@ -739,8 +739,10 @@ export class Audio {
     if (!this.ctx) return;
     let t = this.now + delay;
     for (let i = 0; i < n; i++) {
-      this.tone(t, 659, 0.12, 0.28, 'sine');
-      this.tone(t + 0.32, 523, 0.12, 0.4, 'sine');
+      this.tone(t, 659, 0.26, 0.28, 'sine');
+      this.tone(t, 1318, 0.06, 0.2, 'triangle');
+      this.tone(t + 0.32, 523, 0.26, 0.4, 'sine');
+      this.tone(t + 0.32, 1046, 0.06, 0.3, 'triangle');
       t += 0.95;
     }
   }
@@ -749,16 +751,17 @@ export class Audio {
     if (!this.ctx) return;
     const t0 = this.now + delay;
     for (let t = 0; t < seconds; t += 0.055) {
-      this.tone(t0 + t, 2100 * pitch, 0.035, 0.05, 'square');
-      this.tone(t0 + t + 0.02, 3150 * pitch, 0.02, 0.04, 'triangle');
+      this.tone(t0 + t, 2100 * pitch, 0.07, 0.05, 'square');
+      this.tone(t0 + t + 0.02, 3150 * pitch, 0.045, 0.04, 'triangle');
     }
   }
   /** a chime striking the hour */
   chime(n = 4, delay = 0, f = 392) {
     if (!this.ctx) return;
     for (let i = 0; i < n; i++) {
-      this.tone(this.now + delay + i * 1.1, f, 0.16, 2.2, 'sine');
-      this.tone(this.now + delay + i * 1.1, f * 2.01, 0.05, 1.2, 'sine');
+      this.tone(this.now + delay + i * 1.1, f, 0.32, 2.2, 'sine');
+      this.tone(this.now + delay + i * 1.1, f * 2.01, 0.1, 1.2, 'sine');
+      this.tone(this.now + delay + i * 1.1, f * 3.02, 0.04, 0.8, 'sine');
     }
   }
 

@@ -698,3 +698,112 @@ export function realEttore() {
     },
   };
 }
+
+// ======================================================================
+// Ottavio the watchmaker: an old man in a loose nightshirt, white-haired and bearded, pale and half there.
+// He lies on his back (asleep on the bed, hands folded on his chest) or stands, glaring at whoever woke him.
+export function realOttavio(): Character & { setOpacity: (v: number) => void; setLying: (v: boolean) => void } {
+  const { g, body, b } = base('male', 0.95);
+  dress(body, { cloth: '#d6d2c8', clothRough: 0.95, puff: 0.015, skinTint: '#d9dcd8', skinBright: 0.92, face: { sockets: 1, gaunt: 1 } });
+  if (body.userData.faceU) body.userData.faceU.uScare.value = 0.4;
+  attachHair(body, 'hairParted', 0xc9c6c0);
+  attachHair(body, 'beard', 0xc4c1bb);
+  browColor(body, 0xb0aca6);
+  const ARM = ['upperarm_l', 'lowerarm_l', 'hand_l', 'upperarm_r', 'lowerarm_r', 'hand_r'];
+  const arm0 = ARM.map((n) => b[n].quaternion.clone());
+  const shirtTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#d6d2c8';
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(120,110,100,0.22)';
+    for (let x = 0; x < w; x += 16) c.fillRect(x, 0, 2, h);
+    noise(c, w, h, 4000, 0.1);
+  });
+  const shirt = new THREE.MeshStandardMaterial({ map: shirtTex, roughness: 0.95, side: THREE.DoubleSide });
+  // a loose nightshirt, shoulders to shins: hides the young, strong body underneath
+  g.updateMatrixWorld(true);
+  const sh = wp(b.upperarm_l), pe = wp(b.pelvis), nk = wp(b.Head);
+  const top = sh.y + 0.06;
+  const gown = lathe([[0.075, nk.y - 0.06], [0.19, top - 0.01], [0.25, top - 0.07], [0.255, sh.y - 0.22], [0.235, pe.y + 0.18], [0.24, pe.y - 0.1], [0.27, 0.3], [0.28, 0.28]], shirt, 0, 0, pe.z, 28);
+  gown.scale.z = 0.8;
+  g.add(gown);
+  // sleeves over the upper arms, following the bones
+  const sleeves: THREE.Mesh[] = [];
+  const sleeve = (side: 'l' | 'r') => {
+    const s0 = wp(b['upperarm_' + side]), e0 = wp(b['lowerarm_' + side]);
+    const len = s0.distanceTo(e0) + 0.04;
+    const geo = new THREE.CylinderGeometry(0.1, 0.085, len, 12, 1, true);
+    geo.translate(0, -len / 2 + 0.02, 0);
+    const m = new THREE.Mesh(geo, shirt);
+    b['upperarm_' + side].add(m);
+    // bone space: point the sleeve down the bone towards the elbow
+    const dir = b['lowerarm_' + side].position.clone().normalize();
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir);
+    m.scale.setScalar(1 / body.scale.x);
+    sleeves.push(m);
+  };
+  const pose = (lying: boolean) => {
+    const pos = g.position.clone(), rot = g.rotation.clone();
+    g.position.set(0, 0, 0);
+    g.rotation.set(0, 0, 0);
+    ARM.forEach((n, i) => b[n].quaternion.copy(arm0[i]));
+    g.updateMatrixWorld(true);
+    for (const side of ['l', 'r'] as const) {
+      if (!lying) {
+        armDown(b, side, 0.06, 0.03, 0.06);
+        continue;
+      }
+      const sx = side === 'l' ? 1 : -1;
+      const s = wp(b['upperarm_' + side]);
+      armTo(b, side, new THREE.Vector3(s.x + sx * 0.1, s.y - 0.25, s.z + 0.06), new THREE.Vector3(sx * 0.03, s.y - 0.2, s.z + 0.2));
+      curlFingers(b, side, 0.4);
+      g.updateMatrixWorld(true);
+    }
+    g.position.copy(pos);
+    g.rotation.copy(rot);
+    g.updateMatrixWorld(true);
+  };
+  sleeve('l');
+  sleeve('r');
+  pose(false);
+  saveRest(b);
+  const mats: THREE.Material[] = [];
+  g.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+    if (m && !mats.includes(m)) {
+      m.transparent = true;
+      mats.push(m);
+    }
+  });
+  const eyes = eyesMaterial(body);
+  return {
+    group: g,
+    head: b.Head,
+    setEyes: (on) => {
+      if (eyes) {
+        eyes.emissive = new THREE.Color(0xffffff);
+        eyes.emissiveIntensity = on ? 0.5 : 0;
+      }
+    },
+    setOpacity: (v: number) => {
+      mats.forEach((m) => ((m as THREE.MeshStandardMaterial).opacity = v));
+      g.visible = v > 0.01;
+    },
+    setLying: (v: boolean) => pose(v),
+    /** lying: head a little to one side; standing: turns to face you and glares */
+    update: (dt, t, camera) => {
+      const lying = Math.abs(g.rotation.x) > 0.5;
+      if (!lying && camera) {
+        const want = Math.atan2(camera.position.x - g.position.x, camera.position.z - g.position.z);
+        let d = want - g.rotation.y;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        g.rotation.y += d * Math.min(1, dt * 2);
+      }
+      restore(b.Head);
+      if (lying) turnWorld(b.Head, Y.clone().applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())), -0.4 + Math.sin(t * 0.3) * 0.03);
+      else {
+        turnWorld(b.Head, X, 0.12 + Math.sin(t * 0.8) * 0.03);
+        turnWorld(b.Head, Y, Math.sin(t * 0.5) * 0.1);
+      }
+    },
+  };
+}
