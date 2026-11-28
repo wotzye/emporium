@@ -251,8 +251,9 @@ export function createMap(g: Game): Location {
   // a finished shop opens again while it still holds something another unfinished shop needs
   const stillNeeded = {
     get ada() {
+      const gear = !g.flag('placedWatch') && !g.flag('a.gear') && !g.flag('o.gearIn') && !g.has('gear');
       const bulb = !g.flag('placedCamera') && !g.flag('a.redbulb') && !g.flag('f.bulb') && !g.has('redbulb');
-      return bulb || uvLeft('ada');
+      return gear || bulb || uvLeft('ada');
     },
     get barbiere() {
       return (!g.flag('placedGlasses') && !g.flag('y.shears') && !g.flag('a.shears') && !g.flag('a.vines') && !g.has('shears')) || uvLeft('barbiere');
@@ -596,6 +597,7 @@ export function createMap(g: Game): Location {
       if (g.has('watch')) return 'hint.map.returnWatch';
       if (g.has('camera')) return 'hint.map.returnCamera';
       if (g.has('radio')) return 'hint.map.returnRadio';
+      if (g.flag('placedGlasses') && stillNeeded.ada && g.flag('o.labEntered') && !g.flag('a.gear')) return 'hint.map.gear';
       if (g.flag('placedGlasses') && stillNeeded.ada && g.flag('f.dark')) return 'hint.map.redbulb';
       if (g.flag('placedRazor') && stillNeeded.barbiere && g.flag('a.shedKey')) return 'hint.map.shears';
       if (g.flag('placedWatch') && stillNeeded.orologeria && g.flag('c.sheet.clock')) return 'hint.map.hand';

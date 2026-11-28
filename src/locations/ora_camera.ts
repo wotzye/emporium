@@ -92,11 +92,16 @@ export function createOraCamera(g: Game): Location {
   // ---------------- the bed ----------------
   const bedX = -1.1, bedZ = -0.7;
   const bed = new THREE.Group();
-  bed.add(rbox(0.95, 0.35, 1.9, 0.03, woodDark, 0, 0.3, 0));
-  bed.add(rbox(1.0, 0.9, 0.06, 0.02, woodDark, 0, 0.55, -0.95));
-  for (const x of [-0.48, 0.48]) bed.add(lathe([[0, 0], [0.03, 0.01], [0.035, 0.04], [0, 0.07]], brassMat(), x, 1.0, -0.95, 12));
-  bed.add(rbox(0.92, 0.12, 1.5, 0.04, new THREE.MeshStandardMaterial({ color: 0xcfc8b8, roughness: 0.95 }), 0, 0.53, 0.18));
-  bed.add(rbox(0.6, 0.1, 0.3, 0.05, new THREE.MeshStandardMaterial({ color: 0xe0dacc, roughness: 0.95 }), 0, 0.52, -0.72));
+  // an old single bed (the headboard at the back, towards -z)
+  const bedModel = prop('bedC', { width: 1.0, grey: 0.85 });
+  if (bedModel) bed.add(bedModel);
+  else {
+    bed.add(rbox(0.95, 0.35, 1.9, 0.03, woodDark, 0, 0.3, 0));
+    bed.add(rbox(1.0, 0.9, 0.06, 0.02, woodDark, 0, 0.55, -0.95));
+    for (const x of [-0.48, 0.48]) bed.add(lathe([[0, 0], [0.03, 0.01], [0.035, 0.04], [0, 0.07]], brassMat(), x, 1.0, -0.95, 12));
+    bed.add(rbox(0.92, 0.12, 1.5, 0.04, new THREE.MeshStandardMaterial({ color: 0xcfc8b8, roughness: 0.95 }), 0, 0.53, 0.18));
+    bed.add(rbox(0.6, 0.1, 0.3, 0.05, new THREE.MeshStandardMaterial({ color: 0xe0dacc, roughness: 0.95 }), 0, 0.52, -0.72));
+  }
   bed.position.set(bedX, 0, bedZ);
   bed.rotation.y = 0;
   scene.add(bed);

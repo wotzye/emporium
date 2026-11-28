@@ -105,6 +105,10 @@ const FILES = {
   stethoscope: 'models/stethoscope.glb',
   musicBoxM: 'models/musicBoxM.glb',
   wallClockM: 'models/wallClockM.glb',
+  clockA: 'models/clockA.glb',
+  clockD: 'models/clockD.glb',
+  doorA: 'models/doorA.glb',
+  bedC: 'models/bedC.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;
@@ -128,7 +132,7 @@ export function preloadModels(onProgress?: (k: number) => void) {
   // the props one after the other, in the gaps: seventy downloads and decodes at once froze phones
   // (taps lost, text crawling) and filled their memory
   const rest = all.filter((i) => !CHAR_IDS.includes(i));
-  let lanes = 3;
+  let lanes = 4;
   const next = () => {
     const id = rest.shift();
     if (!id) {
@@ -143,7 +147,7 @@ export function preloadModels(onProgress?: (k: number) => void) {
       .finally(() => (typeof requestIdleCallback === 'function' ? requestIdleCallback(() => next(), { timeout: 400 }) : setTimeout(next, 60)));
   };
   // three lanes are enough to finish on the title screen on a decent connection
-  setTimeout(() => { next(); next(); next(); }, 300);
+  setTimeout(() => { next(); next(); next(); next(); }, 300);
   let done = 0;
   loading = Promise.all(
     ids.map((id) =>

@@ -417,11 +417,7 @@ export function createAdaSoggiorno(g: Game): Location {
   const hFront = hitBox(1.0, 2.1, 0.2, -0.9, 1.05, D / 2 - 0.1, 'frontdoor');
   // the sewing room door (right wall): Ada la sarta's workroom, locked
   const sewZ = 0.25;
-  scene.add(rbox(0.06, 2.05, 0.85, 0.01, woodMaterial({ base: '#3a2c20', repeat: [1, 2] }), W / 2 - 0.03, 1.025, sewZ));
-  const sewSign = textPlane([t('sew.sign')], 0.4, 0.09, { bg: '#d9d3c4', size: 20, px: 64 });
-  sewSign.position.set(W / 2 - 0.07, 2.15, sewZ);
-  sewSign.rotation.y = -Math.PI / 2;
-  scene.add(sewSign);
+  // (the sewing room is gone: no door on this wall any more)
   const hSew = hitBox(0.2, 2.1, 0.95, W / 2 - 0.1, 1.05, sewZ, 'sewdoor');
   scene.add(hSew);
   const sewOpen = () => !!g.flag('a.sewOpen');

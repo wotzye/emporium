@@ -49,7 +49,7 @@ export function createAdaSoffitta(g: Game): Location {
   const cageLight = new THREE.PointLight(0xffd9a8, 2.4, 5, 1.6);
   cageLight.position.set(0, -0.45, 0);
   cagePivot.add(cageLight);
-  const trunkLamp = new THREE.PointLight(0xffc98a, 3.2, 3.6, 1.5);
+  const trunkLamp = new THREE.PointLight(0xffc98a, 2.2, 3.6, 1.5);
   trunkLamp.position.set(-1.3, 1.1, -1.3);
   scene.add(trunkLamp);
   scene.add(cyl(0.05, 0.06, 0.16, new THREE.MeshStandardMaterial({ color: 0xfff0d0, emissive: 0xffb860, emissiveIntensity: 1.2, transparent: true, opacity: 0.85 }), -1.3, 0.95, -1.3, 12));
@@ -79,21 +79,35 @@ export function createAdaSoffitta(g: Game): Location {
   };
   setLid(trunkOpen() ? 1 : 0);
   // the glasses, inside, on a folded wedding veil
-  const veil = mesh(new THREE.PlaneGeometry(0.5, 0.3), new THREE.MeshStandardMaterial({ color: 0xe8e4da, roughness: 0.9 }), trunkPos.x, 0.36, trunkPos.z, false);
+  const veil = mesh(new THREE.PlaneGeometry(0.5, 0.3), new THREE.MeshStandardMaterial({ color: 0x9a968c, roughness: 1 }), trunkPos.x, 0.36, trunkPos.z, false);
   veil.rotation.x = -Math.PI / 2;
   scene.add(veil);
   const glasses = new THREE.Group();
-  const spec = prop('spectacles', { width: 0.14 });
+  const spec = prop('spectacles', { width: 0.24 });
   if (spec) {
     glasses.add(cursify(spec));
   } else {
     for (const s of [-1, 1]) glasses.add(mesh(new THREE.TorusGeometry(0.03, 0.004, 6, 20), cursedMat(), s * 0.035, 0.02, 0));
   }
-  glasses.position.set(trunkPos.x, 0.37, trunkPos.z + 0.02);
+  // on top of what's in the trunk, just under the rim: visible from above once the lid is up
+  // the rim of the trunk's body (the lid left out, open or shut)
+  const body = new THREE.Box3();
+  chestGroup.updateMatrixWorld(true);
+  chestGroup.traverse((o) => {
+    let p: THREE.Object3D | null = o;
+    while (p) {
+      if (p === lid) return;
+      p = p.parent;
+    }
+    if ((o as THREE.Mesh).isMesh) body.expandByObject(o);
+  });
+  const inside = (body.isEmpty() ? 0.42 : body.max.y) - 0.04;
+  veil.position.y = inside - 0.01;
+  glasses.position.set(trunkPos.x, inside, trunkPos.z + 0.02);
   glasses.rotation.y = 0.3;
   scene.add(glasses);
   const glow = new THREE.PointLight(0xff2a2a, 0, 1.4, 2);
-  glow.position.set(trunkPos.x, 0.6, trunkPos.z + 0.1);
+  glow.position.set(trunkPos.x, inside + 0.25, trunkPos.z + 0.1);
   scene.add(glow);
   // new route: the glasses are sewn into Ettore's jacket downstairs; the trunk only keeps the key
   const sewRoute = () => false; // the sewing room is gone: the glasses are back in the trunk

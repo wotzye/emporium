@@ -204,7 +204,7 @@ export function createAdaGiardino(g: Game): Location {
   tin.position.set(-0.3, 0.75, -SD / 2 + 0.2);
   shed.add(rbox(0.7, 0.04, 0.3, 0.005, woodDark, -0.2, 0.73, -SD / 2 + 0.17));
   shed.add(tin);
-  const gearTaken = () => true; // the clockmaker's big wheel is no longer lent out: the tin only holds screws
+  const gearTaken = () => !!g.flag('a.gear');
   const planter = prop('roundTable', { height: 0.6 });
   if (planter) {
     planter.position.set(0.3, 0, 1.3);

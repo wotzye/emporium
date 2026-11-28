@@ -371,8 +371,11 @@ export class Game {
     this.setHeld(null);
     // a room built before its furniture has arrived would stay empty: wait for it (rarely needed)
     if (!this.built[id] && id !== 'map' && !modelsDone()) {
+      // the room is built only once its furniture is in (a room built without it stays bare)
       this.ui.toast(t('ui.loading'));
-      await Promise.race([modelsReady, new Promise((r) => setTimeout(r, 9000))]);
+      const nag = window.setInterval(() => this.ui.toast(t('ui.loading')), 2500);
+      await Promise.race([modelsReady, new Promise((r) => setTimeout(r, 40000))]);
+      clearInterval(nag);
     }
     const L = this.location(id);
     // keep only this place and its neighbours in memory: phones (iPhone above all) lose the

@@ -152,12 +152,7 @@ export function createAdaCamera(g: Game): Location {
   mb.rotation.y = -Math.PI / 2; // the key faces the room
   dresser.add(mb);
   dresser.position.set(dtX, 0, dtZ);
-  scene.add(dresser);
-  const stool = prop('stool', { height: 0.45 });
-  if (stool) {
-    stool.position.set(dtX - 0.55, 0, dtZ + 0.1);
-    scene.add(stool);
-  }
+  // (the dressing table and its music box are gone: the sewing machine stands there now)
   const boxPlayed = () => !!g.flag('ac.music');
   if (boxPlayed()) mbDrawer.position.x = 0.09;
   wardKey.visible = false;
@@ -209,7 +204,7 @@ export function createAdaCamera(g: Game): Location {
   crutch.visible = !g.flag('a.crutch');
 
   // ---------------- Ada's sewing machine (right wall, back) and the gramophone (right wall, front) ----------------
-  const mX = W / 2 - 0.32, mZ = -0.55, mY = 0.76;
+  const mX = W / 2 - 0.32, mZ = dtZ, mY = 0.62;
   const woodMid = woodMaterial({ base: '#5a4430' });
   scene.add(rbox(0.55, 0.04, 1.0, 0.01, woodMid, mX, mY, mZ));
   for (const [x, z] of [[-0.22, -0.45], [0.22, -0.45], [-0.22, 0.45], [0.22, 0.45]]) scene.add(rbox(0.04, mY, 0.04, 0.005, walnut, mX + x, mY / 2, mZ + z));
@@ -232,7 +227,7 @@ export function createAdaCamera(g: Game): Location {
   const sewLamp = new THREE.PointLight(0xffdcae, 1.2, 2.2, 1.6);
   sewLamp.position.set(mX - 0.3, 1.5, mZ);
   scene.add(sewLamp);
-  const gX = W / 2 - 0.35, gZ = 1.45;
+  const gX = W / 2 - 0.35, gZ = -0.55;
   scene.add(rbox(0.55, 0.6, 0.45, 0.02, woodMid, gX, 0.3, gZ));
   const gram = prop('gramophone', { height: 0.55, turn: -Math.PI / 2, grey: 0.9 });
   if (gram) {
@@ -262,18 +257,20 @@ export function createAdaCamera(g: Game): Location {
   const hWin = hitBox(0.2, 2.1, 1.3, -W / 2 + 0.1, 1.05, 0.4, 'out');
   const hMachine = hitBox(0.6, 0.5, 1.0, mX, mY + 0.2, mZ, 'machine');
   const hGram = hitBox(0.6, 0.9, 0.5, gX, 0.6, gZ, 'gramophone');
-  scene.add(hBox, hDresser, hWard, hBed, hSampler, hDoor, hWin, hMachine, hGram);
+  void hBox;
+  void hDresser;
+  scene.add(hWard, hBed, hSampler, hDoor, hWin, hMachine, hGram);
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
-    { id: 'mbkey', obj: hKey, view: 'dresser', when: () => boxPlayed() && wardKey.visible, tap: async (item) => {
+    { id: 'mbkey', obj: hKey, view: 'dresser', when: () => false, tap: async (item) => {
       if (item) return g.nope();
       wardKey.visible = false;
       g.set('ac.wardKey');
       g.give('wardkey');
       return say('ac.keyTaken');
     } },
-    { id: 'musicbox', obj: hBox, view: 'dresser', when: () => !(boxPlayed() && wardKey.visible), tap: async (item) => {
+    { id: 'musicbox', obj: hBox, view: 'dresser', when: () => false, tap: async (item) => {
       if (item) return g.nope();
       if (boxPlayed()) {
         if (wardKey.visible) {
@@ -286,7 +283,7 @@ export function createAdaCamera(g: Game): Location {
       }
       return say('ac.musicbox');
     } },
-    { id: 'dresser', obj: hDresser, view: 'dresser', lowPriority: true, tap: async (item) => {
+    { id: 'dresser', obj: hDresser, view: 'dresser', lowPriority: true, when: () => false, tap: async (item) => {
       if (item) return g.nope();
       return say(boxPlayed() ? 'ac.mirrorAfter' : 'ac.dresser');
     } },
@@ -375,7 +372,7 @@ export function createAdaCamera(g: Game): Location {
       kind: 'dial',
       obj: winder,
       center: winder.getWorldPosition(new THREE.Vector3()),
-      when: () => g.viewName === 'dresser' && !boxPlayed() && !playing,
+      when: () => false && !boxPlayed() && !playing,
       onTurn: (d) => {
         wound = Math.min(1, wound + Math.abs(d) / (Math.PI * 2 * TURNS));
         winder.rotation.z -= Math.abs(d);

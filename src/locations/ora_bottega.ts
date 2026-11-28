@@ -45,7 +45,22 @@ export function createOraBottega(g: Game): Location {
   // ---------------- walls of clocks ----------------
   const clocks: ReturnType<typeof wallClock>[] = [];
   const bezels = [brass, woodDark, mat(0x1a1918, { roughness: 0.5 }), woodMid];
+  // real clocks (3D models), each stopped at its own hour; the drawn ones only where a model is missing
+  const MODELS: [Parameters<typeof prop>[0], number, number?][] = [['clockA', 4.2], ['clockD', 4.0], ['wallClockM', 2.4], ['antiqueClock', 4.6, -Math.PI / 2]];
   const placeClock = (x: number, y: number, z: number, ry: number, r: number, k: number) => {
+    // keep the workshop door clear
+    if (ry === 0 && Math.abs(x + 1.6) < 0.55 && y < 2.2) return;
+    const [id, hk, turn] = MODELS[k % MODELS.length];
+    const m = prop(id, { height: r * hk, turn });
+    if (m) {
+      const wrap = new THREE.Group();
+      wrap.add(m);
+      wrap.position.set(x + Math.sin(ry) * 0.05, y - r * hk * 0.35, z + Math.cos(ry) * 0.05);
+      wrap.rotation.y = ry;
+      wrap.rotation.z = (Math.random() - 0.5) * 0.08;
+      scene.add(wrap);
+      return;
+    }
     const c = wallClock(r, { roman: k % 2 === 0, dark: k % 5 === 3, bezel: bezels[k % bezels.length] });
     c.group.position.set(x, y, z);
     c.group.rotation.y = ry;
@@ -180,7 +195,11 @@ export function createOraBottega(g: Game): Location {
   const labPivot = new THREE.Group();
   labPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   labPivot.position.set(labDoorX - 0.42, 0, -D / 2 + 0.04);
-  labPivot.add(rbox(0.84, 2.04, 0.05, 0.01, woodMid, 0.42, 1.02, 0));
+  const labLeaf = prop('doorA', { width: 0.84, turn: Math.PI / 2, grey: 0.85 });
+  if (labLeaf) {
+    labLeaf.position.set(0.42, 0, 0);
+    labPivot.add(labLeaf);
+  } else labPivot.add(rbox(0.84, 2.04, 0.05, 0.01, woodMid, 0.42, 1.02, 0));
   labPivot.add(textPlane([t('ora.labDoor')], 0.4, 0.1, { bg: '#d4ccb8', size: 30, px: 48 }).translateX(0.42).translateY(1.6).translateZ(0.03));
   scene.add(labPivot);
   if (g.flag('o.labOpen')) labPivot.rotation.y = 1.4;
@@ -192,7 +211,12 @@ export function createOraBottega(g: Game): Location {
   const stairPivot = new THREE.Group();
   stairPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   stairPivot.position.set(W / 2 - 0.04, 0, stairZ + 0.42);
-  stairPivot.add(rbox(0.05, 2.04, 0.84, 0.01, woodDark, 0, 1.02, -0.42));
+  const stairLeaf = prop('doorA', { width: 0.84, turn: Math.PI / 2, grey: 0.85 });
+  if (stairLeaf) {
+    stairLeaf.position.set(0, 0, -0.42);
+    stairLeaf.rotation.y = Math.PI / 2;
+    stairPivot.add(stairLeaf);
+  } else stairPivot.add(rbox(0.05, 2.04, 0.84, 0.01, woodDark, 0, 1.02, -0.42));
   stairPivot.add(rbox(0.04, 0.12, 0.08, 0.01, brass, -0.04, 1.05, -0.75));
   scene.add(stairPivot);
   if (g.flag('o.stairs')) stairPivot.rotation.y = -1.3;
@@ -435,7 +459,7 @@ export function createOraBottega(g: Game): Location {
         if (tickAcc > 1) tickAcc = 0;
       } else {
         // 3:17, always — though now and then a minute hand twitches, as if trying
-        clocks.forEach((c, i) => c.setTime(3, 17 + (Math.sin(time * 0.7 + i * 1.3) > 0.995 ? 0.6 : 0)));
+        clocks.forEach((c, i) => c.setTime((i * 5) % 12, (i * 17) % 60));
         if (mantelGo()) mc.setTime(3, 17 + (time % 60) / 60);
       }
     },

@@ -195,7 +195,14 @@ export class UI {
   }
 
   /** Typewriter dialog. Resolves after the last line is dismissed. */
+  /** dialogues never overlap: a second one waits for the first (an overwritten one would never end) */
+  private sayChain: Promise<void> = Promise.resolve();
   say(lines: Line[]): Promise<void> {
+    const run = this.sayChain.then(() => this.sayNow(lines));
+    this.sayChain = run.catch(() => undefined);
+    return run;
+  }
+  private sayNow(lines: Line[]): Promise<void> {
     return new Promise((resolve) => {
       let i = 0;
       let typing = 0;
