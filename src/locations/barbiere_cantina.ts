@@ -118,6 +118,7 @@ export function createBarbiereCantina(g: Game): Location {
   clock.add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), brass).translateY(1.15).translateZ(0.12));
   // the pendulum door: opens when the time is right
   const doorPivot = new THREE.Group();
+  doorPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   doorPivot.position.set(-0.22, 0.45, 0.105);
   doorPivot.add(rbox(0.44, 0.6, 0.02, 0.01, woodDark, 0.22, 0, 0));
   doorPivot.add(fx(mesh(new THREE.PlaneGeometry(0.3, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.08, metalness: 1, roughness: 0.05 }), 0.22, 0, 0.012, false)));

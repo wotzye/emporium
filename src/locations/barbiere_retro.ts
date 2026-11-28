@@ -3,7 +3,6 @@ import { prop } from '../models';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, box, cyl, sphere, mat, mesh, rbox, lathe, fx, dust, textPlane, hitBox, bulb, canvasTex, noise, tileMaterial, woodMaterial, plasterMaterial, liveCanvas, handwheel, lightCone } from '../builders';
 import { t } from '../i18n';
-import { lisaInk, onWall } from './lisa_uv';
 
 /** The barber's back room: sink, towels, a bench of bottles, the boiler, a trapdoor to the cellar. */
 const RINGS_Z = [-1.2, -0.65, -0.1, 0.45, 0.95];
@@ -25,7 +24,6 @@ export function createBarbiereRetro(g: Game): Location {
     ceil: plasterMaterial({ base: '#3a3733', repeat: [2, 2], damp: 0.8 }),
   }));
   // Lisa's message, in invisible ink (UV torch)
-  scene.add(onWall(lisaInk(g, 'barbiere'), 'left', W, D, 0.3, 1.9));
   const woodDark = woodMaterial({ base: '#3b2c1f' });
   const woodMid = woodMaterial({ base: '#5b4430' });
   const chrome = new THREE.MeshStandardMaterial({ color: 0xd0d0d0, roughness: 0.2, metalness: 1, envMapIntensity: 1.5 });
@@ -288,6 +286,7 @@ export function createBarbiereRetro(g: Game): Location {
 
   // ---------------- trapdoor in the floor ----------------
   const trapPivot = new THREE.Group();
+  trapPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   trapPivot.position.set(0.2, 0.012, -0.05);
   const trap = new THREE.Group();
   trap.add(rbox(0.9, 0.04, 0.9, 0.01, woodDark, 0, 0, 0.45));
@@ -348,6 +347,7 @@ export function createBarbiereRetro(g: Game): Location {
   const yardZ = 0.4;
   scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.05), new THREE.MeshBasicMaterial({ color: 0x0b0d10 }), W / 2 - 0.012, 1.025, yardZ, false).rotateY(-Math.PI / 2));
   const yardPivot = new THREE.Group();
+  yardPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   yardPivot.position.set(W / 2 - 0.04, 0, yardZ - 0.42);
   yardPivot.add(rbox(0.05, 2.04, 0.84, 0.01, woodMid, 0, 1.02, 0.42));
   yardPivot.add(mesh(new THREE.PlaneGeometry(0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0x8a949c, roughness: 0.3, transparent: true, opacity: 0.55 }), -0.03, 1.55, 0.42, false).rotateY(-Math.PI / 2));

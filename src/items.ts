@@ -45,6 +45,22 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'labkey',
     svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v5 M26 20 v3"/>'),
   },
+  mbkey: {
+    id: 'mbkey',
+    svg: s('<circle cx="12" cy="20" r="5"/><circle cx="12" cy="20" r="2"/><path d="M17 20 H32 M28 20 v4"/>'),
+  },
+  mweight: {
+    id: 'mweight',
+    svg: s('<path d="M14 14 h12 l3 12 h-18 z"/><path d="M20 6 v8"/>'),
+  },
+  stetho: {
+    id: 'stetho',
+    svg: s('<path d="M12 6 v10 a8 8 0 0 0 16 0 v-10"/><path d="M20 24 v6"/><circle cx="20" cy="33" r="3"/>'),
+  },
+  roomkey: {
+    id: 'roomkey',
+    svg: s('<rect x="5" y="15" width="10" height="10" rx="2"/><path d="M15 20 H34 M30 20 v5 M26 20 v4"/>'),
+  },
   windkey: {
     id: 'windkey',
     svg: s('<path d="M20 6 v18"/><rect x="16" y="24" width="8" height="10"/><path d="M8 6 H32 M8 6 v6 M32 6 v-0"/>'),

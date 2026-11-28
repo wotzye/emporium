@@ -119,16 +119,17 @@ export class Game {
   }
 
   // ---------------- UV light ----------------
+  /** The UV lens is gone from the game: what was written in invisible ink is just written now. */
   get uvOn() {
-    return !!this.flag('uvOn') && this.has('uvlens');
+    return true;
   }
   /** Read a document that may hide lines in invisible ink: true if the hidden part was readable (UV on). */
   async readDoc(titleKey: string, textKey: string, hand = true): Promise<boolean> {
     const text = t(textKey);
     const hidden = /⟦/.test(text);
-    await this.ui.doc(t(titleKey), text, hand, this.uvOn);
-    if (hidden && !this.uvOn) await this.say(this.has('uvlens') ? 'uv.docBlankLens' : 'uv.docBlank');
-    return !hidden || this.uvOn;
+    void hidden;
+    await this.ui.doc(t(titleKey), text, hand, true);
+    return true;
   }
 
   setUV(on: boolean) {
@@ -185,7 +186,7 @@ export class Game {
       L.hotspots.push({
         id: 'uvink' + i,
         obj: m,
-        when: () => this.uvOn && this.engine.torchOn && (m.material as THREE.MeshBasicMaterial).opacity > 0.3,
+        when: () => (m.material as THREE.MeshBasicMaterial).opacity > 0.3,
         tap: async (item) => {
           if (item) return this.nope();
           this.audio.sfx('paper');
@@ -211,11 +212,11 @@ export class Game {
       });
       L.scene.userData.uvList = list;
     }
-    const uv = this.uvOn && this.engine.torchOn;
     for (const m of list) {
-      const k = uv ? this.torchOn(m, 5) : 0;
+      // always readable; looking straight at it counts as reading it
+      const k = this.lookingAt(m, 5);
       const mat = m.material as THREE.MeshBasicMaterial;
-      mat.opacity += (k * 0.95 - mat.opacity) * 0.2;
+      mat.opacity = 0.9;
       if (k > 0.55 && !m.userData.uvSeen && !this.busy) {
         m.userData.uvSeen = true;
         (m.userData.onReveal as (() => void) | undefined)?.();
@@ -307,6 +308,8 @@ export class Game {
     const s = loadSave();
     if (!s) return false;
     this.save = s;
+    // the UV lens was taken out of the game: old saves lose it quietly
+    s.inventory = s.inventory.filter((i) => i !== 'uvlens');
     setLang(s.lang);
     this.applySettings();
     return true;
@@ -671,6 +674,16 @@ export class Game {
   }
 
   /** 0..1: how much the torch is pointing at this object (for writing that only shows in its light). */
+  /** how squarely the camera looks at something (1 = dead centre), torch or not */
+  lookingAt(obj: THREE.Object3D, maxDist = 4.5) {
+    const on = this.engine.torchOn;
+    this.engine.torchOn = true;
+    try {
+      return this.torchOn(obj, maxDist);
+    } finally {
+      this.engine.torchOn = on;
+    }
+  }
   torchOn(obj: THREE.Object3D, maxDist = 4.5) {
     if (!this.engine.torchOn) return 0;
     const cam = this.engine.camera;
@@ -690,9 +703,9 @@ export class Game {
     on = on && has && this.loc?.id !== 'map';
     if (!silent && on !== this.engine.torchOn) this.audio.sfx('switch');
     this.engine.torchOn = on;
-    this.engine.torch.color.set(this.uvOn ? 0x8a66ff : 0xfff4e0);
+    this.engine.torch.color.set(0xfff4e0);
     if (this.loc?.id !== 'map') this.save.flags.torchOn = on;
-    this.ui.setTorch(has && this.loc?.id !== 'map', on, this.uvOn);
+    this.ui.setTorch(has && this.loc?.id !== 'map', on, false);
   }
   toggleTorch() {
     if (this.busy && !this.engine.torchOn) return;
@@ -853,7 +866,7 @@ export class Game {
   }
 
   /** A clue you act out with the phone: blow, shout, shake. */
-  physical(kind: 'blow' | 'shout' | 'shake' | 'flip' | 'facedown' | 'jump', textKey: string) {
+  physical(kind: 'blow' | 'shout' | 'shake' | 'flip' | 'facedown' | 'jump' | 'silence', textKey: string) {
     return this.ui.sensor(kind, t('ui.sensor.' + kind), t(textKey), this.settings.sensors ?? true);
   }
 

@@ -3,7 +3,7 @@ import { useAudioContext } from './sensors';
  * All sound is synthesized with WebAudio: no audio files to load, nothing to license.
  * iOS only starts audio after a user gesture, so init() is called from the title screen tap.
  */
-export type DroneKind = 'map' | 'emporio' | 'macelleria' | 'barbiere' | 'cripta' | 'none';
+export type DroneKind = 'map' | 'emporio' | 'macelleria' | 'barbiere' | 'cripta' | 'orologi' | 'none';
 
 export class Audio {
   ctx: AudioContext | null = null;
@@ -112,6 +112,7 @@ export class Audio {
       macelleria: { f: [41.2, 41.6, 61.7, 87.3], lp: 220, noise: 0.35, level: 0.07 },
       barbiere: { f: [46.2, 46.5, 69.3, 98], lp: 300, noise: 0.3, level: 0.06 },
       cripta: { f: [36.7, 36.9, 55, 77.8], lp: 200, noise: 0.4, level: 0.07 },
+      orologi: { f: [43.6, 43.9, 65.4], lp: 240, noise: 0.15, level: 0.035 },
     };
     const s = settings[kind];
     const lp = ctx.createBiquadFilter();
@@ -503,13 +504,16 @@ export class Audio {
     if (!this.ctx || this.samplesLoading) return;
     this.samplesLoading = true;
     const ctx = this.ctx;
-    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh', 'pigeons', 'pigeoncoo', 'amb_hell', 'spooky', 'synth', 'sewing', 'gramophone']) {
+    for (const n of ['laugh', 'footsteps', 'hinge', 'chains', 'chairpump', 'clock', 'growl', 'jumpwhisper', 'smash', 'latch', 'musicbox', 'windup', 'page', 'screech', 'scratch', 'inhale', 'scissors', 'spray', 'amb_fridge', 'amb_storm', 'amb_evil', 'possessed', 'jumpscare', 'ghostmove', 'bell', 'ghostwhisper', 'ghostbreath', 'demonlaugh', 'ghostwail', 'evillaugh', 'pigeons', 'pigeoncoo', 'amb_hell', 'spooky', 'synth', 'sewing', 'gramophone', 'heart', 'heartfast', 'towerclock', 'amb_clocks', 'tictac']) {
       fetch(`sounds/${n}.mp3`)
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .then((b) => ctx.decodeAudioData(b))
         .then((buf) => {
           this.samples[n] = buf;
           if (n.startsWith('amb_') || n === 'clock') this.ambience(this.droneKind);
+          // a loop asked for before its recording arrived starts now
+          const want = this.loopWant[n];
+          if (want) this.setLoop(n, want);
         })
         .catch(() => {});
     }
@@ -525,6 +529,7 @@ export class Audio {
       macelleria: [['amb_fridge', 0.4], ['amb_evil', 0.12]],
       barbiere: [['amb_evil', 0.18], ['clock', 0.12]],
       cripta: [['amb_hell', 0.3], ['synth', 0.1]],
+      orologi: [],
       none: [],
     };
     const want = beds[kind].filter(([n]) => this.samples[n]);
@@ -548,6 +553,45 @@ export class Audio {
       src.start(t, Math.random() * Math.max(0, this.samples[n].duration - 1));
       return { src, g };
     });
+  }
+
+  /**
+   * A recording that loops for as long as a place wants it (the heartbeats at the clockmaker's):
+   * setLoop(name, gain) fades it to that level, setLoop(name, 0) fades it out and stops it.
+   */
+  private loopNodes: Record<string, { src: AudioBufferSourceNode; g: GainNode; rate: number }> = {};
+  private loopWant: Record<string, number> = {};
+  setLoop(name: string, gain: number, o: { tau?: number; rate?: number } = {}) {
+    this.loopWant[name] = gain;
+    if (!this.ctx) return;
+    const t = this.now;
+    let n = this.loopNodes[name];
+    if (gain <= 0.0001) {
+      delete this.loopWant[name];
+      if (!n) return;
+      n.g.gain.setTargetAtTime(0.0001, t, o.tau ?? 0.15);
+      const src = n.src;
+      delete this.loopNodes[name];
+      setTimeout(() => { try { src.stop(); } catch { /* */ } }, 1500);
+      return;
+    }
+    const buf = this.samples[name];
+    if (!buf) return;
+    if (!n) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      src.connect(g).connect(this.master);
+      src.start(t);
+      n = this.loopNodes[name] = { src, g, rate: 1 };
+    }
+    n.g.gain.setTargetAtTime(gain, t, o.tau ?? 0.5);
+    if (o.rate && o.rate !== n.rate) {
+      n.src.playbackRate.setTargetAtTime(o.rate, t, 0.4);
+      n.rate = o.rate;
+    }
   }
 
   /** play a recorded sound (or a slice of it); false if it isn't loaded */
@@ -602,7 +646,7 @@ export class Audio {
   }
 
   /** named recordings for specific moments (no-op if not loaded) */
-  rec(name: 'pigeons' | 'pigeoncoo' | 'spooky' | 'synth' | 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper' | 'sewing' | 'gramophone', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
+  rec(name: 'pigeons' | 'pigeoncoo' | 'spooky' | 'synth' | 'growl' | 'smash' | 'chairpump' | 'scissors' | 'spray' | 'musicbox' | 'windup' | 'scratch' | 'chains' | 'possessed' | 'ghostmove' | 'bell' | 'footsteps' | 'demonlaugh' | 'evillaugh' | 'ghostwail' | 'ghostwhisper' | 'sewing' | 'gramophone' | 'heart' | 'heartfast' | 'towerclock' | 'tictac', o: { gain?: number; rate?: number; offset?: number; dur?: number; delay?: number } = {}) {
     return this.sample(name, o);
   }
 

@@ -266,6 +266,7 @@ export function createAdaCucina(g: Game): Location {
   // ---------------- the pantry: tall narrow door, holds the crutches ----------------
   const pantryX = 1.15;
   const pantryPivot = new THREE.Group();
+  pantryPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   pantryPivot.position.set(pantryX - 0.3, 0, -D / 2 + 0.05);
   pantryPivot.add(rbox(0.6, 2.0, 0.04, 0.01, woodMaterial({ base: '#6d6252' }), 0.3, 1.0, 0));
   pantryPivot.add(cyl(0.015, 0.015, 0.05, chrome, 0.53, 1.0, 0.04, 8).rotateX(Math.PI / 2));
@@ -305,6 +306,7 @@ export function createAdaCucina(g: Game): Location {
   });
   scene.add(mesh(new THREE.PlaneGeometry(0.8, 2.0), new THREE.MeshBasicMaterial({ color: 0x050505 }), W / 2 - 0.012, 1.0, gdZ, false).rotateY(-Math.PI / 2));
   const gdPivot = new THREE.Group();
+  gdPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   gdPivot.position.set(W / 2 - 0.04, 0, gdZ - 0.4);
   gdPivot.add(rbox(0.05, 2.0, 0.8, 0.01, woodMaterial({ base: '#6d6252' }), 0, 1.0, 0.4));
   gdPivot.add(mesh(new THREE.PlaneGeometry(0.5, 0.9), new THREE.MeshBasicMaterial({ map: gdTex }), -0.03, 1.4, 0.4, false).rotateY(-Math.PI / 2));

@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, woodMaterial, mat, framed, cyl, canvasTex } from '../builders';
 import { t } from '../i18n';
-import { lisaInk, onWall } from './lisa_uv';
 import { oldPhoto } from '../photos';
 import { wallpaper } from './ada_common';
 import { radioHint } from './radio_negozio';
@@ -27,7 +26,6 @@ export function createRadioCamera(g: Game): Location {
     ceil: woodMaterial({ base: '#26201a', repeat: [2, 2], plank: true }),
   }));
   // Lisa's message, in invisible ink (UV torch)
-  scene.add(onWall(lisaInk(g, 'radio'), 'left', W, D, 0.0, 1.75));
   scene.add(new THREE.AmbientLight(0xffffff, 0.05));
   const desk = new THREE.PointLight(0xffd9a0, g.flag('rl.power') ? 1.8 : 0.4, 4, 1.6);
   desk.position.set(-1.0, 1.3, -1.0);

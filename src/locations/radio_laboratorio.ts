@@ -104,7 +104,7 @@ export function createRadioLaboratorio(g: Game): Location {
   lensTag.position.set(0.07, 0.002, 0.03);
   lens.add(lensTag);
   lens.position.set(-0.6, bY + 0.026, bZ + 0.18);
-  lens.visible = !lensTaken();
+  lens.visible = false; // the UV lens is out of the game
   scene.add(lens);
   // in invisible ink, on the wall above the recorder: Paolo's joke for whoever has the lens
   scene.add(uvInk([t('radio.uvTape1'), t('radio.uvTape2')], 0.7, 0.26).translateX(0.3).translateY(1.3).translateZ(-D / 2 + 0.03));
@@ -133,7 +133,7 @@ export function createRadioLaboratorio(g: Game): Location {
       }
       return say(g.flag('rl.code') ? 'radio.tapeDone' : 'radio.tapeHint');
     } },
-    { id: 'lens', obj: hLens, view: 'bench', when: () => !lensTaken(), tap: async (item) => {
+    { id: 'lens', obj: hLens, view: 'bench', when: () => false && !lensTaken(), tap: async (item) => {
       if (item) return g.nope();
       lens.visible = false;
       g.set('rl.lens');

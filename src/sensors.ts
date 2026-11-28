@@ -3,7 +3,7 @@
  * Each one degrades gracefully: if the sensor is missing, blocked, or switched off in the
  * settings, the player holds a button instead. Nothing ever stalls the game.
  */
-export type SensorKind = 'blow' | 'shout' | 'shake' | 'flip' | 'facedown' | 'jump';
+export type SensorKind = 'blow' | 'shout' | 'shake' | 'flip' | 'facedown' | 'jump' | 'silence';
 
 let micStream: MediaStream | null = null;
 let micCtx: AudioContext | null = null;
@@ -184,10 +184,36 @@ export function listen(kind: SensorKind, onLevel: (k: number) => void, cancel: {
       tick();
       return;
     }
-    // ---- blow / shout ----
+    // ---- blow / shout / silence ----
     const an = await openMic();
     if (!an) return finish(false);
     const buf = new Float32Array(an.fftSize);
+    if (kind === 'silence') {
+      // hold your breath: five seconds with nothing louder than the quietest the room has been
+      let quietest = 1, lastS = performance.now();
+      const t1 = lastS;
+      const tickS = () => {
+        if (cancel.cancelled) return finish(false);
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - lastS) / 1000);
+        lastS = now;
+        an.getFloatTimeDomainData(buf);
+        let rms = 0;
+        for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+        rms = Math.sqrt(rms / buf.length);
+        quietest = Math.min(quietest, rms);
+        const limit = Math.max(0.012, quietest * 2.5);
+        if (now - t1 > 300) {
+          if (rms > limit * 2) progress = 0; // a word, a cough: start again
+          else if (rms <= limit) progress = Math.min(1, progress + dt / 5);
+        }
+        onLevel(progress);
+        if (progress >= 1) return finish(true);
+        requestAnimationFrame(tickS);
+      };
+      tickS();
+      return;
+    }
     // phones squash the mic level (automatic gain), so judge against the room's own noise:
     // listen to the silence for a moment, then anything well above it counts
     let floor = 0.01, n = 0;

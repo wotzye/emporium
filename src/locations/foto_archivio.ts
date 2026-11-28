@@ -164,6 +164,11 @@ export function createFotoArchivio(g: Game): Location {
       tap: async (item) => {
         if (item) return g.nope();
         if (!opened.has(d.n)) {
+          // the self-portrait's drawer stays shut until the darkroom print has said which one it is
+          if (d.n === THE_ONE && !g.flag('f.print')) {
+            g.audio.sfx('wrong');
+            return say('foto.d31locked');
+          }
           opened.add(d.n);
           saveOpened();
           g.audio.sfx('drawer');

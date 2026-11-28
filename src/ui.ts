@@ -3,7 +3,7 @@ import { t } from './i18n';
 import { listen, SensorKind, motionNeedsTap, askMotion } from './sensors';
 
 export interface Line {
-  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio' | 'nello' | 'paolo';
+  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio' | 'nello' | 'paolo' | 'ottavio';
   key: string;
   vars?: Record<string, string | number>;
 }
@@ -331,7 +331,7 @@ export class UI {
     return new Promise((res) => {
       const b = el('div', 'sensor');
       const icon = el('div', 'sicon ' + kind);
-      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : kind === 'flip' ? '🔄' : kind === 'facedown' ? '🌑' : kind === 'jump' ? '⤒' : '💨';
+      icon.textContent = kind === 'shake' ? '📳' : kind === 'shout' ? '📢' : kind === 'flip' ? '🔄' : kind === 'facedown' ? '🌑' : kind === 'jump' ? '⤒' : kind === 'silence' ? '🤫' : '💨';
       const p = el('div', 'paper');
       p.textContent = text;
       const bar = el('div', 'sbar');
@@ -344,7 +344,7 @@ export class UI {
       let done = false;
       let k = 0;
       const set = (v: number) => {
-        k = Math.max(k, v);
+        k = kind === 'silence' ? v : Math.max(k, v);
         fill.style.width = `${Math.round(k * 100)}%`;
         icon.style.transform = kind === 'shake' ? `rotate(${Math.sin(performance.now() / 40) * 18 * v}deg)` : `scale(${1 + v * 0.4})`;
       };

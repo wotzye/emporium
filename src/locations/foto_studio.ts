@@ -162,6 +162,7 @@ export function createFotoStudio(g: Game): Location {
   const darkZ = -0.4;
   scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.05), new THREE.MeshBasicMaterial({ color: 0x030202 }), W / 2 - 0.012, 1.025, darkZ, false).rotateY(-Math.PI / 2));
   const darkPivot = new THREE.Group();
+  darkPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   darkPivot.position.set(W / 2 - 0.04, 0, darkZ + 0.42);
   darkPivot.add(rbox(0.05, 2.0, 0.84, 0.01, woodDark, 0, 1.0, -0.42));
   scene.add(darkPivot);

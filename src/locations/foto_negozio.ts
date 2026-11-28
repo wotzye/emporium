@@ -107,6 +107,7 @@ export function createFotoNegozio(g: Game): Location {
   const stairX = 1.85;
   scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.05), new THREE.MeshBasicMaterial({ color: 0x050505 }), stairX, 1.025, -D / 2 + 0.012, false));
   const stairPivot = new THREE.Group();
+  stairPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   stairPivot.position.set(stairX - 0.42, 0, -D / 2 + 0.05);
   stairPivot.add(rbox(0.84, 2.0, 0.05, 0.01, woodDark, 0.42, 1.0, 0));
   stairPivot.add(cyl(0.02, 0.02, 0.04, mat(0x9a8a62, { metalness: 1, roughness: 0.4 }), 0.75, 1.0, 0.04, 10).rotateX(Math.PI / 2));

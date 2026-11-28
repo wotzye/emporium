@@ -376,6 +376,7 @@ export function createMacelleria(g: Game): Location {
   // ---------------- cold room door ----------------
   const cellaX = 1.9;
   const doorPivot = new THREE.Group();
+  doorPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   doorPivot.position.set(cellaX - 0.65, 0, -2.96);
   const door = rbox(1.3, 2.2, 0.12, 0.03, steel, 0.65, 1.1, 0);
   doorPivot.add(door);

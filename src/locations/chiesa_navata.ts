@@ -107,6 +107,7 @@ export function createChiesaNavata(g: Game): Location {
   // the bell tower door (left, by the entrance)
   scene.add(mesh(new THREE.PlaneGeometry(0.9, 2.1), new THREE.MeshBasicMaterial({ color: 0x040404 }), -W / 2 + 0.012, 1.05, towerZ, false).rotateY(Math.PI / 2));
   const towerPivot = new THREE.Group();
+  towerPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   towerPivot.position.set(-W / 2 + 0.05, 0, towerZ - 0.45);
   towerPivot.add(rbox(0.06, 2.05, 0.9, 0.01, woodDark, 0, 1.025, 0.45));
   towerPivot.add(cyl(0.025, 0.025, 0.05, mat(0x6a5a3a, { metalness: 0.8 }), 0.05, 1.0, 0.8, 8).rotateZ(Math.PI / 2));

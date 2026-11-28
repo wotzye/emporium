@@ -143,6 +143,7 @@ export function createRadioNegozio(g: Game): Location {
   });
   scene.add(mesh(new THREE.PlaneGeometry(0.84, 2.0), new THREE.MeshBasicMaterial({ map: stairHole }), W / 2 - 0.012, 1.0, stairZ, false).rotateY(-Math.PI / 2));
   const stairPivot = new THREE.Group();
+  stairPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   stairPivot.position.set(W / 2 - 0.05, 0, stairZ + 0.42);
   stairPivot.add(rbox(0.05, 2.0, 0.84, 0.01, woodDark, 0, 1.0, -0.42));
   const padlock = new THREE.Group();

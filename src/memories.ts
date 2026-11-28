@@ -6,7 +6,7 @@ import { photoOr } from './photos';
 const PHOTO_ORDER: Record<string, number[]> = {
   bar: [1, 2, 3, 4, 5],
   ada: [1, 2, 3, 5, 6],
-  ora: [1, 2, 3, 5, 6],
+  ora: [1, 6, 3, 5, 7],
   foto: [6, 5, 3, 2, 1],
   radio: [6, 5, 3, 2, 1],
 };

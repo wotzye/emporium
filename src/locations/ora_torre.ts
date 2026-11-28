@@ -202,7 +202,13 @@ export function createOraTorre(g: Game): Location {
     }
     g.audio.sfx('glass');
     dropHit();
+    // for a moment the whole village beats at once, then only the tower ticks
+    g.audio.setLoop('heartfast', 0.75, { tau: 0.2 });
+    g.audio.setLoop('heart', 0.6, { tau: 0.2 });
     await say('ora.restarted1');
+    g.audio.setLoop('heartfast', 0, { tau: 0.8 });
+    g.audio.setLoop('heart', 0, { tau: 1.2 });
+    g.audio.setLoop('towerclock', 0.45);
     await g.view('floor');
     await say('ora.restarted2');
   };
@@ -310,7 +316,7 @@ export function createOraTorre(g: Game): Location {
     id: 'ora_torre',
     nameKey: 'place.oraTorre',
     scene,
-    drone: 'barbiere',
+    drone: 'orologi',
     startView: 'main',
     exitTo: 'ora_camera',
     views: {
@@ -332,7 +338,9 @@ export function createOraTorre(g: Game): Location {
       }
       if (watch.visible) watchGlow.intensity = 0.5 + Math.sin(time * 3) * 0.2;
     },
+    leave: () => g.audio.setLoop('towerclock', 0),
     enter: async () => {
+      if (restarted()) g.audio.setLoop('towerclock', 0.45);
       if (!g.flag('o.towerEntered')) {
         g.set('o.towerEntered');
         await sleep(300);

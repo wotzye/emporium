@@ -107,7 +107,7 @@ export function pigeon(ring = false) {
 /** the church opens once you have the bell tower key (Nello's radio) */
 export const LISA_SHOPS = ['radio', 'barbiere', 'ada', 'ora', 'foto'];
 /** Paolo's key, and all five of Lisa's messages read: only then does the church let you in. */
-export const churchOpen = (g: Game) => (!!g.has('towerkey') && LISA_SHOPS.every((k) => g.flag('uv.' + k))) || !!g.flag('ch.entered');
+export const churchOpen = (g: Game) => !!g.has('towerkey') || !!g.flag('ch.entered');
 
 /** one hint chain for the whole church */
 export function churchHint(g: Game): string {

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { prop } from '../models';
+import { createAdaGhost } from '../characters';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, mat, mesh, rbox, cyl, lathe, sphere, textPlane, hitBox, canvasTex, noise, woodMaterial, dust } from '../builders';
 import { t } from '../i18n';
@@ -7,9 +8,13 @@ import { wallpaper, doilyTex, sleep } from './ada_common';
 
 /**
  * Ada's bedroom, reached from the garden through the French window. The double bed made on one
- * side only. On the dressing table a music box: wind it and, when the tune ends, a little drawer
- * opens with the key of the wardrobe. In the wardrobe: Ettore's suit, and his crutch.
+ * side only. In the wardrobe: Ettore's suit, his crutch, and Ada's work basket (thread, a seam
+ * ripper). By the wall, her treadle sewing machine and the gramophone: thread the machine, put the
+ * waltz on, work the treadle in time, and the machine sews a message by itself: SCUCI L'ORLO.
+ * (The music box on the dressing table still plays; it only holds memories now.)
  */
+/** the treadle, in waltz time like the record: toc ... toc toc ... toc toc */
+const SEW_RHYTHM = 'LSLS';
 const TURNS = 2;
 
 export function createAdaCamera(g: Game): Location {
@@ -155,7 +160,7 @@ export function createAdaCamera(g: Game): Location {
   }
   const boxPlayed = () => !!g.flag('ac.music');
   if (boxPlayed()) mbDrawer.position.x = 0.09;
-  wardKey.visible = !g.flag('ac.wardKey');
+  wardKey.visible = false;
 
   // ---------------- the wardrobe (left, back corner) ----------------
   const wX = -1.35, wZ = -1.45;
@@ -203,6 +208,44 @@ export function createAdaCamera(g: Game): Location {
   setWard(wardOpen() ? 1 : 0);
   crutch.visible = !g.flag('a.crutch');
 
+  // ---------------- Ada's sewing machine (right wall, back) and the gramophone (right wall, front) ----------------
+  const mX = W / 2 - 0.32, mZ = -0.55, mY = 0.76;
+  const woodMid = woodMaterial({ base: '#5a4430' });
+  scene.add(rbox(0.55, 0.04, 1.0, 0.01, woodMid, mX, mY, mZ));
+  for (const [x, z] of [[-0.22, -0.45], [0.22, -0.45], [-0.22, 0.45], [0.22, 0.45]]) scene.add(rbox(0.04, mY, 0.04, 0.005, walnut, mX + x, mY / 2, mZ + z));
+  scene.add(rbox(0.3, 0.03, 0.6, 0.005, mat(0x2a2826, { metalness: 0.6, roughness: 0.5 }), mX - 0.05, 0.12, mZ).rotateZ(-0.2));
+  const machine = prop('sewing', { width: 0.55, grey: 0.9, turn: -Math.PI / 2 });
+  const mach = machine ?? rbox(0.2, 0.3, 0.45, 0.03, mat(0x1a1a1a), 0, 0.15, 0);
+  mach.position.set(mX + 0.02, mY + 0.02, mZ);
+  scene.add(mach);
+  scene.add(rbox(0.25, 0.004, 0.4, 0.002, mat(0xd8d2c4, { roughness: 1 }), mX - 0.12, mY + 0.025, mZ + 0.15));
+  const words = textPlane([t('sew.words')], 0.36, 0.08, { bg: 'transparent', fg: '#1a1814', size: 40, px: 96, font: "'Bradley Hand', 'Segoe Print', cursive" });
+  words.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+  words.position.set(mX - 0.12, mY + 0.034, mZ + 0.15);
+  (words.material as THREE.MeshStandardMaterial).depthWrite = false;
+  words.renderOrder = 2;
+  words.visible = !!g.flag('a.sewn');
+  scene.add(words);
+  const thread = cyl(0.015, 0.015, 0.035, mat(0x2a2622, { roughness: 0.8 }), mX + 0.02, mY + 0.32, mZ - 0.1, 10);
+  thread.visible = !!g.flag('a.threaded');
+  scene.add(thread);
+  const sewLamp = new THREE.PointLight(0xffdcae, 1.2, 2.2, 1.6);
+  sewLamp.position.set(mX - 0.3, 1.5, mZ);
+  scene.add(sewLamp);
+  const gX = W / 2 - 0.35, gZ = 1.45;
+  scene.add(rbox(0.55, 0.6, 0.45, 0.02, woodMid, gX, 0.3, gZ));
+  const gram = prop('gramophone', { height: 0.55, turn: -Math.PI / 2, grey: 0.9 });
+  if (gram) {
+    gram.position.set(gX, 0.6, gZ);
+    scene.add(gram);
+  }
+  // Ada, when the machine sews by itself
+  const ada = createAdaGhost();
+  ada.group.traverse((o) => (o.userData.noPick = true));
+  ada.setOpacity(0);
+  ada.group.position.set(mX - 0.6, 0, mZ + 0.2);
+  scene.add(ada.group);
+
   // the door to the hall: locked from the other side
   scene.add(rbox(0.9, 2.05, 0.06, 0.02, walnut, 0.9, 1.025, D / 2 - 0.04));
   const plaque = textPlane(t('ac.sampler').split('\n'), 0.42, 0.3, { bg: '#e2dccd', size: 22, px: 128, font: 'Georgia, serif' });
@@ -217,7 +260,9 @@ export function createAdaCamera(g: Game): Location {
   const hSampler = hitBox(0.5, 0.4, 0.1, bedX, 1.75, -D / 2 + 0.05, 'sampler');
   const hDoor = hitBox(1.0, 2.1, 0.2, 0.9, 1.05, D / 2 - 0.1, 'halldoor');
   const hWin = hitBox(0.2, 2.1, 1.3, -W / 2 + 0.1, 1.05, 0.4, 'out');
-  scene.add(hBox, hDresser, hWard, hBed, hSampler, hDoor, hWin);
+  const hMachine = hitBox(0.6, 0.5, 1.0, mX, mY + 0.2, mZ, 'machine');
+  const hGram = hitBox(0.6, 0.9, 0.5, gX, 0.6, gZ, 'gramophone');
+  scene.add(hBox, hDresser, hWard, hBed, hSampler, hDoor, hWin, hMachine, hGram);
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
@@ -246,32 +291,59 @@ export function createAdaCamera(g: Game): Location {
       return say(boxPlayed() ? 'ac.mirrorAfter' : 'ac.dresser');
     } },
     { id: 'wardrobe', obj: hWard, view: 'wardrobe', tap: async (item) => {
-      if (!wardOpen()) {
-        if (item === 'wardkey') {
-          g.deselect();
-          g.take('wardkey');
-          g.set('ac.ward');
-          g.audio.sfx('unlock');
-          g.audio.sfx('creak');
-          for (let i = 0; i <= 24; i++) {
-            setWard(i / 24);
-            await sleep(30);
-          }
-          return g.say([{ who: 'diego', key: 'ac.wardOpen1' }, { who: 'diego', key: 'ac.wardOpen2' }]);
-        }
-        if (item) return g.nope();
-        g.audio.sfx('wrong');
-        return say('ac.wardLocked');
-      }
       if (item) return g.nope();
-      if (crutch.visible) {
+      if (!wardOpen()) {
+        g.set('ac.ward');
+        g.audio.sfx('creak');
+        for (let i = 0; i <= 24; i++) {
+          setWard(i / 24);
+          await sleep(30);
+        }
+        return g.say([{ who: 'diego', key: 'ac.wardOpen1' }, { who: 'diego', key: 'ac.wardOpen2' }]);
+      }
+      if (crutch.visible || !g.flag('a.basket')) {
         crutch.visible = false;
         g.set('a.crutch');
         g.give('crutch');
+        g.set('a.basket');
+        g.give('thread');
+        g.give('ripper');
         g.audio.sfx('whisper');
-        return g.say([{ who: 'diego', key: 'ac.crutch' }, { who: 'ada', key: 'ac.adaWhisper' }]);
+        return g.say([{ who: 'diego', key: 'ac.crutch' }, { who: 'diego', key: 'ac.basket' }, { who: 'ada', key: 'ac.adaWhisper' }]);
       }
       return say('ac.wardEmpty');
+    } },
+    { id: 'machine', obj: hMachine, view: 'machine', tap: async (item) => {
+      if (item === 'thread') {
+        g.deselect();
+        g.take('thread');
+        g.set('a.threaded');
+        thread.visible = true;
+        g.audio.sfx('click');
+        return say('sew.threaded');
+      }
+      if (item) return g.nope();
+      if (g.flag('a.sewn')) return say('sew.machineDone');
+      if (!g.flag('a.threaded')) return say('sew.machine');
+      const ok = await g.ui.knock(t('sew.treadleTitle'), t(g.flag('a.waltz') ? 'sew.treadleTextWaltz' : 'sew.treadleText'), SEW_RHYTHM, () => g.audio.rec('sewing', { gain: 0.7, dur: 0.35 }));
+      if (!ok) return;
+      g.set('a.sewn');
+      g.audio.rec('sewing', { gain: 0.8, dur: 2.5 });
+      await sleep(1500);
+      words.visible = true;
+      g.audio.sfx('whisper');
+      ada.setOpacity(0.7);
+      await sleep(700);
+      ada.setOpacity(0);
+      await g.say([{ who: 'diego', key: 'sew.sewn1' }, { who: 'diego', key: 'sew.sewn2' }]);
+      g.note('note.sew.hem');
+    } },
+    { id: 'gramophone', obj: hGram, view: 'gramophone', tap: async (item) => {
+      if (item) return g.nope();
+      g.set('a.waltz');
+      g.audio.sfx('click');
+      g.audio.rec('gramophone', { gain: 0.55, dur: 12 });
+      return g.say([{ who: 'diego', key: 'sew.gram1' }, { who: 'diego', key: 'sew.gram2' }]);
     } },
     { id: 'bed', obj: hBed, lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
@@ -348,12 +420,15 @@ export function createAdaCamera(g: Game): Location {
       main: { pos: [-0.6, 1.6, 1.5], look: [0.4, 0.95, -1.0], yaw: 65, pitch: 18 },
       dresser: { pos: [dtX - 0.75, 1.15, dtZ - 0.2], look: [dtX, dtY + 0.08, dtZ - 0.2], parent: 'main', yaw: 15, pitch: 10, fov: 50 },
       wardrobe: { pos: [wX + 0.6, 1.55, wZ + 1.9], look: [wX, 1.2, wZ], parent: 'main', yaw: 20, pitch: 12, fov: 60 },
+      machine: { pos: [mX - 0.95, 1.35, mZ + 0.1], look: [mX, mY + 0.1, mZ], parent: 'main', yaw: 20, pitch: 12, fov: 55 },
+      gramophone: { pos: [gX - 1.0, 1.4, gZ - 0.2], look: [gX, 0.8, gZ], parent: 'main', yaw: 20, pitch: 12 },
     },
     hotspots,
     interactions,
     update: (dt, time) => {
       motes.update(dt, time);
       if (playing) dancer.rotation.y += dt * 3;
+      if (ada.group.visible) ada.update(dt, time, g.engine.camera);
       if (wardOpen()) sleeve.rotation.z = Math.sin(time * 0.9) * 0.08; // as if someone had just let go of it
     },
     enter: async () => {
@@ -364,11 +439,11 @@ export function createAdaCamera(g: Game): Location {
       }
     },
     hint: () => {
-      if (g.has('crutch') || g.flag('a.crutch')) return 'hint.ada.hatch';
-      if (wardOpen()) return 'hint.ac.crutch';
-      if (g.has('wardkey')) return 'hint.ac.wardrobe';
-      if (boxPlayed()) return 'hint.ac.key';
-      return 'hint.ac.musicbox';
+      if (g.flag('glasses')) return 'hint.ada.leave';
+      if (!g.flag('a.basket')) return wardOpen() ? 'hint.ac.crutch' : 'hint.ac.wardrobe';
+      if (!g.flag('a.threaded')) return 'hint.sew.thread';
+      if (!g.flag('a.sewn')) return g.flag('a.waltz') ? 'hint.sew.treadle' : 'hint.sew.gramophone';
+      return 'hint.ada.hem';
     },
     debug: { winder, getWound: () => wound },
   };

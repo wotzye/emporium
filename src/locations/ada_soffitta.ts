@@ -4,11 +4,14 @@ import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, cyl, mat, mesh, rbox, lathe, dust, hitBox, canvasTex, noise, woodMaterial, cursedMat } from '../builders';
 import { createAdaGhost } from '../characters';
 import { t } from '../i18n';
-import { lisaInk, onWall } from './lisa_uv';
 import { sleep } from './ada_common';
 
-/** Ada's attic: low, dark, crates stacked in front of the trunk she climbed up to every night. */
-export const TRUNK_CODE = '1406';
+/**
+ * Ada's attic: low, crates stacked in front of the trunk she climbed up to every night, and her
+ * wedding dress on a tailor's dummy. SCUCI L'ORLO, the machine downstairs said: unpick the hem of
+ * the wedding dress and a folded note gives the trunk's combination. In the trunk, the glasses.
+ */
+export const TRUNK_CODE = '2703';
 
 export function createAdaSoffitta(g: Game): Location {
   const scene = new THREE.Scene();
@@ -19,7 +22,6 @@ export function createAdaSoffitta(g: Game): Location {
   const boards = woodMaterial({ base: '#3b2e21', repeat: [4, 4], plank: true });
   scene.add(room(W, H, D, { wall: woodMaterial({ base: '#2e241a', repeat: [3, 1.5], plank: true }), floor: boards, ceil: woodMaterial({ base: '#241c14', repeat: [3, 3], plank: true }) }));
   // Lisa's message, in invisible ink (UV torch)
-  scene.add(onWall(lisaInk(g, 'ada'), 'back', W, D, 0.6, 1.35));
   const woodDark = woodMaterial({ base: '#2a2016' });
   // rafters
   for (let x = -2; x <= 2; x += 0.8) scene.add(rbox(0.12, 0.16, D, 0.01, woodDark, x, H - 0.08, 0));
@@ -42,6 +44,16 @@ export function createAdaSoffitta(g: Game): Location {
   }
   cagePivot.position.set(0.3, H, 0.3);
   scene.add(cagePivot);
+  // the caged bulb is lit now (weakly), and an oil lamp stands on a crate by the trunk
+  scene.add(new THREE.AmbientLight(0xffe6c8, 0.1));
+  const cageLight = new THREE.PointLight(0xffd9a8, 2.4, 5, 1.6);
+  cageLight.position.set(0, -0.45, 0);
+  cagePivot.add(cageLight);
+  const trunkLamp = new THREE.PointLight(0xffc98a, 3.2, 3.6, 1.5);
+  trunkLamp.position.set(-1.3, 1.1, -1.3);
+  scene.add(trunkLamp);
+  scene.add(cyl(0.05, 0.06, 0.16, new THREE.MeshStandardMaterial({ color: 0xfff0d0, emissive: 0xffb860, emissiveIntensity: 1.2, transparent: true, opacity: 0.85 }), -1.3, 0.95, -1.3, 12));
+  scene.add(rbox(0.4, 0.86, 0.4, 0.02, woodMaterial({ base: '#3a2c1f' }), -1.3, 0.43, -1.3));
   // the hatch you came up through
   scene.add(mesh(new THREE.PlaneGeometry(0.8, 0.6), new THREE.MeshBasicMaterial({ color: 0x111111 }), 0.6, 0.003, 1.4, false).rotateX(-Math.PI / 2));
 
@@ -84,7 +96,7 @@ export function createAdaSoffitta(g: Game): Location {
   glow.position.set(trunkPos.x, 0.6, trunkPos.z + 0.1);
   scene.add(glow);
   // new route: the glasses are sewn into Ettore's jacket downstairs; the trunk only keeps the key
-  const sewRoute = () => !!g.flag('a.sewRoute');
+  const sewRoute = () => false; // the sewing room is gone: the glasses are back in the trunk
   glasses.visible = trunkOpen() && !g.flag('glasses') && !sewRoute();
 
   // ---------------- crates in the way ----------------
@@ -195,18 +207,35 @@ export function createAdaSoffitta(g: Game): Location {
           setLid(i / 25);
           await sleep(30);
         }
-        g.set('a.sewRoute');
+        glasses.visible = !g.flag('glasses');
         g.audio.sfx('whisper');
-        g.give('sewkey');
-        return g.say([{ who: 'diego', key: 'ada.trunkOpenSew1' }, { who: 'diego', key: 'ada.trunkOpenSew2' }]);
+        return say('ada.trunkOpen');
       }
       if (glasses.visible) return takeGlasses();
       if (sewRoute() && !g.flag('glasses')) return say('ada.trunkSew');
       return say('ada.trunkEmpty');
     } },
     { id: 'dummy', obj: hDummy, view: 'dummy', tap: async (item) => {
+      if (item === 'ripper') {
+        if (!g.flag('a.sewn')) return say('sew.whereCut');
+        g.deselect();
+        g.take('ripper');
+        g.set('a.hemOpen');
+        g.audio.sfx('rub');
+        await sleep(600);
+        await say('ada.hemOpen');
+        g.audio.sfx('paper');
+        await g.ui.doc(t('ada.hemNoteTitle'), t('ada.hemNote'), true);
+        g.note('note.ada.trunk');
+        return;
+      }
       if (item) return g.nope();
-      return say('ada.dummy');
+      if (g.flag('a.hemOpen')) {
+        g.audio.sfx('paper');
+        return g.ui.doc(t('ada.hemNoteTitle'), t('ada.hemNote'), true);
+      }
+      await say('ada.dummy');
+      return say(g.flag('a.sewn') ? 'ada.dummyHem' : 'ada.dummyHem0');
     } },
     { id: 'suitcase', obj: hSuitcase, tap: async (item) => {
       if (item) return g.nope();
@@ -282,9 +311,10 @@ export function createAdaSoffitta(g: Game): Location {
     },
     hint: () => {
       if (g.flag('glasses')) return 'hint.ada.leave';
+      if (!g.flag('a.sewn')) return 'hint.ada.sewFirst';
+      if (!g.flag('a.hemOpen')) return 'hint.ada.hem';
       if (!clear()) return 'hint.ada.crates';
       if (!trunkOpen()) return 'hint.ada.code';
-      if (sewRoute()) return 'hint.ada.sewDoor';
       return 'hint.ada.take';
     },
     debug: { crates, clear, trunkPos },

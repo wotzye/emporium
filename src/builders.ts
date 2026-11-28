@@ -892,12 +892,13 @@ export function uvInk(lines: string[], w: number, h: number, o: { size?: number;
     }
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.shadowColor = 'rgba(190,150,255,0.9)';
-    c.shadowBlur = 10;
-    c.fillStyle = '#efe6ff';
+    // pencil and chalk on the wall, pale enough to read in the dark
+    c.shadowColor = 'rgba(0,0,0,0.7)';
+    c.shadowBlur = 4;
+    c.fillStyle = '#ddd6c6';
     lines.forEach((l, i) => c.fillText(l, W / 2, H / 2 + (i - (lines.length - 1) / 2) * size * 1.2));
   });
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, depthWrite: false, toneMapped: false }));
   m.userData.uvInk = true;
   // tappable once it shows (the game gives it a hotspot), see-through for taps otherwise
   m.userData.hit = true;

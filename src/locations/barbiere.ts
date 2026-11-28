@@ -456,6 +456,7 @@ export function createBarbiere(g: Game): Location {
   scene.add(rbox(0.1, 2.15, 1.05, 0.02, woodDark, -2.97, 1.075, -1.0));
   scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.0), new THREE.MeshBasicMaterial({ color: 0x000000 }), -2.99, 1.0, -1.0, false).rotateY(Math.PI / 2));
   const cabDoorPivot = new THREE.Group();
+  cabDoorPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   cabDoorPivot.position.set(-2.93, 0, -1.42);
   cabDoorPivot.add(rbox(0.05, 2.0, 0.84, 0.01, woodMid, 0.0, 1.0, 0.42));
   for (const y of [0.55, 1.45]) cabDoorPivot.add(rbox(0.02, 0.6, 0.6, 0.02, woodDark, 0.03, y, 0.42));

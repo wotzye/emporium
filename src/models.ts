@@ -100,6 +100,11 @@ const FILES = {
   barberPole: 'models/barberPole.glb',
   pocketWatch: 'models/pocketWatch.glb',
   bellowsCam: 'models/bellowsCam.glb',
+  metronome: 'models/metronome.glb',
+  antiqueClock: 'models/antiqueClock.glb',
+  stethoscope: 'models/stethoscope.glb',
+  musicBoxM: 'models/musicBoxM.glb',
+  wallClockM: 'models/wallClockM.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;

@@ -92,7 +92,8 @@ export function createAdaGiardino(g: Game): Location {
   });
   const fwGlass = mesh(new THREE.PlaneGeometry(fwW, fwH), new THREE.MeshStandardMaterial({ map: fwTex, roughness: 0.15, metalness: 0.4 }), fwX, fwH / 2, -D / 2 + 0.02, false);
   scene.add(fwGlass);
-  const fwPivot = new THREE.Group(); // the right leaf opens when you go in
+  const fwPivot = new THREE.Group();
+  fwPivot.userData.passThrough = true; // an open door must not stand between you and the doorway // the right leaf opens when you go in
   fwPivot.position.set(fwX + fwW / 2, 0, -D / 2 + 0.04);
   scene.add(fwPivot);
   scene.add(rbox(fwW + 0.4, 0.08, 0.35, 0.01, stone, fwX, 0.04, -D / 2 + 0.17));
@@ -173,6 +174,7 @@ export function createAdaGiardino(g: Game): Location {
   shed.add(shedLight);
   // the door: hinged on the left, padlocked
   const sDoor = new THREE.Group();
+  sDoor.userData.passThrough = true;
   sDoor.position.set(-SW / 2 + 0.4, 0, SD / 2 + 0.02);
   sDoor.add(rbox(0.75, SH - 0.05, 0.04, 0.01, woodShed, 0.375, SH / 2, 0));
   const shedLock = new THREE.Group();
@@ -202,7 +204,7 @@ export function createAdaGiardino(g: Game): Location {
   tin.position.set(-0.3, 0.75, -SD / 2 + 0.2);
   shed.add(rbox(0.7, 0.04, 0.3, 0.005, woodDark, -0.2, 0.73, -SD / 2 + 0.17));
   shed.add(tin);
-  const gearTaken = () => !!g.flag('a.gear');
+  const gearTaken = () => true; // the clockmaker's big wheel is no longer lent out: the tin only holds screws
   const planter = prop('roundTable', { height: 0.6 });
   if (planter) {
     planter.position.set(0.3, 0, 1.3);

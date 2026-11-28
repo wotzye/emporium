@@ -1,16 +1,18 @@
 import * as THREE from 'three';
-import { Game, Location, Hotspot } from '../game';
+import { Game, Location, Hotspot, Interaction } from '../game';
 import { room, rbox, mesh, dust, textPlane, hitBox, bulb, lightCone, canvasTex, noise, woodMaterial, plasterMaterial, tileMaterial, mat, cyl } from '../builders';
 import { prop } from '../models';
 import { t } from '../i18n';
 import { wallClock, grandfatherClock, brassMat } from './ora_common';
 
 /**
- * L'Ora Ferma — the shop. Every clock on every wall says 3:17.
- * A mantel clock on the counter won't go: shake it (the phone) and it spits out the workshop key.
- * The stairs to the flat upstairs are behind a door with a 4-digit lock.
+ * L'Ora Ferma — the shop. Every clock is stopped: Ottavio couldn't bear to hear them. Under the
+ * silence, faint, a heartbeat. The mantel clock rattles: shake it (the phone) for the workshop key.
+ * The repair tickets tell what he did. The metronome on the counter has lost its weight (it's in
+ * the workshop drawer): put it back, set it going, listen to the heart with the stethoscope and
+ * slide the weight until the metronome beats with it. In time, its base springs open: the key to
+ * the silent room upstairs. And every clock in the shop starts again... which he can't bear.
  */
-export const CLARA_CODE = '0912';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function createOraBottega(g: Game): Location {
@@ -81,11 +83,68 @@ export function createOraBottega(g: Game): Location {
     w.group.position.set(-1.3 + i * 0.17, 1.0, -0.6 + (i % 2) * 0.12);
     scene.add(w.group);
   }
+  // ---------------- the metronome ----------------
+  const metro = new THREE.Group();
+  const mBase = prop('metronome', { height: 0.3, only: /tronome|Markings/ });
+  if (mBase) metro.add(mBase);
+  else metro.add(rbox(0.12, 0.24, 0.1, 0.01, woodDark, 0, 0.12, 0));
+  const rod = new THREE.Group();
+  rod.position.set(0, 0.05, 0.035);
+  const ROD = 0.22;
+  rod.add(rbox(0.006, ROD, 0.004, 0.001, mat(0xc9c2b0, { metalness: 0.8, roughness: 0.3 }), 0, ROD / 2, 0));
+  const weight = new THREE.Group();
+  weight.add(rbox(0.03, 0.022, 0.012, 0.004, brass, 0, 0, 0));
+  const hWeight = hitBox(0.09, 0.07, 0.06, 0, 0, 0, 'weight');
+  weight.add(hWeight);
+  const W_LOW = 0.05, W_TOP = 0.2;
+  const HEART_BPM = 80; // the recording of the heart
+  const hasWeight = () => !!g.flag('o.mweightOn');
+  const running = () => !!g.flag('o.metroRun');
+  const synced = () => !!g.flag('o.metro');
+  const clocksGo = () => !!g.flag('o.metro') || !!g.flag('o.restarted');
+  let wy = synced() ? W_TOP - ((HEART_BPM - 40) / 168) * (W_TOP - W_LOW) : Number(g.flag('o.metroY') ?? W_LOW);
+  weight.position.y = wy;
+  weight.visible = hasWeight();
+  rod.add(weight);
+  metro.add(rod);
+  // the whole metronome is the handle: drag up or down anywhere on it to slide the weight
+  // (catching a weight that swings back and forth with a fingertip is no fun)
+  const grab = hitBox(0.16, 0.32, 0.14, 0, 0.16, 0.02, 'metroGrab');
+  metro.add(grab);
+  let grabY0 = 0, wy0 = 0;
+  metro.position.set(0.15, 0.99, -0.72);
+  scene.add(metro);
+  let swing = 0, lastSide = 0, dragging = false, syncT = 0, solving = false, lastSyncMs = 0;
+  // weight low: fast (208); at the top: slow (40)
+  const tempo = () => 40 + ((W_TOP - wy) / (W_TOP - W_LOW)) * 168;
+  const hearts = () => {
+    if (clocksGo()) return g.audio.setLoop('heart', 0, { tau: 0.6 });
+    g.audio.setLoop('heart', g.flag('o.stethOn') ? 0.8 : 0.16);
+  };
+  const solved = async () => {
+    solving = true;
+    g.set('o.metro');
+    g.audio.setLoop('heart', 0, { tau: 0.3 });
+    g.audio.sfx('clunk');
+    await sleep(500);
+    await g.say([{ who: 'diego', key: 'ora.metroSync1' }]);
+    g.give('roomkey');
+    g.audio.sfx('pickup');
+    await say('ora.metroKey');
+    // and every clock in the shop starts again
+    g.audio.setLoop('amb_clocks', 0.35, { tau: 0.3 });
+    g.audio.rec('towerclock', { gain: 0.5 });
+    g.engine.shake(0.02, 0.6);
+    await sleep(1800);
+    await g.say([{ who: 'ottavio', key: 'ora.voiceRest' }]);
+    solving = false;
+  };
+
   // repair tickets on a spike
   const spike = new THREE.Group();
   spike.add(cyl(0.004, 0.004, 0.14, brass, 0, 0.07, 0, 6));
   for (let i = 0; i < 6; i++) spike.add(mesh(new THREE.PlaneGeometry(0.08, 0.1), mat(0x8a8474, { side: THREE.DoubleSide }), 0, 0.02 + i * 0.012, 0, false).rotateX(-Math.PI / 2).rotateZ(i * 0.6));
-  spike.position.set(0.25, 0.99, -0.45);
+  spike.position.set(0.42, 0.99, -0.42);
   scene.add(spike);
   // the mantel clock that won't go
   const mantel = new THREE.Group();
@@ -119,6 +178,7 @@ export function createOraBottega(g: Game): Location {
   const labDoorX = -1.6;
   scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.05), new THREE.MeshBasicMaterial({ color: 0x060606 }), labDoorX, 1.025, -D / 2 + 0.012, false));
   const labPivot = new THREE.Group();
+  labPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   labPivot.position.set(labDoorX - 0.42, 0, -D / 2 + 0.04);
   labPivot.add(rbox(0.84, 2.04, 0.05, 0.01, woodMid, 0.42, 1.02, 0));
   labPivot.add(textPlane([t('ora.labDoor')], 0.4, 0.1, { bg: '#d4ccb8', size: 30, px: 48 }).translateX(0.42).translateY(1.6).translateZ(0.03));
@@ -130,6 +190,7 @@ export function createOraBottega(g: Game): Location {
   const stairZ = 0.6;
   scene.add(mesh(new THREE.PlaneGeometry(0.85, 2.05), new THREE.MeshBasicMaterial({ color: 0x060606 }), W / 2 - 0.012, 1.025, stairZ, false).rotateY(-Math.PI / 2));
   const stairPivot = new THREE.Group();
+  stairPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   stairPivot.position.set(W / 2 - 0.04, 0, stairZ + 0.42);
   stairPivot.add(rbox(0.05, 2.04, 0.84, 0.01, woodDark, 0, 1.02, -0.42));
   stairPivot.add(rbox(0.04, 0.12, 0.08, 0.01, brass, -0.04, 1.05, -0.75));
@@ -138,7 +199,10 @@ export function createOraBottega(g: Game): Location {
 
   // ---------------- hotspots ----------------
   const hMantel = hitBox(0.45, 0.4, 0.3, 0.75, 1.15, -0.6, 'mantel');
-  const hTickets = hitBox(0.25, 0.25, 0.25, 0.25, 1.08, -0.45, 'tickets');
+  const hTickets = hitBox(0.22, 0.25, 0.22, 0.42, 1.08, -0.42, 'tickets');
+  const hMetro = hitBox(0.2, 0.34, 0.18, 0.15, 1.15, -0.72, 'metronome');
+  hMetro.userData.passThrough = true;
+  scene.add(hMetro);
   // an envelope waiting to be collected: «Morandi — pendola». Inside, the minute hand of the barber's cellar clock.
   const env = textPlane([t('ora.envelope')], 0.2, 0.11, { bg: '#d9cfb6', size: 18, px: 96, font: "'Bradley Hand', 'Segoe Print', cursive" });
   env.rotation.x = -Math.PI / 2;
@@ -193,7 +257,38 @@ export function createOraBottega(g: Game): Location {
     { id: 'tickets', obj: hTickets, view: 'counter', tap: async (item) => {
       if (item) return g.nope();
       g.audio.sfx('paper');
-      return g.ui.doc(t('ora.ticketsTitle'), t('ora.tickets'), true);
+      await g.ui.doc(t('ora.ticketsTitle'), t('ora.tickets'), true);
+      if (!g.flag('o.tickets')) {
+        g.set('o.tickets');
+        g.note('note.hearts');
+        await g.say([{ who: 'diego', key: 'ora.ticketsAfter1' }, { who: 'diego', key: 'ora.ticketsAfter2' }]);
+      }
+    } },
+    { id: 'metronome', obj: hMetro, view: 'counter', tap: async (item) => {
+      if (item === 'mweight') {
+        g.deselect();
+        g.take('mweight');
+        g.set('o.mweightOn');
+        weight.visible = true;
+        g.audio.sfx('clunk');
+        return say('ora.metroWeight');
+      }
+      if (item === 'stetho') {
+        g.deselect();
+        g.set('o.stethOn');
+        hearts();
+        return say('ora.metroSteth');
+      }
+      if (item) return g.nope();
+      if (synced()) return say('ora.metronomeAfter');
+      if (!hasWeight()) return say('ora.metroNoWeight');
+      if (!running()) {
+        g.set('o.metroRun');
+        g.audio.sfx('click');
+        await say('ora.metroStart');
+      }
+      await say('ora.metronomeHow');
+      if (!g.flag('o.stethOn')) return say('ora.metroFaint');
     } },
     { id: 'case', obj: hCase, view: 'counter', lowPriority: true, tap: async (item) => {
       if (item) return g.nope();
@@ -235,9 +330,13 @@ export function createOraBottega(g: Game): Location {
         g.audio.steps(6, 0.4, false);
         return g.go('ora_camera');
       }
-      if (item) return g.nope();
-      const ok = await g.ui.keypad(t('ora.stairsLock'), 4, (c) => c === CLARA_CODE, () => g.audio.sfx('click'));
-      if (!ok) return;
+      if (item !== 'roomkey') {
+        if (item) return g.nope();
+        g.audio.sfx('wrong');
+        return say('ora.stairsLocked');
+      }
+      g.deselect();
+      g.take('roomkey');
       g.set('o.stairs');
       g.audio.sfx('unlock');
       g.audio.sfx('creak');
@@ -253,6 +352,40 @@ export function createOraBottega(g: Game): Location {
     } },
   ];
 
+  const interactions: Interaction[] = [
+    {
+      kind: 'drag',
+      obj: grab,
+      plane: new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.72 - 0.02),
+      when: () => g.viewName === 'counter' && hasWeight() && !synced(),
+      onStart: () => {
+        dragging = true;
+        grabY0 = 0.16;
+        wy0 = wy;
+        g.audio.sfx('click');
+      },
+      onMove: () => {
+        // a finger's travel moves the weight a little less: fine control
+        // the pointer moves the grab box; the weight follows its height change since the touch began
+        wy = THREE.MathUtils.clamp(wy0 + (grab.position.y - grabY0) * 0.6, W_LOW, W_TOP);
+        weight.position.set(0, wy, 0);
+      },
+      onEnd: async () => {
+        dragging = false;
+        grab.position.set(0, 0.16, 0.02);
+        // close enough and the weight settles on the notch: a real metronome clicks into its steps
+        if (Math.abs(tempo() - HEART_BPM) <= 14) wy = W_TOP - ((HEART_BPM - 40) / 168) * (W_TOP - W_LOW);
+        weight.position.set(0, wy, 0);
+        g.set('o.metroY', wy);
+        syncT = 0;
+        if (!running()) {
+          g.set('o.metroRun');
+          await say('ora.metroStart');
+        }
+      },
+    },
+  ];
+
   // after the restart, the clocks all tell the real time and tick
   const now = new Date();
   let tickAcc = 0;
@@ -261,7 +394,7 @@ export function createOraBottega(g: Game): Location {
     nameKey: 'place.oraBottega',
     next: ['ora_laboratorio', 'ora_camera'],
     scene,
-    drone: 'emporio',
+    drone: 'orologi',
     startView: 'main',
     views: {
       main: { pos: [1.4, 1.65, 1.9], look: [-0.6, 1.2, -1.6], yaw: 60, pitch: 18 },
@@ -270,9 +403,30 @@ export function createOraBottega(g: Game): Location {
       stairs: { pos: [1.0, 1.6, 0.9], look: [W / 2, 1.2, stairZ], parent: 'main', yaw: 20, pitch: 12 },
     },
     hotspots,
+    interactions,
     update: (dt, time) => {
       motes.update(dt, time);
-      const restarted = !!g.flag('o.restarted');
+      // the metronome swings (and ticks at each end) until it is stopped
+      const target = running() && hasWeight() && !dragging ? 0.42 : 0;
+      // in time with the heart (which you can only really hear with the stethoscope) for a few beats
+      if (target && !synced() && !solving && g.flag('o.stethOn')) {
+        // by the wall clock, not the frame clock: a struggling phone must not make it take longer
+        const nowMs = performance.now();
+        const real = lastSyncMs ? Math.min(0.5, (nowMs - lastSyncMs) / 1000) : 0;
+        lastSyncMs = nowMs;
+        syncT = Math.abs(tempo() - HEART_BPM) <= 3 ? syncT + real : 0;
+        if (syncT > 3.5) void solved();
+      }
+      if (target) {
+        swing += dt * Math.PI * (tempo() / 60);
+        rod.rotation.z = Math.sin(swing) * target;
+        const side = Math.sign(Math.sin(swing));
+        if (side !== lastSide) {
+          lastSide = side;
+          g.audio.sfx('tick');
+        }
+      } else rod.rotation.z *= 0.85;
+      const restarted = clocksGo();
       if (restarted) {
         const m = now.getMinutes() + time / 60;
         clocks.forEach((c, i) => c.setTime(now.getHours(), m + i * 0));
@@ -285,7 +439,14 @@ export function createOraBottega(g: Game): Location {
         if (mantelGo()) mc.setTime(3, 17 + (time % 60) / 60);
       }
     },
+    leave: () => {
+      g.audio.setLoop('heart', 0);
+      g.audio.setLoop('amb_clocks', 0);
+    },
     enter: async () => {
+      hearts();
+      // once the metronome beats in time, every clock in the shop ticks
+      g.audio.setLoop('amb_clocks', clocksGo() ? 0.3 : 0);
       if (!g.flag('o.entered')) {
         g.set('o.entered');
         await sleep(300);
@@ -296,9 +457,14 @@ export function createOraBottega(g: Game): Location {
       if (g.has('watch')) return 'hint.ora.leave';
       if (!mantelGo()) return 'hint.ora.shake';
       if (!g.flag('o.labOpen')) return g.has('labkey') ? 'hint.ora.labdoor' : 'hint.ora.key';
-      if (!g.flag('o.stairs')) return g.flag('o.gears') ? 'hint.ora.code' : 'hint.ora.lab';
+      if (!g.flag('o.stairs')) {
+        if (g.has('roomkey')) return 'hint.ora.stairs';
+        if (!hasWeight()) return g.has('mweight') ? 'hint.ora.weight' : 'hint.ora.lab';
+        if (!g.flag('o.stethOn')) return g.has('stetho') ? 'hint.ora.stethUse' : 'hint.ora.stethGet';
+        return 'hint.ora.metronome';
+      }
       return 'hint.ora.upstairs';
     },
-    debug: { clocks, mantel },
+    debug: { clocks, mantel, weight, metro, state: () => ({ dragging, syncT, solving, tempo: tempo(), wy, running: running(), w: hasWeight() }) },
   };
 }

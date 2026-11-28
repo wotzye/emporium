@@ -8,8 +8,10 @@ import { gear, brassMat, steelMat, wallClock } from './ora_common';
 
 /**
  * The workshop. On the bench, an open movement with three empty arbors between the spring
- * barrel and the hand pinion. Four loose gears in a tray. The engraved plate that says which goes
- * where is under a crust of dust: blow on it. Mesh the train and the drawer under the bench opens.
+ * barrel and the hand pinion; four loose gears in a tray; the engraved plate says P · G · M.
+ * Mesh the train, then wind the barrel with a finger: it doesn't tick, it beats, like a heart,
+ * and the drawer under the bench springs open. Inside: the metronome's lost weight, and the
+ * tower's winding key. On the bench, Ottavio's stethoscope: a clockmaker's, for listening to hearts.
  */
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // radii: the right order is small, large, medium (P · G · M)
@@ -47,7 +49,9 @@ export function createOraLaboratorio(g: Game): Location {
   drawer.add(cyl(0.012, 0.012, 0.05, brass, 0, 0, 0.34, 8).rotateX(Math.PI / 2));
   drawer.position.set(0.5, benchTop - 0.14, benchZ + 0.05);
   scene.add(drawer);
-  const drawerOpen = () => !!g.flag('o.gears');
+  const drawerOpen = () => !!g.flag('o.train');
+  const placed = () => !!g.flag('o.gears');
+  const trainRuns = () => !!g.flag('o.train');
   if (drawerOpen()) drawer.position.z = benchZ + 0.4;
   // the photo of Clara and the winding key lie inside
   const claraTex = oldPhoto('clara', 320, 240, (c, w, h) => {
@@ -72,8 +76,13 @@ export function createOraLaboratorio(g: Game): Location {
       c.fill();
     }
   }, { age: 0.3, border: false });
-  const photo = mesh(new THREE.PlaneGeometry(0.16, 0.12), new THREE.MeshStandardMaterial({ map: claraTex, roughness: 0.9 }), -0.1, 0.075, 0, false);
-  photo.rotation.x = -Math.PI / 2;
+  void claraTex;
+  // the metronome's sliding weight, wrapped in a rag with a tag
+  const photo = new THREE.Group();
+  photo.add(rbox(0.05, 0.035, 0.02, 0.006, brass, 0, 0, 0));
+  photo.add(mesh(new THREE.PlaneGeometry(0.05, 0.03), mat(0xe2dccb, { side: THREE.DoubleSide }), 0.045, 0.003, 0.02, false).rotateX(-Math.PI / 2));
+  photo.position.set(-0.1, 0.075, 0);
+  photo.scale.setScalar(1.6);
   drawer.add(photo);
   const wkey = new THREE.Group();
   wkey.add(cyl(0.008, 0.008, 0.1, steel, 0, 0, 0, 6).rotateX(Math.PI / 2));
@@ -108,6 +117,8 @@ export function createOraLaboratorio(g: Game): Location {
   const barrelR = 0.05, pinionR = 0.04;
   const xs = [0, 0.085, 0.19, 0.31, 0.4].map((d) => plateX - 0.02 + d);
   const barrel = gear(barrelR, 22, brass);
+  // a fingertip-sized handle on the barrel, to turn it
+  barrel.add(hitBox(0.16, 0.06, 0.16, 0, 0.02, 0, 'barrel'));
   barrel.position.set(xs[0], y0, plateZ);
   scene.add(barrel);
   const pinion = gear(pinionR, 16, steel);
@@ -124,7 +135,7 @@ export function createOraLaboratorio(g: Game): Location {
 
   // the engraved instruction plate, under dust
   const plateCv = liveCanvas(256, 96);
-  let dustK = g.flag('o.blown') ? 0 : 1;
+  let dustK = 0; // the plate is clean now: nothing to blow away
   const drawPlate = () => {
     const c = plateCv.ctx;
     c.fillStyle = '#6e5c36';
@@ -162,7 +173,11 @@ export function createOraLaboratorio(g: Game): Location {
   scene.add(rbox(0.32, 0.012, 0.05, 0.004, brass, plateX + 0.2, benchTop + 0.006, plateZ2 - 0.02));
 
   // the loose gears, in a tray at the right
-  const trayX = 0.75, trayZ = benchZ + 0.12;
+  // the tray sits close to the movement, in the light
+  const trayX = 0.55, trayZ = benchZ + 0.2;
+  const trayLamp = new THREE.PointLight(0xffe8c4, 1.6, 1.2, 1.5);
+  trayLamp.position.set(trayX, benchTop + 0.5, trayZ + 0.1);
+  scene.add(trayLamp);
   scene.add(rbox(0.36, 0.02, 0.24, 0.005, woodDark, trayX, benchTop + 0.01, trayZ));
   type Loose = { id: GearId; o: THREE.Group; home: THREE.Vector3; on: number };
   const startPos: Record<GearId, [number, number]> = { P: [-0.1, -0.06], G: [0.09, 0.03], M: [-0.07, 0.07], X: [0.1, -0.08] };
@@ -182,14 +197,14 @@ export function createOraLaboratorio(g: Game): Location {
       l.o.position.copy(arbors[a]);
     }
   }
-  if (drawerOpen()) RIGHT.forEach((id, i) => {
+  if (placed()) RIGHT.forEach((id, i) => {
     const l = loose.find((q) => q.id === id)!;
     l.on = i;
     l.o.position.copy(arbors[i]);
   });
   const save = () => g.set('o.gearPos', JSON.stringify(Object.fromEntries(loose.map((l) => [l.id, l.on]))));
   // the big wheel is not in the tray: Ottavio lent it to Ettore, at the Villino (it's in the shed there)
-  const haveBig = () => !!g.flag('o.gearIn') || drawerOpen() || (saved.G ?? -1) >= 0;
+  const haveBig = () => true;
   const bigG = loose.find((l) => l.id === 'G')!;
   bigG.o.visible = haveBig();
   const lentTag = textPlane([t('ora.lentTag')], 0.09, 0.04, { bg: '#e2dccb', size: 18, px: 64 });
@@ -197,7 +212,21 @@ export function createOraLaboratorio(g: Game): Location {
   lentTag.position.set(trayX + startPos.G[0], benchTop + 0.022, trayZ + startPos.G[1]);
   lentTag.visible = !haveBig();
   scene.add(lentTag);
-  let spinning = drawerOpen();
+  let spinning = trainRuns();
+  let windAcc = 0;
+
+  // Ottavio's stethoscope, on the bench to the left of the movement
+  const steth = prop('stethoscope', { height: 0.22, rot: [-Math.PI / 2, 0, 0] });
+  const SX = -0.12, SZ = benchZ + 0.33;
+  const stethObj = steth ?? cyl(0.03, 0.03, 0.01, steel, SX, benchTop + 0.01, SZ, 16);
+  if (steth) {
+    steth.position.set(SX, benchTop + 0.005, SZ);
+    steth.rotation.y = 0.5;
+  }
+  scene.add(stethObj);
+  stethObj.visible = !g.flag('o.stethTaken');
+  const hSteth = hitBox(0.26, 0.12, 0.22, SX, benchTop + 0.05, SZ, 'steth');
+  scene.add(hSteth);
 
   // shelves of parts, a cabinet of drawers, clocks in pieces
   for (let r = 0; r < 3; r++) scene.add(rbox(1.4, 0.03, 0.3, 0.005, woodDark, W / 2 - 0.85, 1.3 + r * 0.42, -D / 2 + 0.18));
@@ -234,10 +263,18 @@ export function createOraLaboratorio(g: Game): Location {
 
   const solved = async () => {
     g.set('o.gears');
+    g.audio.sfx('clunk');
+    await sleep(300);
+    await say('ora.movement2');
+  };
+  const heartbeat = () => g.audio.setLoop('heart', trainRuns() ? 0.12 : 0, { rate: 0.75 });
+  const runTrain = async () => {
+    g.set('o.train');
     spinning = true;
-    g.audio.rec('windup', { gain: 0.7 });
-    g.audio.sfx('tick');
-    await sleep(1400);
+    g.audio.rec('windup', { gain: 0.6 });
+    heartbeat();
+    await sleep(600);
+    await say('ora.trainRuns');
     await g.view('drawer');
     g.audio.sfx('drawer');
     for (let i = 0; i <= 20; i++) {
@@ -247,8 +284,9 @@ export function createOraLaboratorio(g: Game): Location {
     await say('ora.drawerOpen');
   };
 
+
   const hotspots: Hotspot[] = [
-    { id: 'tray', obj: hTray, view: 'bench', when: () => !haveBig(), tap: async (item) => {
+    { id: 'tray', obj: hTray, view: 'bench', when: () => false, tap: async (item) => {
       if (item === 'gear') {
         g.deselect();
         g.take('gear');
@@ -272,22 +310,20 @@ export function createOraLaboratorio(g: Game): Location {
         return say('ora.gearBack');
       }
       if (item) return g.nope();
-      if (drawerOpen()) return say('ora.movementAfter');
-      return say(g.flag('o.blown') ? 'ora.movement2' : 'ora.movement');
+      if (trainRuns()) return say('ora.movementAfter');
+      if (placed()) return say('ora.windTrain');
+      return say('ora.movement');
     } },
-    { id: 'plate', obj: hPlate, view: 'bench', tap: async (item) => {
+    { id: 'steth', obj: hSteth, view: 'bench', when: () => !g.flag('o.stethTaken'), tap: async (item) => {
       if (item) return g.nope();
-      if (g.flag('o.blown')) return say('ora.plateRead');
-      await say('ora.plateDusty');
-      const ok = await g.physical('blow', 'ora.blowText');
-      if (!ok) return;
-      g.set('o.blown');
-      g.audio.sfx('steam');
-      for (let i = 20; i >= 0; i--) {
-        dustK = i / 20;
-        drawPlate();
-        await sleep(40);
-      }
+      stethObj.visible = false;
+      g.set('o.stethTaken');
+      g.give('stetho');
+      g.audio.sfx('pickup');
+      return say('ora.steth');
+    } },
+    { id: 'plate', obj: hPlate, view: 'bench', lowPriority: true, tap: async (item) => {
+      if (item) return g.nope();
       g.note('note.gears');
       return say('ora.plateRead');
     } },
@@ -295,9 +331,9 @@ export function createOraLaboratorio(g: Game): Location {
       if (item) return g.nope();
       photo.visible = false;
       g.set('o.photo');
-      g.audio.sfx('paper');
-      await g.ui.doc(t('ora.photoTitle'), t('ora.photoBack'), true);
-      g.note('note.clara');
+      g.give('mweight');
+      g.audio.sfx('pickup');
+      await say('ora.mweight');
     } },
     { id: 'drawerKey', obj: hWkey, view: 'drawer', when: () => drawerOpen() && wkey.visible, tap: async (item) => {
       if (item) return g.nope();
@@ -313,9 +349,9 @@ export function createOraLaboratorio(g: Game): Location {
       if (photo.visible) {
         photo.visible = false;
         g.set('o.photo');
-        g.audio.sfx('paper');
-        await g.ui.doc(t('ora.photoTitle'), t('ora.photoBack'), true);
-        g.note('note.clara');
+        g.give('mweight');
+        g.audio.sfx('pickup');
+        await say('ora.mweight');
         return;
       }
       if (wkey.visible) {
@@ -347,7 +383,7 @@ export function createOraLaboratorio(g: Game): Location {
     kind: 'drag' as const,
     obj: l.o,
     plane,
-    when: () => g.viewName === 'bench' && !drawerOpen() && (l.id !== 'G' || haveBig()),
+    when: () => g.viewName === 'bench' && !placed(),
     onStart: () => {
       g.audio.sfx('click');
       l.on = -1;
@@ -386,17 +422,39 @@ export function createOraLaboratorio(g: Game): Location {
     },
   }));
 
+  // wind the barrel with a finger: the train turns with it, and after two turns it runs by itself
+  interactions.push({
+    kind: 'dial',
+    obj: barrel,
+    center: barrel.position.clone(),
+    when: () => g.viewName === 'bench' && placed() && !trainRuns(),
+    onTurn: (d) => {
+      windAcc += Math.abs(d);
+      barrel.rotation.y -= d;
+      loose.forEach((l) => {
+        if (l.on < 0) return;
+        const dir = l.on % 2 === 0 ? 1 : -1;
+        l.o.rotation.y += dir * d * (barrelR / R[l.id]);
+      });
+      pinion.rotation.y -= d * (barrelR / pinionR);
+      if (Math.floor(windAcc / 1.2) !== Math.floor((windAcc - Math.abs(d)) / 1.2)) g.audio.sfx('tick');
+    },
+    onEnd: async () => {
+      if (windAcc >= Math.PI * 4 && !trainRuns()) await runTrain();
+    },
+  });
+
   return {
     id: 'ora_laboratorio',
     nameKey: 'place.oraLaboratorio',
     scene,
-    drone: 'barbiere',
+    drone: 'orologi',
     startView: 'main',
     exitTo: 'ora_bottega',
     views: {
       main: { pos: [0.9, 1.6, 1.25], look: [-0.2, 0.95, -1.1], yaw: 60, pitch: 18 },
       drawer: { pos: [0.5, benchTop + 0.4, benchZ + 1.05], look: [0.5, benchTop - 0.16, benchZ + 0.35], parent: 'main', yaw: 15, pitch: 10, fov: 55 },
-      bench: { pos: [0.25, 1.48, benchZ + 0.62], look: [0.15, benchTop, benchZ + 0.02], parent: 'main', yaw: 15, pitch: 10, fov: 52 },
+      bench: { pos: [0.2, 1.5, benchZ + 0.72], look: [0.2, benchTop, benchZ + 0.08], parent: 'main', yaw: 15, pitch: 10, fov: 58 },
     },
     hotspots,
     interactions,
@@ -414,7 +472,9 @@ export function createOraLaboratorio(g: Game): Location {
         pinion.rotation.y = w * (barrelR / pinionR);
       }
     },
+    leave: () => g.audio.setLoop('heart', 0),
     enter: async () => {
+      heartbeat();
       if (!g.flag('o.labEntered')) {
         g.set('o.labEntered');
         await sleep(300);
@@ -422,12 +482,12 @@ export function createOraLaboratorio(g: Game): Location {
       }
     },
     hint: () => {
-      if (!g.flag('o.blown')) return 'hint.ora.blow';
-      if (!drawerOpen() && !haveBig()) return g.has('gear') ? 'hint.ora.gearBack' : 'hint.ora.needGear';
-      if (!drawerOpen()) return 'hint.ora.gears';
+      if (!placed()) return 'hint.ora.gears';
+      if (!trainRuns()) return 'hint.ora.windTrain';
       if (!g.flag('o.photo') || !g.flag('o.windKey')) return 'hint.ora.drawer';
-      return 'hint.ora.code';
+      if (!g.flag('o.stethTaken')) return 'hint.ora.stethGet';
+      return 'hint.ora.weight';
     },
-    debug: { loose, arbors, benchTop },
+    debug: { loose, arbors, benchTop, barrel },
   };
 }

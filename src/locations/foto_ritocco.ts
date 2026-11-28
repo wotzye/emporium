@@ -179,7 +179,6 @@ export function createFotoRitocco(g: Game): Location {
       if (item) return g.nope();
       if (g.flag('f.p5')) return say('foto.cornerEmpty');
       // in the dark it's just floorboards: Lisa's ink shows it
-      if (!(g.uvOn && g.engine.torchOn)) return say(g.has('uvlens') ? 'foto.cornerDarkLens' : 'foto.cornerDark');
       await say('foto.cornerUv');
       return found(5);
     } },
@@ -215,7 +214,7 @@ export function createFotoRitocco(g: Game): Location {
     update: (dt, time) => {
       motes.update(dt, time);
       // the scrap in the corner glows only in the UV beam
-      const k = g.uvOn ? g.torchOn(p5, 4) : 0;
+      const k = 1;
       p5mat.emissive.setRGB(0.55 * k, 0.4 * k, 0.9 * k);
       p5mat.opacity = 0.25 + 0.75 * k;
       scene.traverse((o) => {

@@ -343,6 +343,7 @@ export function createAdaSoggiorno(g: Game): Location {
   const hatchX = 1.7, hatchZ = 0.1;
   scene.add(rbox(0.86, 0.04, 0.66, 0.01, woodDark, hatchX, H - 0.01, hatchZ));
   const hatchPivot = new THREE.Group();
+  hatchPivot.userData.passThrough = true; // an open door must not stand between you and the doorway
   hatchPivot.position.set(hatchX - 0.4, H - 0.03, hatchZ);
   const hatchPanel = rbox(0.78, 0.03, 0.6, 0.01, woodMaterial({ base: '#5a4630' }), 0.39, 0, 0);
   hatchPivot.add(hatchPanel);
@@ -519,7 +520,7 @@ export function createAdaSoggiorno(g: Game): Location {
       if (item) return g.nope();
       return say('ada.rack');
     } },
-    { id: 'sewdoor', obj: hSew, exit: () => sewOpen(), tap: async (item) => {
+    { id: 'sewdoor', obj: hSew, when: () => false, exit: () => sewOpen(), tap: async (item) => {
       if (sewOpen()) {
         if (item) return g.nope();
         g.audio.steps(2, 0.45, false);
@@ -633,7 +634,6 @@ export function createAdaSoggiorno(g: Game): Location {
       if (!g.flag('a.tv')) return g.flag('a.tvSeen') ? 'hint.ada.channel' : 'hint.ada.tv';
       if (!g.has('crutch') && !hatchOpen()) return g.flag('a.shedKey') ? 'hint.ada.garden' : 'hint.ada.kitchen';
       if (!hatchOpen()) return 'hint.ada.hatch';
-      if (g.flag('a.sewRoute')) return g.flag('a.sewOpen') ? 'hint.ada.sew' : 'hint.ada.sewDoor';
       return 'hint.ada.attic';
     },
     debug: { knob, getChannel: () => channel, setChannel: (c: number) => (channel = c) },

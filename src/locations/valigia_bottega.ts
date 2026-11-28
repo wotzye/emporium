@@ -151,7 +151,7 @@ export function createValigiaBottega(g: Game): Location {
   const hTrunk = hitBox(1.1, 0.7, 0.7, W / 2 - 0.5, 0.35, 1.4, 'trunk');
   scene.add(hBook, hCase, hShelves, hApron, hTrunk);
   const say = (k: string) => g.say(k);
-  const lit = () => g.uvOn && g.engine.torchOn;
+  const lit = () => true;
 
   const openCase = async () => {
     g.set('v.open');
