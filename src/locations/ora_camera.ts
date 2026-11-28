@@ -307,7 +307,10 @@ export function createOraCamera(g: Game): Location {
       g.set('o.called');
       g.audio.setLoop('heartfast', 0.8, { tau: 0.2 });
       await g.shock();
+      // step back, so you see him get up
+      const back = g.view('ott', 0.9);
       await riseUp();
+      await back;
       await g.say([
         { who: 'ottavio', key: 'ora.ott1' },
         { who: 'ottavio', key: 'ora.ott2' },

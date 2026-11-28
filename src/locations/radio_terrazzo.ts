@@ -96,8 +96,8 @@ export function createRadioTerrazzo(g: Game): Location {
   yagi.add(mesh(new THREE.ConeGeometry(0.09, 0.26, 8), mat(0xe8e2d4, { emissive: 0x6a6660 }), 0, 0, -1.22).rotateX(-Math.PI / 2));
   yagi.position.set(MAST[0], 3.5, MAST[1]);
   yagi.rotation.order = 'YXZ';
-  yagi.rotation.y = -2.3;
-  let antElev = Number(g.flag('rl.elev') ?? 0.1);
+  yagi.rotation.y = -0.96; // side-on to the antenna view, so you can see it tilt
+  let antElev = Number(g.flag('rl.elev') ?? -0.3); // starts pointing down at the village
   yagi.rotation.x = antElev;
   scene.add(yagi);
   // the rotator: a hand wheel on the mast, at chest height
@@ -448,7 +448,7 @@ export function createRadioTerrazzo(g: Game): Location {
       center: wheel.getWorldPosition(new THREE.Vector3()),
       when: () => !contact() && g.viewName === 'antenna',
       onTurn: (d) => {
-        antElev = THREE.MathUtils.clamp(antElev - d * 0.25, 0, Math.PI / 2);
+        antElev = THREE.MathUtils.clamp(antElev - d * 0.25, -0.35, Math.PI / 2);
         yagi.rotation.x = antElev;
         wheel.rotation.z -= d;
         mix();

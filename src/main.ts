@@ -110,7 +110,7 @@ game.engine.renderer.domElement.addEventListener('webglcontextlost', (e) => {
 });
 
 /** shown in a corner of the title screen, so you can tell which version the phone is running */
-const VERSION = 'v0.27';
+const VERSION = 'v0.27.1';
 
 /** EmporiumEscape presents: the logo out of the dark, a bell, then the title */
 function splash(): Promise<void> {

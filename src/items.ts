@@ -17,7 +17,7 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   key: {
     id: 'key',
-    svg: s('<circle cx="13" cy="20" r="6"/><circle cx="13" cy="20" r="2"/><path d="M19 20 H34 M29 20 v5 M33 20 v4"/>'),
+    svg: s('<circle cx="12" cy="20" r="4"/><path d="M16 20 H28 M25 20 v3 M28 20 v2"/>'),
   },
   case: {
     id: 'case',
@@ -43,11 +43,11 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   labkey: {
     id: 'labkey',
-    svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v5 M26 20 v3"/>'),
+    svg: s('<circle cx="9" cy="15" r="3.5"/><circle cx="9" cy="25" r="3.5"/><circle cx="4.5" cy="20" r="3.5"/><path d="M12 20 H35 M31 20 v6 h-3 v-3 M24 20 v3"/>'),
   },
   mbkey: {
     id: 'mbkey',
-    svg: s('<circle cx="12" cy="20" r="5"/><circle cx="12" cy="20" r="2"/><path d="M17 20 H32 M28 20 v4"/>'),
+    svg: s('<path d="M14 20 C6 8 1 14 4 20 C1 26 6 32 14 20 Z"/><path d="M14 20 C6 14 9 14 14 20"/><path d="M14 20 H32"/><rect x="31" y="17" width="5" height="6"/>'),
   },
   mweight: {
     id: 'mweight',
@@ -59,11 +59,11 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   roomkey: {
     id: 'roomkey',
-    svg: s('<rect x="5" y="15" width="10" height="10" rx="2"/><path d="M15 20 H34 M30 20 v5 M26 20 v4"/>'),
+    svg: s('<path d="M12 27 C2 20 4 11 10 13 C11 13.5 12 14.5 12 15 C12 14.5 13 13.5 14 13 C20 11 22 20 12 27 Z"/><path d="M18 21 H35 M31 21 v5 M27 21 v3 M34 21 v3"/>'),
   },
   windkey: {
     id: 'windkey',
-    svg: s('<path d="M20 6 v18"/><rect x="16" y="24" width="8" height="10"/><path d="M8 6 H32 M8 6 v6 M32 6 v-0"/>'),
+    svg: s('<path d="M8 10 H24 a3 3 0 0 1 0 6 H8 a3 3 0 0 1 0 -6 Z"/><path d="M14 16 V30"/><rect x="11" y="30" width="6" height="6"/>'),
   },
   watch: {
     id: 'watch',
@@ -72,15 +72,15 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   yardkey: {
     id: 'yardkey',
-    svg: s('<circle cx="11" cy="20" r="6"/><circle cx="11" cy="20" r="2"/><path d="M17 20 H34 M30 20 v6 M26 20 v4"/>'),
+    svg: s('<circle cx="9" cy="20" r="6"/><path d="M15 20 H35 M31 20 v7 M27 20 v7 M27 27 h4 M35 20 v4"/>'),
   },
   padkey: {
     id: 'padkey',
-    svg: s('<circle cx="12" cy="20" r="4"/><path d="M16 20 H30 M27 20 v4 M24 20 v3"/><rect x="28" y="8" width="8" height="8" rx="1"/><path d="M30 8 v-2 a2 2 0 0 1 4 0 v2"/>'),
+    svg: s('<circle cx="9" cy="24" r="3"/><path d="M12 24 H22 M20 24 v3"/><rect x="24" y="16" width="11" height="10" rx="1"/><path d="M26 16 v-3 a3.5 3.5 0 0 1 7 0 v3"/>'),
   },
   shedkey: {
     id: 'shedkey',
-    svg: s('<circle cx="12" cy="14" r="5"/><path d="M12 19 V34 M12 30 h4 M12 26 h3"/><rect x="20" y="8" width="12" height="7"/>'),
+    svg: s('<circle cx="22" cy="12" r="4"/><path d="M22 16 V35 M22 31 h4 M22 27 h3"/><path d="M19 10 L9 6"/><rect x="3" y="4" width="8" height="12" rx="1" transform="rotate(-20 7 10)"/>'),
   },
   shears: {
     id: 'shears',
@@ -88,7 +88,7 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   wardkey: {
     id: 'wardkey',
-    svg: s('<path d="M8 20 q0 -6 6 -6 q6 0 6 6 q0 6 -6 6 q-6 0 -6 -6z"/><path d="M20 20 H34 M30 20 v5 M33 20 v3"/>'),
+    svg: s('<path d="M10 13 L16 20 L10 27 L4 20 Z"/><circle cx="10" cy="20" r="1.5"/><path d="M16 20 H33 M30 20 v4 M33 20 v4 M30 24 h3"/>'),
   },
   minutehand: {
     id: 'minutehand',
@@ -104,7 +104,7 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   flatkey: {
     id: 'flatkey',
-    svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v5 M27 20 v3"/>'),
+    svg: s('<path d="M5 14 h10 a3 3 0 0 1 3 3 v6 a3 3 0 0 1 -3 3 h-10 z"/><circle cx="9" cy="20" r="2"/><path d="M18 17 H35 L33 20 L35 23 H18 M21 17 l2 -2 l2 2 l2 -2 l2 2 l2 -2 l2 2"/>'),
   },
   flashbulb: {
     id: 'flashbulb',
@@ -117,11 +117,11 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   cemkey: {
     id: 'cemkey',
-    svg: s('<circle cx="11" cy="20" r="6"/><path d="M17 20 H34 M30 20 v6 M26 20 v4"/><path d="M8 17 l6 6"/>'),
+    svg: s('<circle cx="10" cy="20" r="7"/><path d="M10 15 V25 M6.5 18.5 H13.5"/><path d="M17 20 H36 M33 20 v8 M29 20 v5 M33 28 h-4"/>'),
   },
   suitcasekey: {
     id: 'suitcasekey',
-    svg: s('<circle cx="12" cy="20" r="5"/><path d="M17 20 H32 M29 20 v4 M26 20 v3"/><path d="M5 9 h10 v6 h-10z"/>'),
+    svg: s('<circle cx="9" cy="28" r="3"/><path d="M12 28 H22 M20 28 v3 M17 28 v2"/><path d="M22 26 L27 14"/><path d="M24 6 h11 v12 h-11 l-3 -6 z"/><circle cx="25.5" cy="12" r="1"/>'),
   },
   pnote: {
     id: 'pnote',
@@ -154,7 +154,7 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   towerkey: {
     id: 'towerkey',
-    svg: s('<circle cx="10" cy="20" r="6"/><circle cx="10" cy="20" r="2"/><path d="M16 20 H35 M31 20 v6 M27 20 v4 M33 20 v4"/>'),
+    svg: s('<circle cx="9" cy="20" r="5"/><circle cx="9" cy="20" r="1.5"/><path d="M14 20 H36 M32 20 v6 M28 20 v4"/><path d="M9 25 v3"/><path d="M5 35 q0 -7 4 -7 q4 0 4 7 z"/>'),
   },
   page: {
     id: 'page',
@@ -162,11 +162,11 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   m2key: {
     id: 'm2key',
-    svg: s('<circle cx="11" cy="20" r="6"/><path d="M17 20 H34 M30 20 v5 M25 20 v3"/><path d="M6 14 l-2 -4"/>'),
+    svg: s('<ellipse cx="9" cy="20" rx="6" ry="4"/><path d="M15 20 H34 M22 20 v4 M25 20 v3 M28 20 v4 M31 20 v3 M34 20 v4"/>'),
   },
   cellarkey: {
     id: 'cellarkey',
-    svg: s('<circle cx="10" cy="20" r="7"/><circle cx="10" cy="20" r="3"/><path d="M17 20 H35 M31 20 v7 M27 20 v4"/>'),
+    svg: s('<rect x="4" y="14" width="11" height="11" rx="1"/><rect x="7.5" y="17.5" width="4" height="4"/><path d="M15 20 H35 M31 20 v6 M35 20 v6 M31 26 h4"/>'),
   },
   salt: {
     id: 'salt',
@@ -186,7 +186,7 @@ export const ITEMS: Record<string, ItemDef> = {
   },
   sewkey: {
     id: 'sewkey',
-    svg: s('<circle cx="11" cy="20" r="5"/><path d="M16 20 H34 M30 20 v4 M27 20 v3"/><path d="M8 13 q3 -4 6 0"/>'),
+    svg: s('<ellipse cx="10" cy="20" rx="7" ry="3.5"/><ellipse cx="10" cy="20" rx="4" ry="1.2"/><path d="M17 20 H34 M30 20 v5 M34 20 v3"/><path d="M6 23 q-4 8 6 10 q8 1 10 -6"/>'),
   },
   thread: {
     id: 'thread',
