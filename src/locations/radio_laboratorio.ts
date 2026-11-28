@@ -8,8 +8,9 @@ import { radioWall, valveRadio, ether, sleep } from './radio_common';
 
 /**
  * Nello's lab. The bench, the soldering iron still in its stand, a tape recorder with a reel
- * already threaded: Paolo recorded a message for his father, backwards, as a joke. Played
- * forwards it's gibberish; turn the reel back by hand and you hear him.
+ * already threaded: Nello recorded himself backwards, so that nobody else would understand.
+ * Played forwards it's gibberish; turn the reel back by hand and you hear him, and the code of
+ * his room.
  */
 export function createRadioLaboratorio(g: Game): Location {
   const scene = new THREE.Scene();
@@ -106,7 +107,7 @@ export function createRadioLaboratorio(g: Game): Location {
   lens.position.set(-0.6, bY + 0.026, bZ + 0.18);
   lens.visible = false; // the UV lens is out of the game
   scene.add(lens);
-  // in invisible ink, on the wall above the recorder: Paolo's joke for whoever has the lens
+  // chalked on the wall above the recorder: Nello's reminder to himself
   scene.add(uvInk([t('radio.uvTape1'), t('radio.uvTape2')], 0.7, 0.26).translateX(0.3).translateY(1.3).translateZ(-D / 2 + 0.03));
 
   // ---------------- hotspots ----------------
@@ -175,12 +176,12 @@ export function createRadioLaboratorio(g: Game): Location {
     e.set(0.15, 1);
     try {
       if (!backwards) {
-        await g.say([{ who: 'paolo', key: 'radio.tapeFwd' }]);
+        await g.say([{ who: 'nello', key: 'radio.tapeFwd' }]);
       } else {
-        await g.say([{ who: 'paolo', key: 'radio.tapeBack1' }, { who: 'paolo', key: 'radio.tapeBack2' }, { who: 'paolo', key: 'radio.tapeBack3' }]);
+        await g.say([{ who: 'nello', key: 'radio.tapeBack1' }, { who: 'nello', key: 'radio.tapeBack2' }, { who: 'nello', key: 'radio.tapeBack3' }]);
         if (!g.flag('rl.code')) {
           g.set('rl.code');
-          g.note('note.paoloCode');
+          g.note('note.nelloCode');
         }
       }
     } finally {

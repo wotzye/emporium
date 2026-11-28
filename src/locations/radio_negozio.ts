@@ -7,12 +7,12 @@ import { oldPhoto } from '../photos';
 import { radioWall, valveRadio, oldTv, drawSnow, sleep } from './radio_common';
 
 /**
- * Le Voci dell'Etere — the shop. Radios on every shelf, a stack of dead televisions, the ticket
- * spike on the counter (one ticket: a valve lent to Ferri the photographer). A door to the lab,
- * one down to the cellar (the fuse box: no power), and the stairs to Paolo's room, locked with a
- * combination padlock since March 1973.
+ * Le Voci dell'Etere — the shop of Nello Sartori, radio repairman. Radios on every shelf, a stack
+ * of dead televisions, the ticket spike on the counter (one ticket: a valve lent to Ferri the
+ * photographer). A door to the lab, one down to the cellar (the fuse box: no power; his listening
+ * station), and the stairs to his own room, locked with a combination padlock.
  */
-export const PAOLO_CODE = '318';
+export const NELLO_CODE = '126';
 
 export function createRadioNegozio(g: Game): Location {
   const scene = new THREE.Scene();
@@ -69,7 +69,7 @@ export function createRadioNegozio(g: Game): Location {
     scene.add(tv.group);
     tvs.push(tv);
   });
-  const paoloTex = oldPhoto('radio_paolo', 128, 96, (c, w, h) => {
+  const faceTex = oldPhoto('radio_nello', 128, 96, (c, w, h) => {
     c.fillStyle = '#555';
     c.fillRect(0, 0, w, h);
     c.fillStyle = '#ddd';
@@ -107,12 +107,12 @@ export function createRadioNegozio(g: Game): Location {
   open.rotation.y = -0.4;
   scene.add(open);
 
-  // ---------------- father and son on the roof (right wall) ----------------
-  const famTex = oldPhoto('radio_famiglia', 440, 240, (c, w, h) => {
+  // ---------------- Nello in his shop (right wall) ----------------
+  const famTex = oldPhoto('radio_nello', 300, 240, (c, w, h) => {
     c.fillStyle = '#8a857a';
     c.fillRect(0, 0, w, h);
   }, { age: 0.35, border: false });
-  const fam = framed(0.55, 0.3, famTex, woodMaterial({ base: '#1c1510' }));
+  const fam = framed(0.4, 0.32, famTex, woodMaterial({ base: '#1c1510' }));
   fam.position.set(W / 2 - 0.03, 1.7, -0.9);
   fam.rotation.y = -Math.PI / 2;
   scene.add(fam);
@@ -153,7 +153,7 @@ export function createRadioNegozio(g: Game): Location {
   padlock.rotation.y = -Math.PI / 2;
   padlock.visible = !stairsOpen();
   stairPivot.add(padlock);
-  const paoloTag = textPlane([t('radio.paoloDoor')], 0.3, 0.09, { bg: '#d9cfb6', size: 20, px: 64 });
+  const paoloTag = textPlane([t('radio.roomDoor')], 0.3, 0.09, { bg: '#d9cfb6', size: 20, px: 64 });
   paoloTag.position.set(-0.04, 1.6, -0.42);
   paoloTag.rotation.y = -Math.PI / 2;
   stairPivot.add(paoloTag);
@@ -218,7 +218,7 @@ export function createRadioNegozio(g: Game): Location {
       }
       if (item) return g.nope();
       g.audio.sfx('click');
-      const ok = await g.ui.keypad(t('radio.padlock'), 3, (c) => c === PAOLO_CODE, () => g.audio.sfx('click'));
+      const ok = await g.ui.keypad(t('radio.padlock'), 3, (c) => c === NELLO_CODE, () => g.audio.sfx('click'));
       if (!ok) return say('radio.padlockNo');
       g.set('rl.stairs');
       g.audio.sfx('unlock');
@@ -254,7 +254,7 @@ export function createRadioNegozio(g: Game): Location {
     g.audio.sfx('hiss');
     await sleep(1400);
     face = true;
-    tvs[2].mat.map = paoloTex;
+    tvs[2].mat.map = faceTex;
     tvs[2].mat.needsUpdate = true;
     g.audio.stinger();
     g.audio.sfx('whisper');
@@ -311,10 +311,17 @@ export function createRadioNegozio(g: Game): Location {
 export function radioHint(g: Game): string {
   if (g.has('radio')) return 'hint.radio.leave';
   if (!g.flag('rl.ticket')) return 'hint.radio.tickets';
-  if (!g.flag('rl.power')) return 'hint.radio.power';
+  if (!g.flag('rl.power')) return g.has('rfuse') ? 'hint.radio.fuseIn' : 'hint.radio.power';
+  if (!g.flag('rl.station')) return 'hint.radio.station';
+  if (!g.flag('rl.mic')) return 'hint.radio.drawer';
   if (!g.flag('rl.code')) return 'hint.radio.tape';
   if (!g.flag('rl.stairs')) return 'hint.radio.stairs';
-  if (!g.flag('rl.morse')) return 'hint.radio.notebook';
+  if (!g.flag('rl.window')) {
+    if (!g.flag('rl.micOn')) return 'hint.radio.mic';
+    if (!g.flag('rl.overheard')) return 'hint.radio.listen';
+    if (!g.flag('rl.handle')) return 'hint.radio.board';
+    return 'hint.radio.handle';
+  }
   if (!g.flag('rl.valveIn') && !g.has('valve')) return 'hint.radio.valve';
   if (!g.flag('rl.valveIn')) return 'hint.radio.valveIn';
   if (!g.flag('rl.tuned')) return 'hint.radio.tune';

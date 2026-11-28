@@ -734,6 +734,23 @@ export class Audio {
     };
   }
 
+  /** a camera: the shutter's double click, then the flash charging up with its thin whine */
+  shutter(delay = 0) {
+    if (!this.ctx) return;
+    const t = this.now + delay;
+    this.thump(t, 0.35, 900, 0.03);
+    this.thump(t + 0.07, 0.3, 700, 0.03);
+    const ctx = this.ctx;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(2500, t + 0.15);
+    o.frequency.exponentialRampToValueAtTime(7500, t + 1.4);
+    const g = ctx.createGain();
+    this.env(g, t + 0.15, 0.05, 0.03, 1.3);
+    o.connect(g).connect(this.bus);
+    o.start(t + 0.15);
+    o.stop(t + 1.6);
+  }
   /** a cuckoo clock: «cu-cù», n times */
   cuckoo(n = 3, delay = 0) {
     if (!this.ctx) return;

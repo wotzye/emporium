@@ -116,6 +116,7 @@ const FILES = {
   vaseA: 'models/vaseA.glb',
   ashtrayA: 'models/ashtrayA.glb',
   dollB: 'models/dollB.glb',
+  telegraph: 'models/telegraph.glb',
 
 } as const;
 export type ModelId = keyof typeof FILES;

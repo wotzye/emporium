@@ -8,7 +8,7 @@ const PHOTO_ORDER: Record<string, number[]> = {
   ada: [1, 2, 3, 5, 6],
   ora: [1, 6, 3, 5, 7],
   foto: [6, 5, 3, 2, 1],
-  radio: [6, 5, 3, 2, 1],
+  radio: [7, 4, 3, 2, 1],
 };
 const withPhotos = (story: string, panels: { draw: Draw; text: string }[]) =>
   panels.map((p, i) => ({ text: p.text, draw: photoOr(`mem_${story}_${PHOTO_ORDER[story]?.[i] ?? i + 1}`, p.draw) }));
@@ -563,7 +563,7 @@ export function photoMemory(): { title: string; panels: { draw: Draw; text: stri
   return { title: t('mem.foto.title'), panels: withPhotos('foto', panels) };
 }
 
-/** The radio man: Nello Sartori, and Paolo. */
+/** The radio man: Nello Sartori, who wanted to hear everyone. */
 export function radioMemory(): { title: string; panels: { draw: Draw; text: string }[] } {
   const antenna = (c: CanvasRenderingContext2D, x: number, y: number, s: number) => {
     c.strokeStyle = '#1a1816';
@@ -608,26 +608,25 @@ export function radioMemory(): { title: string; panels: { draw: Draw; text: stri
     {
       text: t('mem.radio.1'),
       draw: (c, w, h) => {
-        // father and son on the roof, putting up the antenna
+        // Nello at his bench, a radio open in front of him
         c.fillStyle = '#8a8478';
         c.fillRect(0, 0, w, h);
         c.fillStyle = '#4a4640';
         c.fillRect(0, 520, w, 200);
-        antenna(c, 480, 540, 1.3);
-        figure(c, 360, 560, 1.1, '#2a2621');
-        figure(c, 620, 560, 1.15, '#3a352f');
+        radio(c, 600, 500, 1.2, false);
+        figure(c, 380, 560, 1.15, '#2a2621');
       },
     },
     {
       text: t('mem.radio.2'),
       draw: (c, w, h) => {
-        // the telegram on the table; the father alone, his head in his hands
+        // night; a radio on the table crackling with the neighbours' voices, Nello listening
         c.fillStyle = '#3a3631';
         c.fillRect(0, 0, w, h);
         c.fillStyle = '#5a4430';
         c.fillRect(150, 470, 700, 30);
-        c.fillStyle = paper;
-        c.fillRect(560, 440, 160, 30);
+        radio(c, 620, 440, 1.0, false);
+        waves(c, 660, 420, 3, '#c8c0b0');
         figure(c, 380, 560, 1.2, '#1e1b18');
         chair(c, 380, 640, 1.1);
       },

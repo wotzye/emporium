@@ -12,7 +12,7 @@ import { sleep, churchHint, KNOCK, pigeon, tickPigeons } from './chiesa_common';
  */
 const GRAVES: [string, string][] = [
   ['Ettore Rinaldi', '1919 – 1971'],
-  ['Paolo Sartori', '1952 – 1973'],
+  ['Paolo Gatti', '1952 – 1973'],
   ['Clara Sala', '1958 – 1974'],
   ['Aldo Morandi', '1928 – 1974'],
   ['Giulio Ferri', '1914 – 1974'],

@@ -3,7 +3,7 @@ import { t } from './i18n';
 import { listen, SensorKind, motionNeedsTap, askMotion } from './sensors';
 
 export interface Line {
-  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio' | 'nello' | 'paolo' | 'ottavio';
+  who?: 'diego' | 'mercante' | 'lisa' | 'bruno' | 'narr' | 'ada' | 'ettore' | 'clara' | 'giulio' | 'nello' | 'paolo' | 'ottavio' | 'supremo' | 'vicini' | 'voci';
   key: string;
   vars?: Record<string, string | number>;
 }

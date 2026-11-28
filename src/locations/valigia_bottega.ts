@@ -8,7 +8,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** the day Lisa went away: 24 October 1974 (the register in the sacristy) */
 export const SUITCASE_CODE = '241074';
 /** the four suitcases on the high shelf, left to right: whose dream is in each */
-const HIGH = ['Aldo', 'Ada', 'Paolo', 'LISA'] as const;
+const HIGH = ['Aldo', 'Ada', 'Nello', 'LISA'] as const;
 const LISA_IDX = 3;
 
 /**

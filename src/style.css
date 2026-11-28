@@ -257,6 +257,9 @@ button:active { background: rgba(255,255,255,0.08); }
 #dialog .who.giulio { color: #d4d0c8; font-style: italic; letter-spacing: 0.35em; }
 #dialog .who.nello { color: #d8d2c4; font-style: italic; }
 #dialog .who.paolo { color: #c8d0d8; font-style: italic; letter-spacing: 0.2em; }
+#dialog .who.supremo { color: #ff5a5a; letter-spacing: 0.45em; text-transform: uppercase; }
+#dialog .who.vicini { color: #b8b2a6; font-style: italic; }
+#dialog .who.voci { color: #9aa2a8; font-style: italic; letter-spacing: 0.3em; }
 
 /* telegraph key */
 .tkey { display: block; margin: 14px auto 8px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3a3632, #12100e); border: 3px solid #8a7a5a; box-shadow: 0 6px 0 #2a241c; touch-action: none; }

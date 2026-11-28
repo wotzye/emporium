@@ -2,21 +2,23 @@ import * as THREE from 'three';
 import { Game, Location, Hotspot, Interaction } from '../game';
 import { rbox, mesh, textPlane, hitBox, woodMaterial, plasterMaterial, mat, cyl, cursedMat, liveCanvas, handwheel } from '../builders';
 import { figureGhost } from '../characters';
+import { prop } from '../models';
 import { t } from '../i18n';
 import { radioHint } from './radio_negozio';
 import { valveRadio, ether, beacon, sleep, FREQ_OK, FREQ_START, SK } from './radio_common';
 
 /**
- * The roof terrace: the antenna, and Nello's station in the shack. Every night he sat here with
- * the red transistor the man in black sold him, listening to his dead son. Put the valve back,
- * decode Paolo's beacon (7045), tune in, turn the antenna to the bell tower (Paolo rang the bells:
- * from up there you hear everything). Then key «fine trasmissione» and let them both go.
+ * The roof: the antenna, and Nello's station in the shack. With the red transistor the man in
+ * black sold him he could hear everyone in the village; up here, every night, he tried to hear the
+ * one voice above all of them: the Supreme. Put the valve back, decode the beacon (7045) and tune
+ * the separate tuner to it; the voice says «higher»: crank the antenna up until it points at the
+ * sky. The Supreme answers, and will not let him go. Only then the telegraph key works: key
+ * «fine trasmissione» and close the transmission once and for all, so that he can rest.
  */
 const MAST: [number, number] = [-0.3, -0.6];
 const TOWER: [number, number] = [-6.5, -9.5];
-/** where the antenna must point (rotation.y of the boom): straight at the bell tower */
-const ANT_OK = Math.atan2(-(TOWER[0] - MAST[0]), -(TOWER[1] - MAST[1]));
-const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+/** the antenna's elevation: flat at the start, straight up at the sky when it is right */
+const ELEV_OK = 1.35;
 
 export function createRadioTerrazzo(g: Game): Location {
   const scene = new THREE.Scene();
@@ -70,9 +72,7 @@ export function createRadioTerrazzo(g: Game): Location {
   tower.position.set(TOWER[0], -3, TOWER[1]);
   scene.add(tower);
   // one dim light in the belfry
-  const belfryLight = new THREE.PointLight(0xffe2b0, 0.0, 8, 1.5);
-  belfryLight.position.set(TOWER[0], 6.3, TOWER[1]);
-  scene.add(belfryLight);
+
 
   // ---------------- the antenna ----------------
   const iron = mat(0x3a3a38, { metalness: 0.8, roughness: 0.5 });
@@ -95,15 +95,17 @@ export function createRadioTerrazzo(g: Game): Location {
   // a little arrow, so you can see which end is the front
   yagi.add(mesh(new THREE.ConeGeometry(0.09, 0.26, 8), mat(0xe8e2d4, { emissive: 0x6a6660 }), 0, 0, -1.22).rotateX(-Math.PI / 2));
   yagi.position.set(MAST[0], 3.5, MAST[1]);
-  let antAngle = Number(g.flag('rl.ant') ?? -2.3);
-  yagi.rotation.y = antAngle;
+  yagi.rotation.order = 'YXZ';
+  yagi.rotation.y = -2.3;
+  let antElev = Number(g.flag('rl.elev') ?? 0.1);
+  yagi.rotation.x = antElev;
   scene.add(yagi);
   // the rotator: a hand wheel on the mast, at chest height
   const wheel = handwheel(0.2, mat(0x2a2826, { metalness: 0.7, roughness: 0.4 }));
   wheel.position.set(MAST[0], 1.25, MAST[1] + 0.1);
   wheel.add(hitBox(0.42, 0.42, 0.08, 0, 0, 0.04, 'antGrip'));
   scene.add(wheel);
-  const dir = textPlane(['N · E · S · O'], 0.3, 0.06, { bg: '#d9cfb6', size: 28, px: 64 });
+  const dir = textPlane([t('radio.elevLabel')], 0.3, 0.06, { bg: '#d9cfb6', size: 28, px: 64 });
   dir.position.set(MAST[0], 1.5, MAST[1] + 0.06);
   scene.add(dir);
 
@@ -118,6 +120,12 @@ export function createRadioTerrazzo(g: Game): Location {
   shack.add(rbox(1.4, 0.04, 0.55, 0.01, woodMaterial({ base: '#4f3d2b' }), 0, 0.78, -0.4));
   shack.position.set(sX, 0, sZ);
   scene.add(shack);
+  // a cold light from straight above, when the Supreme answers
+  const skyLight = new THREE.SpotLight(0xd8e4ff, 0, 14, 0.5, 0.7, 1.2);
+  skyLight.position.set(sX - 0.5, 10, sZ + 0.5);
+  skyLight.target.position.set(sX - 0.5, 0, sZ);
+  scene.add(skyLight, skyLight.target);
+  if (g.flag('rl.contact') && !g.flag('rl.freed')) skyLight.intensity = 2.2;
   const tY = 0.8, tZ = sZ - 0.42;
   const lampIn = new THREE.PointLight(0xffd9a0, g.flag('rl.power') ? 1.4 : 0.2, 3, 1.6);
   lampIn.position.set(sX, 1.9, sZ - 0.2);
@@ -125,41 +133,55 @@ export function createRadioTerrazzo(g: Game): Location {
   // the receiver, with a lit dial we draw on
   const dial = liveCanvas(256, 96);
   const rx = valveRadio(0.7, 0.4, 0.3, dial.tex);
-  rx.position.set(sX - 0.15, tY, tZ - 0.05);
+  rx.position.set(sX - 0.02, tY, tZ - 0.05);
   scene.add(rx);
   // the empty valve socket on top, and the valve when it's back
-  scene.add(cyl(0.025, 0.025, 0.01, mat(0x111111), sX + 0.08, tY + 0.405, tZ - 0.12, 10));
+  scene.add(cyl(0.025, 0.025, 0.01, mat(0x111111), sX + 0.21, tY + 0.405, tZ - 0.12, 10));
   const valve = new THREE.Group();
   valve.add(cyl(0.017, 0.017, 0.07, new THREE.MeshStandardMaterial({ color: 0xbfc8cc, transparent: true, opacity: 0.6, roughness: 0.05 }), 0, 0.035, 0, 12));
   const filament = new THREE.MeshBasicMaterial({ color: 0x3a2010 });
   valve.add(mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.03, 6), filament, 0, 0.03, 0, false));
-  valve.position.set(sX + 0.08, tY + 0.41, tZ - 0.12);
+  valve.position.set(sX + 0.21, tY + 0.41, tZ - 0.12);
   scene.add(valve);
-  // the tuning knob, big, on the right of the set
+  // the tuner: a separate box on the left of the set, with one big knob for the frequency
+  const tuner = new THREE.Group();
+  tuner.add(rbox(0.22, 0.2, 0.18, 0.01, mat(0x3a3632, { metalness: 0.4, roughness: 0.5 }), 0, 0.1, 0));
+  tuner.add(textPlane([t('radio.tunerLabel')], 0.18, 0.035, { bg: '#1e1a16', fg: '#d9cfb6', size: 26, px: 64 }).translateY(0.175).translateZ(0.091));
+  tuner.position.set(sX - 0.56, tY + 0.02, tZ + 0.0);
+  scene.add(tuner);
   const knob = new THREE.Group();
-  knob.add(cyl(0.045, 0.045, 0.03, mat(0x1a1612, { roughness: 0.4 }), 0, 0, 0, 20).rotateX(Math.PI / 2));
-  knob.add(rbox(0.008, 0.035, 0.01, 0.002, mat(0xcfc8b8), 0, 0.02, 0.016));
-  knob.add(hitBox(0.16, 0.16, 0.06, 0, 0, 0.03, 'tuneGrip'));
-  knob.position.set(sX + 0.3, tY + 0.12, tZ + 0.12);
+  knob.add(cyl(0.065, 0.065, 0.035, mat(0x1a1612, { roughness: 0.4 }), 0, 0, 0, 24).rotateX(Math.PI / 2));
+  for (let k = 0; k < 12; k++) knob.add(rbox(0.006, 0.012, 0.03, 0.002, mat(0x2a2622), Math.sin((k / 12) * Math.PI * 2) * 0.066, Math.cos((k / 12) * Math.PI * 2) * 0.066, 0));
+  knob.add(rbox(0.01, 0.045, 0.01, 0.002, mat(0xcfc8b8), 0, 0.03, 0.019));
+  knob.add(hitBox(0.2, 0.2, 0.06, 0, 0, 0.03, 'tuneGrip'));
+  knob.position.set(sX - 0.56, tY + 0.1, tZ + 0.11);
   scene.add(knob);
   // the signal lamp: blinks with whatever comes in
   const sigM = new THREE.MeshBasicMaterial({ color: 0x2a2a26 });
-  scene.add(mesh(new THREE.SphereGeometry(0.014, 10, 8), sigM, sX + 0.1, tY + 0.32, tZ + 0.105, false));
-  // the telegraph key
+  scene.add(mesh(new THREE.SphereGeometry(0.014, 10, 8), sigM, sX + 0.23, tY + 0.32, tZ + 0.105, false));
+  // the telegraph key, on its own at the right end of the table
   const key = new THREE.Group();
-  key.add(rbox(0.12, 0.02, 0.07, 0.004, woodMaterial({ base: '#3a2a1c' }), 0, 0.01, 0));
-  const lever = rbox(0.1, 0.01, 0.015, 0.003, mat(0x9a8a62, { metalness: 0.9, roughness: 0.3 }), 0, 0.03, 0);
+  const keyModel = prop('telegraph', { height: 0.09, turn: Math.PI / 2 });
+  const lever = new THREE.Group();
+  if (keyModel) lever.add(keyModel);
+  else {
+    key.add(rbox(0.12, 0.02, 0.07, 0.004, woodMaterial({ base: '#3a2a1c' }), 0, 0.01, 0));
+    lever.add(rbox(0.1, 0.01, 0.015, 0.003, mat(0x9a8a62, { metalness: 0.9, roughness: 0.3 }), 0, 0.03, 0));
+    lever.add(cyl(0.012, 0.012, 0.012, mat(0x111111), 0.045, 0.04, 0, 12));
+  }
   key.add(lever);
-  key.add(cyl(0.012, 0.012, 0.012, mat(0x111111), 0.045, 0.04, 0, 12));
-  key.position.set(sX + 0.4, tY + 0.02, tZ + 0.0);
-  key.rotation.y = -0.2;
+  // a little lamp by the key: dark until the Supreme answers, then lit (the key is live)
+  const keyLampM = new THREE.MeshBasicMaterial({ color: 0x2a2a26 });
+  key.add(mesh(new THREE.SphereGeometry(0.012, 10, 8), keyLampM, -0.09, 0.02, -0.03, false));
+  key.position.set(sX + 0.58, tY + 0.02, tZ + 0.02);
+  key.rotation.y = -0.25;
   scene.add(key);
   // the red transistor radio
   const radiolina = new THREE.Group();
   radiolina.add(rbox(0.16, 0.1, 0.045, 0.01, cursedMat(), 0, 0.05, 0));
   radiolina.add(mesh(new THREE.CircleGeometry(0.03, 16), mat(0x2a0a0a), -0.035, 0.05, 0.0235, false));
   radiolina.add(cyl(0.003, 0.003, 0.3, mat(0x9a9a98, { metalness: 1 }), 0.06, 0.2, -0.01, 4).rotateZ(-0.3));
-  radiolina.position.set(sX - 0.58, tY + 0.02, tZ + 0.04);
+  radiolina.position.set(sX + 0.4, tY + 0.02, tZ + 0.12);
   radiolina.rotation.y = 0.3;
   const taken = () => !!g.flag('radio') || !!g.flag('placedRadio');
   radiolina.visible = !taken();
@@ -214,7 +236,7 @@ export function createRadioTerrazzo(g: Game): Location {
   // the sound: static, Paolo's beacon (only off his frequency), his voice (only on it)
   let eth: ReturnType<typeof ether> | null = null;
   let bea: ReturnType<typeof beacon> | null = null;
-  const antOk = () => Math.abs(wrap(antAngle - ANT_OK)) < 0.2;
+  const antOk = () => antElev > ELEV_OK;
   const mix = () => {
     if (!eth) return;
     const dOk = Math.abs(freq - FREQ_OK);
@@ -246,13 +268,14 @@ export function createRadioTerrazzo(g: Game): Location {
     sigM.color.set(0xffd070);
     mix();
     g.audio.sfx('whisper');
-    await g.say([{ who: 'paolo', key: 'radio.faint1' }, { who: 'paolo', key: 'radio.faint2' }, { who: 'diego', key: 'radio.faint3' }]);
+    await g.say([{ who: 'supremo', key: 'radio.faint1' }, { who: 'supremo', key: 'radio.faint2' }, { who: 'diego', key: 'radio.faint3' }]);
   };
   const makeContact = async () => {
     g.set('rl.contact');
     mix();
-    belfryLight.intensity = 3;
-    g.audio.rec('bell', { gain: 0.7 });
+    skyLight.intensity = 2.2;
+    g.audio.rec('spooky', { gain: 0.6, dur: 6 });
+    g.engine.shake(0.03, 1.2);
     await sleep(900);
     g.audio.sfx('hiss');
     await g.glimpse('nello_figura');
@@ -260,18 +283,20 @@ export function createRadioTerrazzo(g: Game): Location {
     nello.setOpacity(0.35);
     await g.view('station');
     await g.say([
-      { who: 'paolo', key: 'radio.contact1' },
+      { who: 'supremo', key: 'radio.contact1' },
       { who: 'nello', key: 'radio.contact2' },
-      { who: 'paolo', key: 'radio.contact3' },
+      { who: 'supremo', key: 'radio.contact3' },
       { who: 'nello', key: 'radio.contact4' },
-      { who: 'paolo', key: 'radio.contact5' },
-      { who: 'diego', key: 'radio.contact6' },
+      { who: 'supremo', key: 'radio.contact5' },
+      { who: 'nello', key: 'radio.contact6' },
+      { who: 'diego', key: 'radio.contact7' },
     ]);
+    keyLampM.color.set(0xffd070);
   };
   // a tone for the key
   let keyOsc: { stop: () => void } | null = null;
   const keyTone = (down: boolean) => {
-    lever.rotation.z = down ? -0.12 : 0;
+    lever.position.y = down ? -0.006 : 0;
     const ctx = g.audio.ctx;
     if (!ctx) return;
     if (down && !keyOsc) {
@@ -298,11 +323,12 @@ export function createRadioTerrazzo(g: Game): Location {
     sigM.color.set(0x2a2a26);
     filament.color.set(0x3a2010);
     drawDial();
-    await g.say([{ who: 'nello', key: 'radio.free1' }, { who: 'paolo', key: 'radio.free2' }]);
+    keyLampM.color.set(0x2a2a26);
+    await g.say([{ who: 'nello', key: 'radio.free1' }, { who: 'supremo', key: 'radio.free2' }, { who: 'nello', key: 'radio.free2b' }]);
     g.audio.sfx('whisper');
     for (let i = 20; i >= 0; i--) {
       nello.setOpacity((i / 20) * 0.35);
-      belfryLight.intensity = (i / 20) * 3;
+      skyLight.intensity = (i / 20) * 2.2;
       await sleep(70);
     }
     nello.group.visible = false;
@@ -311,14 +337,15 @@ export function createRadioTerrazzo(g: Game): Location {
   };
 
   // ---------------- hotspots ----------------
-  const hRx = hitBox(0.62, 0.45, 0.35, sX - 0.12, tY + 0.2, tZ - 0.05, 'receiver');
-  const hKey = hitBox(0.18, 0.1, 0.14, sX + 0.4, tY + 0.05, tZ, 'key');
-  const hRadiolina = hitBox(0.2, 0.18, 0.16, sX - 0.58, tY + 0.08, tZ + 0.04, 'radiolina');
+  const hRx = hitBox(0.62, 0.45, 0.35, sX + 0.01, tY + 0.2, tZ - 0.05, 'receiver');
+  const hKey = hitBox(0.22, 0.12, 0.18, sX + 0.58, tY + 0.06, tZ + 0.02, 'key');
+  const hRadiolina = hitBox(0.2, 0.18, 0.16, sX + 0.4, tY + 0.08, tZ + 0.1, 'radiolina');
+  const hTuner = hitBox(0.26, 0.24, 0.22, sX - 0.56, tY + 0.12, tZ, 'tuner');
   const hShack = hitBox(1.8, 2.2, 1.4, sX, 1.1, sZ, 'shack');
   const hMast = hitBox(0.6, 1.0, 0.6, MAST[0], 1.25, MAST[1], 'mast');
   const hTower = hitBox(3, 14, 3, TOWER[0], 3, TOWER[1], 'tower');
   const hBack = hitBox(1.4, 1.6, 0.4, 0.3, 0.8, 2.6, 'back');
-  scene.add(hRx, hKey, hRadiolina, hShack, hMast, hTower, hBack);
+  scene.add(hRx, hKey, hRadiolina, hTuner, hShack, hMast, hTower, hBack);
   const say = (k: string) => g.say(k);
 
   const hotspots: Hotspot[] = [
@@ -348,10 +375,15 @@ export function createRadioTerrazzo(g: Game): Location {
       if (!contact()) return say('radio.rxFaint');
       return say('radio.rxContact');
     } },
+    { id: 'tuner', obj: hTuner, view: 'station', tap: async (item) => {
+      if (item) return g.nope();
+      if (!on()) return say('radio.tunerOff');
+      return say(tuned() ? 'radio.tunerDone' : 'radio.tunerHow');
+    } },
     { id: 'key', obj: hKey, view: 'station', tap: async (item) => {
       if (item) return g.nope();
       if (freed()) return say('radio.keyAfter');
-      if (!contact()) return say('radio.keyBefore');
+      if (!contact()) return say(tuned() ? 'radio.keyDead' : 'radio.keyBefore');
       const ok = await g.ui.telegraph(t('radio.keyTitle'), SK, keyTone);
       keyTone(false);
       if (!ok) return say('radio.keyNo');
@@ -416,13 +448,13 @@ export function createRadioTerrazzo(g: Game): Location {
       center: wheel.getWorldPosition(new THREE.Vector3()),
       when: () => !contact() && g.viewName === 'antenna',
       onTurn: (d) => {
-        antAngle = wrap(antAngle - d * 0.5);
-        yagi.rotation.y = antAngle;
+        antElev = THREE.MathUtils.clamp(antElev - d * 0.25, 0, Math.PI / 2);
+        yagi.rotation.x = antElev;
         wheel.rotation.z -= d;
         mix();
       },
       onEnd: async () => {
-        g.set('rl.ant', Math.round(antAngle * 100) / 100);
+        g.set('rl.elev', Math.round(antElev * 100) / 100);
         g.audio.sfx('scrape');
         if (!antOk()) return;
         if (!on() || !tuned()) return say('radio.antNothing');
@@ -467,8 +499,8 @@ export function createRadioTerrazzo(g: Game): Location {
       knob,
       wheel,
       getFreq: () => freq,
-      getAnt: () => antAngle,
-      ANT_OK,
+      getElev: () => antElev,
+      ELEV_OK,
     },
   };
 }

@@ -144,6 +144,14 @@ export const ITEMS: Record<string, ItemDef> = {
     cursed: true,
     svg: s('<rect x="8" y="15" width="24" height="16" rx="2"/><circle cx="15" cy="23" r="4"/><path d="M24 20 h5 M24 24 h5 M24 28 h5 M30 15 L34 4"/>'),
   },
+  contactmic: {
+    id: 'contactmic',
+    svg: s('<rect x="8" y="12" width="10" height="16" rx="3"/><path d="M18 20 C26 20 24 30 33 30"/><path d="M11 16 v8 M15 16 v8"/>'),
+  },
+  winhandle: {
+    id: 'winhandle',
+    svg: s('<rect x="8" y="16" width="9" height="9" rx="2"/><path d="M17 20 H32 a2 2 0 0 1 0 4 H17"/><path d="M12 25 v6"/>'),
+  },
   towerkey: {
     id: 'towerkey',
     svg: s('<circle cx="10" cy="20" r="6"/><circle cx="10" cy="20" r="2"/><path d="M16 20 H35 M31 20 v6 M27 20 v4 M33 20 v4"/>'),
